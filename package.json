@@ -1,0 +1,51 @@
+{
+  "name": "dsh-flower-garden",
+  "version": "2.3.0",
+  "private": true,
+  "description": "Flower garden: a DeepSeek Harness session-view plugin with four scenes, twenty-five flowers, items and a variant flower book.",
+  "type": "module",
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg"
+  },
+  "files": [
+    "index.js",
+    "client.js",
+    "cordis.patch.yml",
+    "locale/*.json",
+    "docs",
+    "icon.svg",
+    "README.md"
+  ],
+  "keywords": [
+    "dsh",
+    "deepseek-harness",
+    "plugin",
+    "session-view",
+    "game"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-conversation"
+      ]
+    }
+  },
+  "scripts": {
+    "test": "npm run test:game && npm run test:render",
+    "test:game": "node test/game.test.cjs",
+    "test:render": "node test/render.test.cjs",
+    "preview": "node tools/preview.cjs"
+  },
+  "devDependencies": {
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  }
+}
