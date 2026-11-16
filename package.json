@@ -1,8 +1,12 @@
 {
   "name": "dsh-flower-garden",
   "version": "2.6.0",
-  "private": true,
   "description": "A living flower garden: 45 flowers, 13 visitors, 12 curiosities, special commissions, resident plants and recurring ecological studies.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TThappy/dsh-flower-garden.git"
+  },
+  "homepage": "https://github.com/TThappy/dsh-flower-garden#readme",
   "type": "module",
   "exports": {
     ".": "./index.js",
