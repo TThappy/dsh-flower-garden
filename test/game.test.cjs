@@ -338,5 +338,234 @@ check('the charm is consumed by the harvest', charmed.charm === false)
 const uncharmed = game.harvestAt({ ...charmState, charm: false }, 'meadow', 0, noon, 'clear')
 check('without the charm the same roll misses', uncharmed.basket[0].variant !== 'hidden')
 
+console.log('visitors and pollination')
+const bloomPlot = { species: 'daisy', growthMs: growMs, moisture: 60, dried: false }
+const guestState = {
+  ...game.freshState(0),
+  scenes: { ...game.freshState(0).scenes, meadow: { unlocked: 3, sprinklerUntil: 0, plots: [bloomPlot, { ...bloomPlot, growthMs: growMs / 2 }, null, null, null, null] } },
+}
+// Walk the visit windows until one brings a visitor to plot #1.
+let visitAt = noon
+while (game.visitorAt('meadow', 0, bloomPlot, visitAt, 'overcast') === null) visitAt += game.VISIT_MS
+const guest = game.visitorAt('meadow', 0, bloomPlot, visitAt, 'overcast')
+check('an open flower attracts a visitor', guest !== null && typeof guest.id === 'string')
+check('the visit is deterministic', game.visitorAt('meadow', 0, bloomPlot, visitAt, 'overcast').id === guest.id)
+check('the visitor belongs to the ground', guest.scenes.includes('meadow'))
+check('a growing plant attracts nobody', game.visitorAt('meadow', 1, guestState.scenes.meadow.plots[1], visitAt, 'overcast') === null)
+check('an empty plot attracts nobody', game.visitorAt('meadow', 2, null, visitAt, 'overcast') === null)
+let windows = 0
+let visits = 0
+const kinds = new Set()
+for (let at = noon; at < noon + 6 * 3600 * 1000; at += game.VISIT_MS) {
+  windows += 1
+  const seen = game.visitorAt('meadow', 0, bloomPlot, at, 'overcast')
+  if (seen === null) continue
+  visits += 1
+  kinds.add(seen.id)
+}
+check('visits arrive at about the stated rate', Math.abs(visits / windows - game.VISIT_CHANCE) < 0.08, `${visits}/${windows}`)
+check('day visitors only by day', [...kinds].every(id => game.VISITORS.find(visitor => visitor.id === id).when !== 'night'))
+const nightKinds = new Set()
+for (let at = night; at < night + 3 * 3600 * 1000; at += game.VISIT_MS) {
+  const seen = game.visitorAt('meadow', 0, bloomPlot, at, 'overcast')
+  if (seen !== null) nightKinds.add(seen.id)
+}
+check('night brings the night visitors', nightKinds.size > 0 && [...nightKinds].every(id => game.VISITORS.find(visitor => visitor.id === id).when !== 'day'), [...nightKinds].join(','))
+const rainKinds = new Set()
+for (let at = noon; at < noon + 6 * 3600 * 1000; at += game.VISIT_MS) {
+  const seen = game.visitorAt('lake', 0, { species: 'lotus', growthMs: game.growMsOf(byId('lotus')), moisture: 100, dried: false }, at, 'rain')
+  if (seen !== null) rainKinds.add(seen.id)
+}
+check('rain keeps the butterflies away', !rainKinds.has('butterfly') && !rainKinds.has('dragonfly') && rainKinds.size > 0)
+check('every ground has someone at any hour', game.SCENES.every(scene => ['day', 'night'].every(when => game.VISITORS.some(visitor => visitor.scenes.includes(scene.id) && (visitor.when === 'any' || visitor.when === when) && visitor.dry !== true))))
+const greeted = game.greetVisitor(guestState, 'meadow', 0, visitAt, 'overcast')
+check('greeting pays the tip', greeted.coins === guestState.coins + guest.tip)
+check('greeting pollinates the flower', greeted.scenes.meadow.plots[0].pollinated === true)
+check('greeting records the visitor', greeted.visitors[guest.id] === 1)
+check('one greeting per visit', game.greetVisitor(greeted, 'meadow', 0, visitAt, 'overcast') === null)
+check('nobody to greet on a growing plot', game.greetVisitor(guestState, 'meadow', 1, visitAt, 'overcast') === null)
+const twin = game.harvestAt({ ...greeted, seed: 1 }, 'meadow', 0, noon, 'overcast')
+check('a pollinated flower gives two blooms', twin.basket.length === 2 && twin.basket.every(item => item.species === 'daisy'))
+check('both blooms reach the flower book', twin.seen['daisy:alt'] === 2)
+check('the double harvest is counted', twin.pollinated === 1 && twin.harvested === 2)
+const nearlyFull = { ...greeted, seed: 1, basket: new Array(game.BASKET_CAPACITY - 1).fill({ species: 'daisy', variant: 'base' }) }
+check('a nearly full basket takes just one', game.harvestAt(nearlyFull, 'meadow', 0, noon, 'overcast').basket.length === game.BASKET_CAPACITY)
+const wetGreeted = {
+  ...greeted,
+  seed: hitSeed,
+  scenes: { ...greeted.scenes, meadow: { ...greeted.scenes.meadow, plots: greeted.scenes.meadow.plots.map((plot, index) => (index === 0 ? { ...plot, moisture: 100 } : plot)) } },
+}
+const goldTwin = game.harvestAt(wetGreeted, 'meadow', 0, night, 'rain')
+check('the second bloom is never a spirit', goldTwin.basket[0].variant === 'hidden' && goldTwin.basket[1].variant === 'alt')
+const savedGuest = game.sanitize(JSON.parse(JSON.stringify(greeted)), visitAt)
+check('pollination survives a reload', savedGuest.scenes.meadow.plots[0].pollinated === true && savedGuest.visitors[guest.id] === 1)
+check('an unknown visitor is dropped on load', game.sanitize({ v: 4, visitors: { dragon: 3 }, lastTick: 5 }, 5).visitors.dragon === undefined)
+
+console.log('water all')
+const dryPair = {
+  ...guestState,
+  scenes: { ...guestState.scenes, meadow: { unlocked: 3, sprinklerUntil: 0, plots: [{ ...bloomPlot, growthMs: 10, moisture: 20 }, { ...bloomPlot, growthMs: 10, moisture: 40 }, bloomPlot, null, null, null] } },
+}
+const soaked = game.waterAll(dryPair, 'meadow')
+check('waters every growing plot', soaked.scenes.meadow.plots[0].moisture === 100 && soaked.scenes.meadow.plots[1].moisture === 100)
+check('leaves an open flower alone', soaked.scenes.meadow.plots[2] === bloomPlot)
+check('nothing to water is a no-op', game.waterAll(soaked, 'meadow') === null)
+
+console.log('the flower market')
+const marketState = game.freshState(0)
+const favourite = game.featuredSpecies(marketState, noon)
+check('the market names a flower', byId(favourite) !== undefined)
+check('the favourite grows on an opened ground', meadow.species.includes(favourite))
+check('the favourite holds all day', game.featuredSpecies(marketState, noon + 3 * 3600 * 1000) === favourite)
+const favourites = new Set()
+for (let day = 0; day < 40; day += 1) favourites.add(game.featuredSpecies(marketState, noon + day * 24 * 3600 * 1000))
+check('the favourite changes from day to day', favourites.size >= 5, favourites.size)
+check('without a clock there is no favourite', game.featuredSpecies(marketState, undefined) === null)
+const favSpecies = byId(favourite)
+check('the favourite sells for half as much again', game.salePrice(favSpecies, 'base', favourite) === Math.round(favSpecies.sell * game.MARKET_BONUS))
+check('other flowers sell at list price', game.salePrice(favSpecies, 'base', 'nobody') === favSpecies.sell)
+const marketBasket = { ...marketState, basket: [{ species: favourite, variant: 'base' }] }
+check('selling with a clock pays the market price', game.sellBasket(marketBasket, undefined, undefined, noon).coins === marketState.coins + Math.round(favSpecies.sell * game.MARKET_BONUS))
+check('basket value follows the market', game.basketValue(marketBasket, noon) === Math.round(favSpecies.sell * game.MARKET_BONUS))
+check('selling without a clock pays list price', game.sellBasket(marketBasket).coins === marketState.coins + favSpecies.sell)
+
+
+console.log('soil, rotation, rest and compost')
+const soilBase = game.freshState(0)
+const soilState = {
+  ...soilBase,
+  coins: 100,
+  bag: { ...soilBase.bag, compost: 1 },
+  scenes: {
+    ...soilBase.scenes,
+    meadow: {
+      ...soilBase.scenes.meadow,
+      soil: [50, 50, 100, 100, 100, 100],
+      last: ['daisy', 'daisy', null, null, null, null],
+    },
+  },
+}
+const sameCrop = game.plantAt(soilState, 'meadow', 0, 'daisy')
+const rotatedCrop = game.plantAt(soilState, 'meadow', 1, 'rose')
+check('same crop applies a rotation penalty', sameCrop.scenes.meadow.soil[0] === 40)
+check('a different crop restores soil', rotatedCrop.scenes.meadow.soil[1] === 58)
+const rested = game.advanceState({ ...soilState, scenes: { ...soilState.scenes, meadow: { ...soilState.scenes.meadow, plots: [null, null, null, null, null, null] } } }, 60 * 1000)
+check('empty plots regain soil while resting', rested.scenes.meadow.soil[0] === 51)
+const composted = game.compostAt(soilState, 'meadow', 0)
+check('compost spends one bag item', composted.bag.compost === 0)
+check('compost restores sixty soil points', composted.scenes.meadow.soil[0] === 100)
+check('composting rich soil is refused', game.compostAt({ ...soilState, scenes: { ...soilState.scenes, meadow: { ...soilState.scenes.meadow, soil: [100, 50, 100, 100, 100, 100] } } }, 'meadow', 0) === null)
+check('soil factor has a defined lower floor', game.soilFactor(0) === game.SOIL_FLOOR && game.soilFactor(100) === 1)
+
+console.log('market saturation and recovery')
+const twoDaisies = { ...game.freshState(0), basket: [{ species: 'daisy', variant: 'base' }, { species: 'daisy', variant: 'base' }] }
+const quote = game.quoteSale(twoDaisies, twoDaisies.basket, noon)
+check('bulk sales quote each bloom sequentially', quote.coins === daisy.sell + Math.round(daisy.sell * (1 - game.GLUT_STEP)))
+const soldBulk = game.sellBasket(twoDaisies, undefined, undefined, noon)
+check('bulk sale records market saturation', soldBulk.glut.daisy.n === 2 && soldBulk.glut.daisy.at === noon)
+check('saturation recovers by time', game.glutSteps(soldBulk, 'daisy', noon + 2 * game.GLUT_RECOVER_MS) === 0)
+check('saturation has a fifty percent floor', game.glutFactor(99) === game.GLUT_FLOOR)
+
+console.log('flower show and garden facilities')
+const showNow = noon
+const showState = { ...game.freshState(showNow), coins: 1000, ribbons: 0, basket: [{ species: 'hydrangea', variant: 'hidden' }] }
+const currentShow = game.showAt(showState, showNow)
+check('show has a stable season and closing time', currentShow.endsAt > showNow && typeof currentShow.season === 'string')
+check('show entry resets for a new period', game.showEntry({ ...showState, show: { id: currentShow.id - 1, points: 20, entered: 3, kinds: ['daisy'] } }, showNow).points === 0)
+check('rare show accepts spirit blooms', game.showAccepts({ ...currentShow, theme: 'rare' }, showState.basket[0]) === true)
+const exhibited = game.exhibit(showState, game.itemKey(showState.basket[0]), showNow)
+check('exhibiting consumes a bloom and grants ribbons', exhibited.basket.length === 0 && exhibited.show.entered === 1 && exhibited.ribbons >= 1)
+check('exhibiting never pays coins', exhibited.coins === showState.coins)
+const facilityStart = { ...game.freshState(0), coins: 1000, ribbons: 2 }
+const hiveCost = game.facilityCost('hive', 0)
+const hive = game.upgradeFacility(facilityStart, 'hive')
+check('facility cost starts at its base price', hiveCost.coins === 200 && hiveCost.ribbons === 0)
+check('facility upgrade spends coins and advances level', hive.facilities.hive === 1 && hive.coins === 800)
+const hive2 = game.upgradeFacility(hive, 'hive')
+check('later facility levels require ribbons', hive2.facilities.hive === 2 && hive2.ribbons === 1)
+check('unknown facility cannot be upgraded', game.upgradeFacility(facilityStart, 'unknown') === null)
+const sameKindBasket = {
+  ...showState,
+  basket: [
+    { species: 'daisy', variant: 'hidden', dna: 111 },
+    { species: 'daisy', variant: 'hidden', dna: 222 },
+    { species: 'rose', variant: 'hidden', dna: 333 },
+  ],
+  specimens: { 'daisy:hidden': { species: 'daisy', variant: 'hidden', dna: 111, count: 2 } },
+}
+const selectedExhibit = game.exhibit(sameKindBasket, game.itemKey(sameKindBasket.basket[0]), showNow, 1)
+check('exhibit can select a specific same-kind individual', selectedExhibit.basket.length === 2 && selectedExhibit.basket.some(item => item.dna === 111) && !selectedExhibit.basket.some(item => item.dna === 222))
+check('exhibit rejects an index whose key does not match', game.exhibit(sameKindBasket, game.itemKey(sameKindBasket.basket[0]), showNow, 2) === null)
+check('exhibit rejects an out-of-range individual index', game.exhibit(sameKindBasket, game.itemKey(sameKindBasket.basket[0]), showNow, 99) === null)
+const soldIndividual = game.sellIndividual(sameKindBasket, 1, showNow)
+check('selling one individual removes only the selected index', soldIndividual.basket.length === 2 && soldIndividual.basket[0].dna === 111 && soldIndividual.basket[1].dna === 333)
+check('selling an individual retains its specimen archive', soldIndividual.specimens['daisy:hidden'].dna === 111 && soldIndividual.specimens['daisy:hidden'].count === 2)
+check('selling an invalid individual index is refused', game.sellIndividual(sameKindBasket, 99, showNow) === null)
+
+console.log('hybrid seeds and individual dna')
+let hybridSeed = 0
+for (let seed = 1; seed < 200000 && hybridSeed === 0; seed += 1) {
+  const first = ((Math.imul(seed, 1664525) + 1013904223) >>> 0) / 4294967296
+  const next = ((Math.imul(((Math.imul(seed, 1664525) + 1013904223) >>> 0), 1664525) + 1013904223) >>> 0) / 4294967296
+  if (first >= 0.03 && next < game.HYBRID_CHANCE) hybridSeed = seed
+}
+const hybridState = {
+  ...game.freshState(0), seed: hybridSeed,
+  scenes: { ...game.freshState(0).scenes, meadow: {
+    unlocked: 3, soil: [100, 100, 100, 100, 100, 100], last: [null, null, null, null, null, null],
+    plots: [
+      { species: 'daisy', growthMs: game.growMsOf(daisy), moisture: 60, dried: false, pollinated: true, dna: 12345 },
+      { species: 'tulip', growthMs: game.growMsOf(byId('tulip')), moisture: 60, dried: false, dna: 54321 },
+      null, null, null, null,
+    ],
+  } },
+}
+const hybridHarvest = game.harvestAt(hybridState, 'meadow', 0, noon, 'overcast')
+check('pollinated neighbours can produce a hybrid seed', hybridHarvest.seeds['daisy~tulip'] === 1)
+check('harvest preserves an individual dna value', hybridHarvest.basket[0].dna === 12345)
+check('harvest archives the first real specimen', hybridHarvest.specimens[game.itemKey(hybridHarvest.basket[0])].dna === 12345 && hybridHarvest.specimens[game.itemKey(hybridHarvest.basket[0])].count === 1)
+const hybridPlanted = game.plantAt(hybridHarvest, 'meadow', 0, 'daisy', 'tulip')
+check('hybrid seed is free and records its pollen tint', hybridPlanted.coins === hybridHarvest.coins && hybridPlanted.scenes.meadow.plots[0].tint === 'tulip')
+check('hybrid seed is consumed on planting', hybridPlanted.seeds['daisy~tulip'] === undefined)
+check('hybrid partner requires a neighbouring open flower', game.hybridPartner(hybridState.scenes.meadow, 0) === 'tulip')
+
+console.log('curiosity conditions and v4 save compatibility')
+const curious = game.traitCauses({ visits: 2, fed: 2, dried: true }, 'meadow', 'clear', new Date(2026, 0, 1, 23, 0).getTime())
+check('repeated visits can cause a twin curiosity', curious.includes('twin'))
+check('repeated feeding can cause a giant curiosity', curious.includes('giant'))
+check('dry soil can cause a variegated curiosity', curious.includes('variegated'))
+check('night can cause an ink curiosity', curious.includes('ink'))
+const savedV4 = game.sanitize({
+  v: 4, coins: 77, ribbons: 3, facilities: { hive: 2 }, seeds: { 'daisy~tulip': 2, 'daisy~nope': 9 },
+  hybrids: { 'daisy~tulip': 1, 'daisy~daisy': 4 }, exotics: { 'daisy:twin': 1, 'daisy:nope': 4 },
+  specimens: {
+    'daisy:base:twin~tulip': { species: 'daisy', variant: 'base', dna: 13579, trait: 'twin', tint: 'tulip', count: 3 },
+    'daisy:base': { species: 'daisy', variant: 'base', dna: 24680, count: 2 },
+  },
+  scenes: { meadow: { unlocked: 3, soil: [42, 100, 100, 100, 100, 100], last: ['daisy', null, null, null, null, null], plots: [{ species: 'daisy', growthMs: 1, moisture: 90, dna: 98765 }, null, null, null, null, null] } },
+  basket: [{ species: 'daisy', variant: 'base', dna: 24680, tint: 'tulip' }], lastTick: 100,
+}, 200)
+check('v4 saves preserve soil, dna and facilities', savedV4.scenes.meadow.soil[0] === 42 && savedV4.scenes.meadow.plots[0].dna === 98765 && savedV4.facilities.hive === 2)
+check('v4 saves preserve hybrid basket metadata', savedV4.basket[0].dna === 24680 && savedV4.basket[0].tint === 'tulip')
+check('invalid hybrid and curiosity keys are dropped', savedV4.seeds['daisy~nope'] === undefined && savedV4.hybrids['daisy~daisy'] === undefined && savedV4.exotics['daisy:nope'] === undefined)
+check('legacy saves gain v4 defaults', game.sanitize({ v: 3, coins: 9, lastTick: 1 }, 2).v === 4 && game.sanitize({ v: 3, coins: 9, lastTick: 1 }, 2).ribbons === 0)
+
+console.log('achievements')
+const firstBloom = game.ACHIEVEMENTS.find(entry => entry.id === 'firstBloom')
+check('ids are unique', new Set(game.ACHIEVEMENTS.map(entry => entry.id)).size === game.ACHIEVEMENTS.length)
+check('nothing is ready on a fresh garden', game.ACHIEVEMENTS.every(entry => !game.achievementReady(start, entry)))
+check('a fresh garden has opened one ground', game.achievementValue(start, 'grounds') === 1)
+check('the first harvest finishes the first goal', game.achievementReady(harvested, firstBloom))
+const claimedFirst = game.claimAchievement(harvested, 'firstBloom')
+check('collecting pays the reward', claimedFirst.coins === harvested.coins + firstBloom.coins)
+check('a reward is collected once', game.claimAchievement(claimedFirst, 'firstBloom') === null)
+check('an unfinished goal cannot be collected', game.claimAchievement(harvested, 'harvest30') === null)
+check('an unknown goal is refused', game.claimAchievement(harvested, 'moonshot') === null)
+check('meeting a visitor counts', game.achievementValue(greeted, 'visitorKinds') === 1)
+check('a delivery is counted', deliveredMixed.delivered === 1 && game.achievementValue(deliveredMixed, 'delivered') === 1)
+check('spirit kinds are counted', game.achievementValue(gold, 'spiritKinds') === 1)
+check('claims survive a reload', game.sanitize(JSON.parse(JSON.stringify(claimedFirst)), 5).claimed.firstBloom === true)
+check('every goal is reachable', game.ACHIEVEMENTS.every(entry => entry.target > 0 && entry.coins > 0))
+
 console.log(failures === 0 ? '\nall checks passed' : `\n${failures} check(s) failed`)
 process.exit(failures === 0 ? 0 : 1)

@@ -50,8 +50,9 @@ const plugin = definition.factory(name => {
   return React
 })
 const game = plugin.__game
-const { GardenView, FlowerArt, BloomPreview } = plugin.__components
+const { GardenView, FlowerArt, BloomPreview, VisitorArt, GardenActivities } = plugin.__components
 const DICT = plugin.__dicts.en
+const ZH_DICT = plugin.__dicts.zh
 
 const t = (key, params) => {
   const template = DICT[key] ?? key
@@ -75,12 +76,13 @@ function check(label, condition, detail) {
 
 /** Rebuild the module closure so a render reads the saved snapshot. */
 function renderWith(state) {
-  store.set('dsh.flower-garden.v3', JSON.stringify({ ...state, lastTick: Date.now() }))
+  for (const key of ['dsh.flower-garden.v4', 'dsh.flower-garden.v3', 'dsh.flower-garden.v2', 'dsh.flower-garden.v1']) store.delete(key)
+  store.set('dsh.flower-garden.v4', JSON.stringify({ ...state, v: 4, lastTick: Date.now() }))
   const fresh = definition.factory(name => React)
   return renderToStaticMarkup(React.createElement(fresh.__components.GardenView, { t }))
 }
 
-const UNRESOLVED = /(?:^|>)((?:view|plot|stage|seed|species|latin|codex|time|reward|error|basket|order|hint|action|stat|weather|scene|variant)\.[a-zA-Z.]+)</u
+const UNRESOLVED = /(?:^|>)((?:view|plot|stage|seed|species|latin|codex|time|reward|error|basket|order|hint|action|stat|weather|scene|variant|visitor|market|ach|item)\.[a-zA-Z.]+)</u
 const byId = id => game.SPECIES.find(species => species.id === id)
 
 console.log('empty garden')
@@ -97,14 +99,24 @@ check('three plots accept a seed', (body.match(/\+ Plant/g) ?? []).length === 3)
 check('three plots are locked', (body.match(/data-state="locked"/g) ?? []).length === 3)
 check('shows the starting coins', body.includes('>25<'))
 check('shows the scene weather', /Clear|Overcast|Rain/u.test(body))
-check('lists two bouquet orders', (body.match(/class="fg-order"/g) ?? []).length === 2)
+const orderSection = body.slice(body.indexOf('>Bouquet orders</h3>')).split('</section>')[0]
+check('lists two bouquet orders', (orderSection.match(/class="fg-order"/g) ?? []).length === 2)
 check('the basket starts empty', body.includes('The basket is empty'))
 check('the flower book is collapsed', body.includes('aria-expanded="false"'))
 check('the flower book counts every entry', body.includes(`0/${game.CODEX_ENTRIES.length}`))
 check('ships its stylesheet', html.includes('.fg-view{'))
 check('explains the reset', body.includes('Reset garden'))
-check('lists the shop while empty', (body.match(/class="fg-item"/g) ?? []).length === 4)
+check('lists the shop while empty', (body.match(/class="fg-item"/g) ?? []).length === 5)
+check('names the market favourite', body.includes('Market today') && body.includes('sells +50%'))
+check('lists every visitor as unseen', (body.match(/class="fg-guest" data-met="false"/g) ?? []).length === game.VISITORS.length)
+check('explains the visitors', body.includes('Open flowers attract visitors'))
+check('the achievements start collapsed', body.includes('id="fg-ach-toggle"') && !body.includes('class="fg-ach"'))
+check('counts the achievements', body.includes(`0/${game.ACHIEVEMENTS.length}`))
 check('every translation key resolves', !UNRESOLVED.test(body), (UNRESOLVED.exec(body) ?? [])[1])
+for (const key of ['basket.pricing', 'basket.first', 'show.confirm']) {
+  check(`English dictionary contains ${key}`, typeof DICT[key] === 'string' && DICT[key].length > 0)
+  check(`Chinese dictionary contains ${key}`, typeof ZH_DICT[key] === 'string' && ZH_DICT[key].length > 0)
+}
 
 console.log('stocked garden with every scene open')
 const base = game.freshState(Date.now())
@@ -154,18 +166,54 @@ check('dries before it blooms', currentWeather === 'rain' || body.includes('Drie
 check('two scenes are open now', (body.match(/data-locked="true"/g) ?? []).length === 2)
 check('groups the basket by bloom', (body.match(/class="fg-bloom"/g) ?? []).length === 3)
 check('marks the gold bloom', body.includes('data-variant="hidden"'))
-check('the gold bloom sells for triple', body.includes('+336'))
+const favourite = game.featuredSpecies(game.sanitize(stocked, Date.now()), Date.now())
+check('the gold bloom sells for triple', body.includes(`+${game.salePrice(byId('hydrangea'), 'hidden', favourite)}`))
+// Nine harvests and one spirit bloom finish two goals; they show even while collapsed.
+check('finished achievements are offered while collapsed', (body.match(/data-action="claim"/g) ?? []).length === 2 && body.includes('First bloom') && body.includes('A first spirit'))
+check('the achievements header counts what is waiting', body.includes('2 to collect'))
 check('offers to sell everything', body.includes('Sell all'))
 check('basket chips open a bloom', (body.match(/data-basket="/g) ?? []).length === 3)
 check('basket chips start collapsed', (body.match(/aria-expanded="false"/g) ?? []).length >= 3)
 check('basket chips name the view action', body.includes('View Daisy'))
 check('shows the upgraded basket size', body.includes('/18'))
-check('lists four shop items', (body.match(/class="fg-item"/g) ?? []).length === 4)
-check('offers to buy each item', (body.match(/Buy · /g) ?? []).length === 4)
+check('lists five shop items', (body.match(/class="fg-item"/g) ?? []).length === 5)
+check('offers to buy each shop item', (body.match(/Buy · /g) ?? []).length === 5)
 check('offers the sprinkler for this ground', body.includes('Use here'))
 check('offers to feed a growing plot', (body.match(/>Feed</g) ?? []).length >= 1)
 check('names the ground', body.includes('Meadow'))
 check('keeps every key resolvable', !UNRESOLVED.test(body), (UNRESOLVED.exec(body) ?? [])[1])
+const activities = renderToStaticMarkup(React.createElement(GardenActivities, {
+  state: game.sanitize(stocked, Date.now()), t, clock: Date.now(), onChange() {},
+}))
+check('renders the flower show activity panel', activities.includes('aria-label="Flower show"') && activities.includes('Flower show'))
+check('renders the garden works activity panel', activities.includes('aria-label="Garden works"') && activities.includes('Garden works'))
+check('activity cards carry stable order semantics', (activities.match(/class="fg-order"/g) ?? []).length >= 3)
+
+console.log('visitors, pollination and the water-all button')
+// Find a moment when a visitor is on plot #1, then render at exactly that moment.
+const roseBloom = { species: 'rose', growthMs: game.growMsOf(byId('rose')), moisture: 30, dried: false, pollinated: true }
+let visitAt = new Date(2026, 5, 1, 12, 0, 0).getTime()
+while (game.visitorAt('meadow', 0, roseBloom, visitAt, game.weatherAt(visitAt)) === null
+  || game.weatherAt(visitAt) === 'rain') visitAt += game.VISIT_MS
+const realNow = Date.now
+Date.now = () => visitAt
+const visited = {
+  ...stocked,
+  visitors: { bee: 2 },
+  scenes: { ...stocked.scenes, meadow: { ...stocked.scenes.meadow, plots: [roseBloom, ...stocked.scenes.meadow.plots.slice(1)] } },
+}
+const visitedBody = stripStyle(renderWith(visited))
+Date.now = realNow
+const guestId = game.visitorAt('meadow', 0, roseBloom, visitAt, game.weatherAt(visitAt)).id
+check('a visitor waits on the open flower', visitedBody.includes(`data-visitor="${guestId}"`) && visitedBody.includes('data-action="greet"'))
+check('the visitor button is labelled', visitedBody.includes(`Greet the ${t(`visitor.${guestId}`)}`))
+check('the pollinated flower says so', visitedBody.includes('Pollinated · harvest ×2'))
+check('a met visitor is named in the list', visitedBody.includes('honey bee') && visitedBody.includes('data-met="true"'))
+check('offers to water the dry plots at once', /data-action="waterAll"[^>]*>Water all · [23]</u.test(visitedBody))
+check('visitor keys resolve', !UNRESOLVED.test(visitedBody), (UNRESOLVED.exec(visitedBody) ?? [])[1])
+for (const visitor of game.VISITORS) {
+  check(`${visitor.id} has a drawing`, renderToStaticMarkup(React.createElement(VisitorArt, { id: visitor.id })).length > 300)
+}
 
 console.log('an empty basket on a full garden')
 const full = {
@@ -220,6 +268,20 @@ check('the flower book card shows the bloom', codexCard.includes('#f7c6d4'))
 check('the flower book card has no sell button', !codexCard.includes('Sell all'))
 check('the flower book card reports the harvests', codexCard.includes('Harvested 3×'))
 check('the flower book card can be closed', codexCard.includes('Close'))
+const modalPreview = renderToStaticMarkup(React.createElement(BloomPreview, {
+  id: 'fg-modal-preview', speciesId: 'daisy', variant: 'base', dna: 12345,
+  trait: 'twin', tint: 'tulip', t, modal: true, meta: ['×1'], onClose() {},
+}))
+check('flower detail uses a native modal dialog', modalPreview.startsWith('<dialog') && modalPreview.includes('class="fg-dialog"'))
+check('modal detail exposes an accessible flower label', modalPreview.includes('aria-label="Twin Tulip-coloured Daisy"'))
+check('modal detail includes species fact and individual controls', modalPreview.includes('It closes at night and in rain') && modalPreview.includes('Show another plant'))
+check('modal detail explains curiosity and hybrid provenance', modalPreview.includes('Visited at least twice before harvest') && modalPreview.includes('Hybrids:'))
+const dnaArtA = renderToStaticMarkup(React.createElement(FlowerArt, { speciesId: 'daisy', stage: 'bloom', variant: 'base', dna: 12345, trait: 'twin', tint: 'tulip' }))
+const dnaArtB = renderToStaticMarkup(React.createElement(FlowerArt, { speciesId: 'daisy', stage: 'bloom', variant: 'base', dna: 54321, trait: 'twin', tint: 'tulip' }))
+const plainDaisyArt = renderToStaticMarkup(React.createElement(FlowerArt, { speciesId: 'daisy', stage: 'bloom', variant: 'base' }))
+check('DNA changes the rendered individual', dnaArtA !== plainDaisyArt)
+const tintOnlyArt = renderToStaticMarkup(React.createElement(FlowerArt, { speciesId: 'daisy', stage: 'bloom', variant: 'base', dna: 12345, tint: 'tulip' }))
+check('tint changes the flower rendering', tintOnlyArt !== plainDaisyArt)
 
 console.log('species artwork')
 const sizes = new Set()
@@ -229,7 +291,7 @@ for (const species of game.SPECIES) {
   check(`${species.id} draws its palette`, art.includes(`"${species.pal.petal}"`) || art.includes(`"${species.pal.petalDeep}"`))
   check(`${species.id} renders a head`, art.includes('<g'))
 }
-check('the heads are not all one drawing', sizes.size >= 18)
+check('every species has its own drawing', sizes.size === game.SPECIES.length, sizes.size)
 const altArt = renderToStaticMarkup(React.createElement(FlowerArt, { speciesId: 'daisy', stage: 'bloom', variant: 'alt' }))
 check('the second colour changes the drawing', altArt.includes('#f7c6d4'))
 const spiritArt = renderToStaticMarkup(React.createElement(FlowerArt, { speciesId: 'daisy', stage: 'bloom', variant: 'hidden' }))
@@ -242,6 +304,18 @@ check('a plain bloom has no aura', !plainArt.includes('fg-haloRing') && !plainAr
 for (const stage of ['seed', 'sprout', 'bud']) {
   check(`grows through the ${stage} stage`, renderToStaticMarkup(React.createElement(FlowerArt, { speciesId: 'lotus', stage, variant: 'base' })).length > 80)
 }
+check('petals are shaded base to tip', plainArt.includes('<linearGradient') && plainArt.includes('url(#fg-daisy-base-'))
+check('every gradient a drawing uses is defined', game.SPECIES.every(species => ['base', 'alt', 'hidden'].every(variant => ['bud', 'bloom'].every(stage => {
+  const art = renderToStaticMarkup(React.createElement(FlowerArt, { speciesId: species.id, stage, variant }))
+  const defined = new Set([...art.matchAll(/ id="([^"]+)"/gu)].map(match => match[1]))
+  return [...art.matchAll(/url\(#([^)]+)\)/gu)].every(match => defined.has(match[1]))
+}))))
+check('each ground has its own footing', new Set(['daisy', 'snowdrop', 'lehua', 'lotus'].map(id => {
+  const art = renderToStaticMarkup(React.createElement(FlowerArt, { speciesId: id, stage: 'seed', variant: 'base' }))
+  return art.slice(0, art.indexOf('</g>'))
+})).size === 4)
+const stageArt = new Set(game.SPECIES.flatMap(species => ['sprout', 'bud', 'bloom'].map(stage => renderToStaticMarkup(React.createElement(FlowerArt, { speciesId: species.id, stage, variant: 'base' })))))
+check('every species looks different at bud and bloom', stageArt.size >= game.SPECIES.length * 2 + 8, stageArt.size)
 
 console.log(failures === 0 ? '\nrender checks passed' : `\n${failures} render check(s) failed`)
 process.exit(failures === 0 ? 0 : 1)

@@ -10,9 +10,11 @@
  * per-species art section). Every species has a codex entry per colour variant:
  * a plain bloom, a natural second colour on odd-numbered plots, and a rare gold
  * "hidden" bloom that only appears under the conditions listed in the flower book.
+ * Open flowers attract visitors that pollinate them, the market favours one
+ * flower a day, and achievements pay out long-term goals.
  *
  * Data path: the garden lives in this browser's `localStorage`
- * (`dsh.flower-garden.v3`) and is advanced from the wall clock, so a plot keeps
+ * (`dsh.flower-garden.v4`) and is advanced from the wall clock, so a plot keeps
  * growing while the tab is closed. No Host call, tool call, session-log write,
  * prompt change, or network request is involved; turning the plugin off removes
  * the tab and leaves the saved garden untouched.
@@ -32,7 +34,7 @@ window.__ModuleLoader__.load({
     const zh = {
       'view.label': '花园',
       'view.title': '我的花园',
-      'header.subtitle': '草原、雪原、火山口、湖畔四块地，二十五种花；每块地的花不一样，天气也不一样。',
+      'header.subtitle': '草原、雪原、火山口、湖畔四块地，二十五种花；每块地的花不一样，天气不一样，来访的客人也不一样。',
       'stat.coins': '金币',
       'stat.level': '等级',
       'stat.levelValue': '等级 {n}',
@@ -236,7 +238,215 @@ window.__ModuleLoader__.load({
       'order.empty': '暂时没有委托，交付一束后会出现新的。',
       'order.goldOnly': '委托只用原色/别色交付，金花留给卖出。',
       'hint.title': '小贴士',
-      'hint.body': '花只在土壤湿润时生长，浇透一次大约能长到七成半；四块地同时生长，切换不会停。离开页面期间最多补算 12 小时（土壤会干，干了就停止生长）。收获进花篮：卖原色最省事，凑花束交付更划算；仙品留着卖，是 3 倍价。',
+      'hint.body': '花只在土壤湿润时生长，浇透一次大约能长到七成半；四块地同时生长，切换不会停。离开页面期间最多补算 12 小时（土壤会干，干了就停止生长）。收获进花篮：卖原色最省事，凑花束交付更划算；仙品留着卖，是 3 倍价。开花后不急着收，等访客来授粉能多收一朵；今日花市点名的花多卖五成。同一种花别一口气卖太多，也别在同一块地里连着种——会跌价、会伤地。',
+      'market.title': '今日花市',
+      'market.bonus': '卖价 +{n}%',
+      'market.note': '今日花市：{flower}卖价 +{n}%。每天零点换一种，只在已解锁花地的花里选；花束委托的报酬不受影响。',
+      'market.tag': '行情',
+      'plot.waterAll': '全部浇水 · {n}',
+      'plot.pollinated': '已授粉 · 收获 ×2',
+      'visitor.section': '访客',
+      'visitor.hint': '开着的花会引来访客。点它打个招呼：拿一点小费，这朵花也被授粉，收获时多得一朵。先别急着收，等等看谁会来。',
+      'visitor.greet': '和{name}打招呼',
+      'visitor.met': '{name}来过了：金币 +{coins}，{flower}已授粉，收获时多得一朵',
+      'visitor.again': '{name}也来了：金币 +{coins}',
+      'visitor.new': '（新访客，已记入名册）',
+      'visitor.unknown': '还没见过',
+      'visitor.when.day': '白天',
+      'visitor.when.night': '夜里 19:00–06:00',
+      'visitor.when.any': '全天',
+      'visitor.dry': '不下雨时',
+      'visitor.bee': '蜜蜂',
+      'visitor.butterfly': '菜粉蝶',
+      'visitor.ladybug': '七星瓢虫',
+      'visitor.dragonfly': '蜻蜓',
+      'visitor.firefly': '萤火虫',
+      'visitor.moth': '蜂鸟鹰蛾',
+      'visitor.robin': '知更鸟',
+      'visitor.honeycreeper': '镰嘴管舌雀',
+      'visitor.kingfisher': '翠鸟',
+      'reward.double': '收获{flower} ×2（授粉加成），+{xp} 经验',
+      'ach.title': '成就',
+      'ach.ready': '{n} 个可领取',
+      'ach.count': '{n}/{total}',
+      'ach.claim': '领取 · +{n}',
+      'ach.claimed': '已领取',
+      'ach.reward': '奖励 {n} 金币',
+      'ach.done': '完成「{name}」，金币 +{n}',
+      'ach.firstBloom.name': '第一朵花',
+      'ach.firstBloom.desc': '收获 1 朵花',
+      'ach.harvest30.name': '勤劳的园丁',
+      'ach.harvest30.desc': '累计收获 30 朵花',
+      'ach.harvest150.name': '花开满园',
+      'ach.harvest150.desc': '累计收获 150 朵花',
+      'ach.firstGuest.name': '有客来访',
+      'ach.firstGuest.desc': '和 1 种访客打过招呼',
+      'ach.pollinator.name': '授粉能手',
+      'ach.pollinator.desc': '收获 12 朵授粉过的花',
+      'ach.naturalist.name': '博物学家',
+      'ach.naturalist.desc': '见过全部 9 种访客',
+      'ach.florist5.name': '花店学徒',
+      'ach.florist5.desc': '交付 5 束花束委托',
+      'ach.florist25.name': '金牌花艺师',
+      'ach.florist25.desc': '交付 25 束花束委托',
+      'ach.firstSpirit.name': '初见仙品',
+      'ach.firstSpirit.desc': '收获 1 种仙品',
+      'ach.spirit8.name': '仙品收藏家',
+      'ach.spirit8.desc': '收获 8 种不同的仙品',
+      'ach.meadowBook.name': '草原通',
+      'ach.meadowBook.desc': '草原的 10 种花全部种过',
+      'ach.allGrounds.name': '四方花地',
+      'ach.allGrounds.desc': '解锁全部 4 块花地',
+      'ach.fullBook.name': '图鉴大成',
+      'ach.fullBook.desc': '收齐图鉴里的每一款',
+      'item.compost': '堆肥',
+      'item.compost.note': '给一个花圃 +60 地力',
+      'item.composted': '堆肥下地：#{n} 号花圃地力回到 {soil}%',
+      'soil.label': '地力 {n}%',
+      'soil.compost': '地力 {n}% · 施堆肥',
+      'soil.low': '地力不足，长得慢',
+      'soil.tip': '地力：每次收获 −14；同一个花圃接着种同一种花再 −10（连作），换一种 +8（轮作）；空着每分钟 +1；地力越低长得越慢，最慢到 55%。',
+      'glut.tag': '跌 {n}%',
+      'glut.note': '卖得太多，这种花跌价 {n}%；每 2 分钟回升 5%',
+      'ribbon.label': '绶带',
+      'trait.named': '{trait}{flower}',
+      'hybrid.name': '{tint}色{form}',
+      'hybrid.tag': '杂交',
+      'hybrid.hint': '可能结杂交种子',
+      'hybrid.seed': '还结出一粒杂交种子：{name}',
+      'hybrid.seeds': '杂交种子',
+      'hybrid.free': '×{n} · 自育',
+      'hybrid.how': '杂交：授粉过的花，隔壁花圃开着另一种花时，收获有机会结出杂交种子——这种花的形，隔壁花的色。',
+      'reward.trait': '✦ 奇珍！收获{name}，卖价 ×{n}',
+      'trait.twin': '并蒂',
+      'trait.giant': '巨株',
+      'trait.rainbow': '虹彩',
+      'trait.frost': '霜晶',
+      'trait.ember': '熔火',
+      'trait.pearl': '珠光',
+      'trait.ink': '墨玉',
+      'trait.variegated': '斑锦',
+      'trait.twin.cause': '收获前被访客光顾过两次以上',
+      'trait.giant.cause': '同一株施过两次以上肥料',
+      'trait.rainbow.cause': '草原下雨时收获',
+      'trait.frost.cause': '雪原降雪时收获',
+      'trait.ember.cause': '火山口热浪时收获',
+      'trait.pearl.cause': '湖畔细雨时收获',
+      'trait.ink.cause': '深夜 22:00–05:00 收获',
+      'trait.variegated.cause': '缺过一次水，又活了下来',
+      'trait.twin.clue': '据说很招客人喜欢的花才会这样',
+      'trait.giant.clue': '吃得特别好的那一株',
+      'trait.rainbow.clue': '草原上，雨里的事',
+      'trait.frost.clue': '雪原上，雪落下来的时候',
+      'trait.ember.clue': '火山口最热的时候',
+      'trait.pearl.clue': '湖畔，雨丝很细的时候',
+      'trait.ink.clue': '夜深了才看得到',
+      'trait.variegated.clue': '吃过苦的花',
+      'trait.title': '奇珍册',
+      'trait.count': '{n} 种花',
+      'trait.unknown': '？？？',
+      'trait.note': '奇珍是花经历了特别的事才长成的样子，卖价 ×2，花展加 3 分；满足条件后也只是有机会。温室每级让机会 +10%。',
+      'show.confirm': '确认送展 · 消耗 1 朵 · +{n} 分',
+      'basket.first': '下一朵 {n} 金币',
+      'basket.individual': '查看个体',
+      'basket.individualNo': '第 {n}/{max} 株',
+      'basket.sellOne': '卖出这一株 · {n} 金币',
+      'basket.confirmOne': '确认卖出这一株 · {n} 金币',
+      'basket.pricing': '同种花逐朵卖出会降价；每组报价按单独卖出计算，全部卖出以总报价为准。',
+      'show.title': '花展',
+      'show.season.spring': '春',
+      'show.season.summer': '夏',
+      'show.season.autumn': '秋',
+      'show.season.winter': '冬',
+      'show.name': '{season}季花展 ·「{theme}」',
+      'show.left': '还剩 {n}',
+      'show.theme.ground': '{scene}之花',
+      'show.theme.warm': '暖色',
+      'show.theme.cool': '冷色与素色',
+      'show.theme.rare': '珍品',
+      'show.desc.ground': '只收{scene}的花。',
+      'show.desc.warm': '只收红、粉、橙、黄色的花。',
+      'show.desc.cool': '只收白、蓝、紫色的花。',
+      'show.desc.rare': '只收仙品、奇珍和杂交花。',
+      'show.rules': '送展的花不换金币，换评分：每朵 1 分，别色 +1、杂交 +2、奇珍 +3、仙品 +4，本届没送过的花种再 +2。每届最多送 {slots} 朵；{a} / {b} / {c} 分各得 1 / 2 / 3 条绶带。',
+      'show.points': '{n} 分',
+      'show.entered': '已送展 {n}/{max}',
+      'show.next': '距下一条绶带还差 {n} 分',
+      'show.done': '本届绶带已拿满',
+      'show.enter': '送展 · +{n} 分',
+      'show.none': '花篮里没有符合本届主题的花。',
+      'show.full': '本届名额已满，下一届再来。',
+      'show.sent': '{name}送去花展：+{n} 分',
+      'show.won': '，赢得 {n} 条绶带！',
+      'facility.title': '花园设施',
+      'facility.level': 'Lv.{n}/{max}',
+      'facility.cost': '{coins} 金币',
+      'facility.costRibbon': '{coins} 金币 + {ribbons} 绶带',
+      'facility.upgrade': '升级',
+      'facility.max': '已满级',
+      'facility.short': '还差 {n} 金币',
+      'facility.shortRibbon': '还差 {n} 条绶带',
+      'facility.done': '{name}升到 Lv.{n}',
+      'facility.hive': '蜂箱',
+      'facility.hive.note': '访客出现的机会 +{n}%',
+      'facility.greenhouse': '温室',
+      'facility.greenhouse.note': '长出奇珍的机会 +{n}%',
+      'facility.bench': '育种台',
+      'facility.bench.note': '结出杂交种子的机会 +{n}%',
+      'facility.note': '设施一级比一级贵（每级 ×1.8），第二级起还要花展的绶带。',
+      'card.example': '外观示例（非收藏标本）',
+      'card.specimen': '收藏标本',
+      'show.choose': '选择送展花朵',
+      'show.exception': '仙品可参加所有主题。',
+      'card.close': '关闭',
+      'card.prev': '上一种',
+      'card.next': '下一种',
+      'card.another': '换一株看看',
+      'card.textbook': '标准株',
+      'card.individual': '每一株都不一样：高矮、朝向、花色深浅都由它自己的基因决定。',
+      'card.no': 'No. {n}',
+      'card.ground': '花地',
+      'card.grow': '生长',
+      'card.seed': '种子',
+      'card.price': '卖价',
+      'card.count': '收获',
+      'card.times': '{n} 次',
+      'card.variants': '花色',
+      'card.traits': '奇珍',
+      'card.hybrids': '杂交',
+      'card.noHybrid': '还没有育出杂交种。',
+      'card.locked': '未发现',
+      'ach.breeder.name': '育种家',
+      'ach.breeder.desc': '育出 5 种杂交花',
+      'ach.curio.name': '奇珍猎人',
+      'ach.curio.desc': '见过 4 种不同的奇珍',
+      'ach.ribbons.name': '花展常客',
+      'ach.ribbons.desc': '在花展赢得 10 条绶带',
+      'fact.dandelion': '一朵「花」其实是上百朵舌状小花；种子靠冠毛随风飞走。',
+      'fact.daisy': '夜里和阴雨天会把花瓣合拢，英文名 daisy 来自「白昼之眼」。',
+      'fact.cherry': '花瓣顶端有个小缺口，这是它和梅花最容易的区分。',
+      'fact.tulip': '剪下来以后茎还会继续长，并朝着光弯过去。',
+      'fact.lavender': '香气主要来自花萼上的油腺，而不是花瓣。',
+      'fact.poppy': '一朵花只开一天左右；花苞一直垂着头，开放前才抬起来。',
+      'fact.sunflower': '花盘里的小花按黄金角排成螺旋；只有幼嫩的花盘会追着太阳转。',
+      'fact.lily': '花药的花粉极易染色，花店常在花开时把它摘掉。',
+      'fact.rose': '茎上的「刺」是表皮长出的皮刺，一掰就掉。',
+      'fact.hydrangea': '好看的「花瓣」其实是萼片；土壤偏酸开蓝花，偏碱开粉花。',
+      'fact.snowdrop': '能顶开积雪：叶尖硬化，体内还有防冻蛋白。',
+      'fact.hellebore': '花后「花瓣」不落，慢慢变绿，像叶子一样继续光合作用。',
+      'fact.plum': '先开花后长叶，花梗极短，所以贴着枝条开。',
+      'fact.edelweiss': '白色的「花瓣」是长满绒毛的苞片，绒毛能挡紫外线和干冷的风。',
+      'fact.camellia': '凋谢时常常整朵落下，而不是一瓣一瓣地掉。',
+      'fact.cactus': '扁平的「掌」是茎，真正的叶子退化成了刺。',
+      'fact.lehua': '常是熔岩凝固后最早长出来的树之一。',
+      'fact.agave': '攒上十几年养分，一生只抽一次花葶，开完整株枯死。',
+      'fact.silversword': '只长在夏威夷的高山火山上，银色绒毛用来反射强烈的阳光。',
+      'fact.plumeria': '花香很浓却没有花蜜，天蛾被香味骗来白白替它传粉。',
+      'fact.pickerel': '每朵小花只开一天，整串花从下往上陆续开放。',
+      'fact.loosestrife': '同一种植物有三种长短不同的花柱，达尔文专门研究过它。',
+      'fact.iris': '垂瓣上的褐色脉纹是给昆虫看的「跑道」，指向花蜜。',
+      'fact.waterlily': '白天开、傍晚合，每朵通常只开三四天。',
+      'fact.lotus': '叶面的微小突起让水珠滚落并带走灰尘；莲子休眠上千年仍能发芽。',
       'action.reset': '重置花园',
       'action.resetConfirm': '再点一次确认重置',
       'action.resetDone': '花园已重置',
@@ -245,7 +455,7 @@ window.__ModuleLoader__.load({
     const en = {
       'view.label': 'Garden',
       'view.title': 'My garden',
-      'header.subtitle': 'Four grounds — meadow, snowfield, crater, lakeside — and twenty-five flowers, each ground with its own species and sky.',
+      'header.subtitle': 'Four grounds — meadow, snowfield, crater, lakeside — and twenty-five flowers, each ground with its own species, sky and visitors.',
       'stat.coins': 'Coins',
       'stat.level': 'Level',
       'stat.levelValue': 'Lv.{n}',
@@ -449,7 +659,215 @@ window.__ModuleLoader__.load({
       'order.empty': 'No order right now; a new one appears after each delivery.',
       'order.goldOnly': 'Bouquets take plain or second-colour blooms; keep the gold for selling.',
       'hint.title': 'Tip',
-      'hint.body': 'Flowers grow only while the soil is wet, and one watering carries them about three quarters of the way. All four grounds grow at once, and switching between them never pauses anything. Away from the tab the garden replays up to 12 hours — the soil still dries, and growth stops when it does. Harvested blooms go to the basket: sell them, or fill a bouquet order for a better price; keep the spirit blooms, they sell for 3×.',
+      'hint.body': 'Flowers grow only while the soil is wet, and one watering carries them about three quarters of the way. All four grounds grow at once, and switching between them never pauses anything. Away from the tab the garden replays up to 12 hours — the soil still dries, and growth stops when it does. Harvested blooms go to the basket: sell them, or fill a bouquet order for a better price; keep the spirit blooms, they sell for 3×. Leave an open flower a while and a visitor may pollinate it for a second bloom; the market’s flower of the day sells for half as much again. Do not flood the market with one flower or grow it twice running in one plot: the price drops and the soil tires.',
+      'market.title': 'Market today',
+      'market.bonus': 'sells +{n}%',
+      'market.note': 'Market today: {flower} sells for +{n}%. It changes at midnight and is always a flower from a ground you have opened; bouquet rewards are not affected.',
+      'market.tag': 'in demand',
+      'plot.waterAll': 'Water all · {n}',
+      'plot.pollinated': 'Pollinated · harvest ×2',
+      'visitor.section': 'Visitors',
+      'visitor.hint': 'Open flowers attract visitors. Click one to greet it: it leaves a small tip and pollinates the flower, which then gives a second bloom at harvest. Wait a little before picking and see who turns up.',
+      'visitor.greet': 'Greet the {name}',
+      'visitor.met': 'A {name} came by: +{coins} coins, and the {flower} is pollinated — one more bloom at harvest',
+      'visitor.again': 'A {name} dropped in too: +{coins} coins',
+      'visitor.new': '(a new visitor for the list)',
+      'visitor.unknown': 'Not seen yet',
+      'visitor.when.day': 'by day',
+      'visitor.when.night': 'at night, 19:00–06:00',
+      'visitor.when.any': 'any time',
+      'visitor.dry': 'when it is not raining',
+      'visitor.bee': 'honey bee',
+      'visitor.butterfly': 'cabbage white',
+      'visitor.ladybug': 'ladybird',
+      'visitor.dragonfly': 'dragonfly',
+      'visitor.firefly': 'firefly',
+      'visitor.moth': 'hummingbird hawk-moth',
+      'visitor.robin': 'robin',
+      'visitor.honeycreeper': 'ʻiʻiwi honeycreeper',
+      'visitor.kingfisher': 'kingfisher',
+      'reward.double': 'Harvested {flower} ×2 (pollinated), +{xp} XP',
+      'ach.title': 'Achievements',
+      'ach.ready': '{n} to collect',
+      'ach.count': '{n}/{total}',
+      'ach.claim': 'Collect · +{n}',
+      'ach.claimed': 'Collected',
+      'ach.reward': 'Reward: {n} coins',
+      'ach.done': 'Finished “{name}”, +{n} coins',
+      'ach.firstBloom.name': 'First bloom',
+      'ach.firstBloom.desc': 'Harvest 1 flower',
+      'ach.harvest30.name': 'Steady gardener',
+      'ach.harvest30.desc': 'Harvest 30 flowers in total',
+      'ach.harvest150.name': 'A garden in full bloom',
+      'ach.harvest150.desc': 'Harvest 150 flowers in total',
+      'ach.firstGuest.name': 'Company',
+      'ach.firstGuest.desc': 'Greet 1 kind of visitor',
+      'ach.pollinator.name': 'Good with bees',
+      'ach.pollinator.desc': 'Harvest 12 pollinated flowers',
+      'ach.naturalist.name': 'Naturalist',
+      'ach.naturalist.desc': 'Meet all 9 kinds of visitor',
+      'ach.florist5.name': 'Apprentice florist',
+      'ach.florist5.desc': 'Deliver 5 bouquet orders',
+      'ach.florist25.name': 'Master florist',
+      'ach.florist25.desc': 'Deliver 25 bouquet orders',
+      'ach.firstSpirit.name': 'A first spirit',
+      'ach.firstSpirit.desc': 'Harvest 1 kind of spirit bloom',
+      'ach.spirit8.name': 'Spirit collector',
+      'ach.spirit8.desc': 'Harvest 8 different spirit blooms',
+      'ach.meadowBook.name': 'Meadow hand',
+      'ach.meadowBook.desc': 'Grow all 10 meadow flowers',
+      'ach.allGrounds.name': 'Four grounds',
+      'ach.allGrounds.desc': 'Open all 4 grounds',
+      'ach.fullBook.name': 'The whole book',
+      'ach.fullBook.desc': 'Collect every entry in the flower book',
+      'item.compost': 'Compost',
+      'item.compost.note': '+60 soil for one plot',
+      'item.composted': 'Composted plot #{n}: soil back to {soil}%',
+      'soil.label': 'Soil {n}%',
+      'soil.compost': 'Soil {n}% · add compost',
+      'soil.low': 'Poor soil — slow growth',
+      'soil.tip': 'Soil: every harvest costs 14; the same flower again in the same plot costs 10 more, a different one gives 8 back; an empty plot regains 1 a minute. Poorer soil grows slower, down to 55% of the pace.',
+      'glut.tag': '−{n}%',
+      'glut.note': 'Too many sold: this flower is down {n}%; it climbs back 5% every 2 minutes',
+      'ribbon.label': 'Ribbons',
+      'trait.named': '{trait} {flower}',
+      'hybrid.name': '{tint}-coloured {form}',
+      'hybrid.tag': 'hybrid',
+      'hybrid.hint': 'May set a hybrid seed',
+      'hybrid.seed': 'It also set a hybrid seed: {name}',
+      'hybrid.seeds': 'Hybrid seeds',
+      'hybrid.free': '×{n} · bred',
+      'hybrid.how': 'Hybrids: a pollinated flower with a different flower open in the next plot may set a hybrid seed at harvest — its own form in the neighbour’s colour.',
+      'reward.trait': '✦ A curiosity! Harvested {name}, sells ×{n}',
+      'trait.twin': 'Twin',
+      'trait.giant': 'Giant',
+      'trait.rainbow': 'Rainbow',
+      'trait.frost': 'Frost',
+      'trait.ember': 'Ember',
+      'trait.pearl': 'Pearl',
+      'trait.ink': 'Ink',
+      'trait.variegated': 'Variegated',
+      'trait.twin.cause': 'Visited at least twice before harvest',
+      'trait.giant.cause': 'Fed at least twice',
+      'trait.rainbow.cause': 'Harvested in meadow rain',
+      'trait.frost.cause': 'Harvested in snowfall on the snowfield',
+      'trait.ember.cause': 'Harvested in a crater heat wave',
+      'trait.pearl.cause': 'Harvested in lakeside drizzle',
+      'trait.ink.cause': 'Harvested late at night, 22:00–05:00',
+      'trait.variegated.cause': 'Dried out once, and lived',
+      'trait.twin.clue': 'Only a flower the visitors love',
+      'trait.giant.clue': 'The best-fed plant of all',
+      'trait.rainbow.clue': 'On the meadow, in the rain',
+      'trait.frost.clue': 'On the snowfield, while it falls',
+      'trait.ember.clue': 'When the crater is at its hottest',
+      'trait.pearl.clue': 'By the lake, in the finest rain',
+      'trait.ink.clue': 'Only seen in the small hours',
+      'trait.variegated.clue': 'A flower that had it hard',
+      'trait.title': 'Curiosities',
+      'trait.count': '{n} flowers',
+      'trait.unknown': '???',
+      'trait.note': 'A curiosity is what a flower becomes after an unusual life. It sells for ×2 and scores 3 more at the show; meeting the cause only gives a chance. Each greenhouse level raises that chance by 10%.',
+      'show.confirm': 'Confirm entry · use 1 bloom · +{n} pts',
+      'basket.first': 'Next bloom: {n} coins',
+      'basket.individual': 'View individual',
+      'basket.individualNo': 'Plant {n}/{max}',
+      'basket.sellOne': 'Sell this plant · {n} coins',
+      'basket.confirmOne': 'Confirm this plant · {n} coins',
+      'basket.pricing': 'Each sale lowers this species’ price. Groups are quoted separately; selling everything uses the total quote.',
+      'show.title': 'Flower show',
+      'show.season.spring': 'Spring',
+      'show.season.summer': 'Summer',
+      'show.season.autumn': 'Autumn',
+      'show.season.winter': 'Winter',
+      'show.name': '{season} show · “{theme}”',
+      'show.left': '{n} left',
+      'show.theme.ground': 'Flowers of the {scene}',
+      'show.theme.warm': 'Warm colours',
+      'show.theme.cool': 'Cool and pale',
+      'show.theme.rare': 'Rarities',
+      'show.desc.ground': 'Only flowers of the {scene}.',
+      'show.desc.warm': 'Only red, pink, orange and yellow flowers.',
+      'show.desc.cool': 'Only white, blue and purple flowers.',
+      'show.desc.rare': 'Only spirit blooms, curiosities and hybrids.',
+      'show.rules': 'A flower given to the show earns points, not coins: 1 each, +1 second colour, +2 hybrid, +3 curiosity, +4 spirit, and +2 for a species new to this show. Up to {slots} flowers a show; {a} / {b} / {c} points win 1 / 2 / 3 ribbons.',
+      'show.points': '{n} pts',
+      'show.entered': '{n}/{max} shown',
+      'show.next': '{n} pts to the next ribbon',
+      'show.done': 'Every ribbon of this show is won',
+      'show.enter': 'Show it · +{n} pts',
+      'show.none': 'Nothing in the basket fits this show.',
+      'show.full': 'This show is full — come back for the next one.',
+      'show.sent': '{name} goes to the show: +{n} pts',
+      'show.won': ' — {n} ribbon(s) won!',
+      'facility.title': 'Garden works',
+      'facility.level': 'Lv.{n}/{max}',
+      'facility.cost': '{coins} coins',
+      'facility.costRibbon': '{coins} coins + {ribbons} ribbons',
+      'facility.upgrade': 'Upgrade',
+      'facility.max': 'Maxed',
+      'facility.short': '{n} coins short',
+      'facility.shortRibbon': '{n} ribbons short',
+      'facility.done': '{name} is now Lv.{n}',
+      'facility.hive': 'Beehive',
+      'facility.hive.note': 'Visitors are +{n}% more likely',
+      'facility.greenhouse': 'Greenhouse',
+      'facility.greenhouse.note': 'Curiosities are +{n}% more likely',
+      'facility.bench': 'Breeding bench',
+      'facility.bench.note': 'Hybrid seeds are +{n}% more likely',
+      'facility.note': 'Each level costs 1.8× the last, and from the second on, ribbons from the flower show.',
+      'card.example': 'Appearance example (not a collected specimen)',
+      'card.specimen': 'Collected specimen',
+      'show.choose': 'Choose a flower to exhibit',
+      'show.exception': 'Spirit blooms may enter any theme.',
+      'card.close': 'Close',
+      'card.prev': 'Previous',
+      'card.next': 'Next',
+      'card.another': 'Show another plant',
+      'card.textbook': 'Textbook plant',
+      'card.individual': 'No two plants are alike: height, lean, facing and shade come from each one’s own genes.',
+      'card.no': 'No. {n}',
+      'card.ground': 'Ground',
+      'card.grow': 'Grows in',
+      'card.seed': 'Seed',
+      'card.price': 'Sells for',
+      'card.count': 'Harvested',
+      'card.times': '{n}×',
+      'card.variants': 'Colours',
+      'card.traits': 'Curiosities',
+      'card.hybrids': 'Hybrids',
+      'card.noHybrid': 'No hybrid bred yet.',
+      'card.locked': 'Not found',
+      'ach.breeder.name': 'Plant breeder',
+      'ach.breeder.desc': 'Breed 5 different hybrids',
+      'ach.curio.name': 'Curio hunter',
+      'ach.curio.desc': 'Find 4 different curiosities',
+      'ach.ribbons.name': 'Show regular',
+      'ach.ribbons.desc': 'Win 10 ribbons at the flower show',
+      'fact.dandelion': 'One “flower” is a hundred or more strap florets; the seeds leave on their own parachutes.',
+      'fact.daisy': 'It closes at night and in rain — the name comes from “day’s eye”.',
+      'fact.cherry': 'Each petal has a small notch at the tip, the easy way to tell it from plum blossom.',
+      'fact.tulip': 'A cut tulip keeps growing in the vase and bends toward the light.',
+      'fact.lavender': 'The scent comes mostly from oil glands on the calyx, not from the petals.',
+      'fact.poppy': 'A flower lasts about a day; the bud hangs its head and lifts it only to open.',
+      'fact.sunflower': 'The disc florets spiral at the golden angle; only young heads follow the sun.',
+      'fact.lily': 'The pollen stains badly, so florists often remove the anthers as the flower opens.',
+      'fact.rose': 'The “thorns” are prickles grown from the skin of the stem, and snap off cleanly.',
+      'fact.hydrangea': 'The showy “petals” are sepals; acid soil turns them blue, alkaline soil pink.',
+      'fact.snowdrop': 'It pushes up through snow: hardened leaf tips, and antifreeze proteins inside.',
+      'fact.hellebore': 'After flowering the “petals” stay on, turn green and photosynthesise like leaves.',
+      'fact.plum': 'It flowers before the leaves, on stalks so short the blossom sits on the branch.',
+      'fact.edelweiss': 'The white “petals” are woolly bracts; the felt screens ultraviolet light and drying wind.',
+      'fact.camellia': 'A spent flower usually drops whole rather than petal by petal.',
+      'fact.cactus': 'The flat pads are stems; the true leaves have become the spines.',
+      'fact.lehua': 'It is often among the first trees to grow on new lava.',
+      'fact.agave': 'It saves for a decade or more, flowers once on a single mast, and dies.',
+      'fact.silversword': 'It grows only on high Hawaiian volcanoes; the silver hairs reflect the fierce sun.',
+      'fact.plumeria': 'Strongly scented but nectarless: hawk-moths are fooled into pollinating it for nothing.',
+      'fact.pickerel': 'Each small flower lasts a day, and the spike opens from the bottom up.',
+      'fact.loosestrife': 'One species, three different style lengths — Darwin wrote a study of it.',
+      'fact.iris': 'The brown veins on the falls are a runway that points insects to the nectar.',
+      'fact.waterlily': 'It opens by day and closes at dusk, and each flower lasts three or four days.',
+      'fact.lotus': 'Tiny bumps on the leaf make water roll off and carry the dirt away; seeds can sprout after a thousand years.',
       'action.reset': 'Reset garden',
       'action.resetConfirm': 'Click again to confirm',
       'action.resetDone': 'Garden reset',
@@ -490,20 +908,22 @@ window.__ModuleLoader__.load({
       },
     ]
     const SCENE_BY_ID = new Map(SCENES.map(scene => [scene.id, scene]))
+    const SCENE_ID_OF = new Map()
+    for (const scene of SCENES) for (const id of scene.species) SCENE_ID_OF.set(id, scene.id)
 
     const SPECIES = [
       // ── meadow ──────────────────────────────────────────────────────────
       {
-        id: 'dandelion', cost: 3, growSec: 45, sell: 6, xp: 1, head: 'dandelion', leaf: 'round',
+        id: 'dandelion', cost: 3, growSec: 45, sell: 6, xp: 1, head: 'dandelion', leaf: 'runcinate',
         pal: { petal: '#f8cd4b', petalDeep: '#e0a923', center: '#f2b62f', centerDeep: '#c98a14', stem: '#8ab06a', leaf: '#95bf72' },
       },
       {
-        id: 'daisy', cost: 5, growSec: 60, sell: 10, xp: 2, head: 'daisy', leaf: 'round',
+        id: 'daisy', cost: 5, growSec: 60, sell: 10, xp: 2, head: 'daisy', leaf: 'spoon',
         pal: { petal: '#fbfaf1', petalDeep: '#e4dcc4', center: '#f5c542', centerDeep: '#d99d20', stem: '#7aa86a', leaf: '#8bbf74' },
         alt: { petal: '#f7c6d4', petalDeep: '#e2a5b9' },
       },
       {
-        id: 'cherry', cost: 10, growSec: 120, sell: 21, xp: 4, head: 'cherry', leaf: 'round',
+        id: 'cherry', cost: 10, growSec: 120, sell: 21, xp: 4, head: 'cherry', leaf: 'twig',
         pal: { petal: '#f9d5e0', petalDeep: '#eeb0c5', center: '#f3b3c6', centerDeep: '#d98ba0', stem: '#8a6d57', leaf: '#7fae72' },
         alt: { petal: '#fdfdfd', petalDeep: '#e6e2df', center: '#f3d7b8', centerDeep: '#dcc09c' },
       },
@@ -513,106 +933,101 @@ window.__ModuleLoader__.load({
         alt: { petal: '#f6d15c', petalDeep: '#d9ae33' },
       },
       {
-        id: 'lavender', cost: 18, growSec: 180, sell: 38, xp: 7, head: 'spike', leaf: 'narrow',
+        id: 'lavender', cost: 18, growSec: 180, sell: 38, xp: 7, head: 'lavender', leaf: 'needle',
         pal: { petal: '#9b86d8', petalDeep: '#7c68bd', center: '#b6a5e6', centerDeep: '#8d7cc9', stem: '#8fa87a', leaf: '#9db98a' },
-        headOpts: { rows: 6 },
       },
       {
-        id: 'poppy', cost: 22, growSec: 210, sell: 47, xp: 9, head: 'poppy', leaf: 'lobed',
+        id: 'poppy', cost: 22, growSec: 210, sell: 47, xp: 9, head: 'poppy', leaf: 'pinnate',
         pal: { petal: '#e6483f', petalDeep: '#bb2f29', center: '#2f2b28', centerDeep: '#1c1a18', stem: '#7fa05f', leaf: '#88ab66' },
         alt: { petal: '#fbf6ef', petalDeep: '#e2d9cc' },
       },
       {
-        id: 'sunflower', cost: 26, growSec: 240, sell: 56, xp: 11, head: 'sunflower', leaf: 'broad',
+        id: 'sunflower', cost: 26, growSec: 240, sell: 56, xp: 11, head: 'sunflower', leaf: 'heart',
         pal: { petal: '#f7b733', petalDeep: '#dd9a1a', center: '#6b4226', centerDeep: '#4d2d18', stem: '#6f9c4f', leaf: '#7fae5c' },
       },
       {
-        id: 'lily', cost: 32, growSec: 290, sell: 70, xp: 13, head: 'lily', leaf: 'narrow',
+        id: 'lily', cost: 32, growSec: 290, sell: 70, xp: 13, head: 'lily', leaf: 'whorl',
         pal: { petal: '#fbf6ec', petalDeep: '#e9c6cd', center: '#e8a63a', centerDeep: '#c8862a', stem: '#6fa05f', leaf: '#7fb46e' },
         alt: { petal: '#f6c9d6', petalDeep: '#dfa6ba' },
       },
       {
-        id: 'rose', cost: 40, growSec: 340, sell: 88, xp: 17, head: 'rose', leaf: 'lobed',
+        id: 'rose', cost: 40, growSec: 340, sell: 88, xp: 17, head: 'rose', leaf: 'rose',
         pal: { petal: '#e2466c', petalDeep: '#b62f52', center: '#8e2242', centerDeep: '#6f1832', stem: '#5f8f52', leaf: '#6fa860' },
         alt: { petal: '#fbf5ec', petalDeep: '#e0d2c0', center: '#e8d8b8', centerDeep: '#c9b48c' },
       },
       {
-        id: 'hydrangea', cost: 50, growSec: 400, sell: 112, xp: 22, head: 'mophead', leaf: 'broad',
+        id: 'hydrangea', cost: 50, growSec: 400, sell: 112, xp: 22, head: 'mophead', leaf: 'serrate',
         pal: { petal: '#8f9bf0', petalDeep: '#6d78d8', center: '#b9c0f8', centerDeep: '#8a93e2', stem: '#7fa76a', leaf: '#8bb877' },
         alt: { petal: '#f2a8c6', petalDeep: '#d97fa6', center: '#f7c6d9', centerDeep: '#e5a0be' },
       },
       // ── snowfield ───────────────────────────────────────────────────────
       {
-        id: 'snowdrop', cost: 8, growSec: 90, sell: 17, xp: 3, head: 'droop', leaf: 'narrow',
+        id: 'snowdrop', cost: 8, growSec: 90, sell: 17, xp: 3, head: 'snowdrop', leaf: 'strap',
         pal: { petal: '#fbfdff', petalDeep: '#dbe4ee', center: '#8fbf7a', centerDeep: '#5f8f4f', stem: '#7fa07a', leaf: '#8fae8a' },
       },
       {
-        id: 'hellebore', cost: 16, growSec: 170, sell: 35, xp: 6, head: 'bloom5', leaf: 'lobed',
+        id: 'hellebore', cost: 16, growSec: 170, sell: 35, xp: 6, head: 'hellebore', leaf: 'palmate',
         pal: { petal: '#f6f1ea', petalDeep: '#ddcfc0', center: '#a8c47f', centerDeep: '#7d9a58', stem: '#6f8a5c', leaf: '#7d9a68' },
         alt: { petal: '#e7b9cd', petalDeep: '#c992ab' },
       },
       {
-        id: 'plum', cost: 24, growSec: 230, sell: 52, xp: 10, head: 'bloom5', leaf: 'round',
+        id: 'plum', cost: 24, growSec: 230, sell: 52, xp: 10, head: 'plum', leaf: 'twig',
         pal: { petal: '#f7b9cd', petalDeep: '#dd8fa9', center: '#f7d76a', centerDeep: '#d8b23c', stem: '#6b5548', leaf: '#7c9a6a' },
         alt: { petal: '#fdfbf7', petalDeep: '#e5dccd' },
       },
       {
-        id: 'edelweiss', cost: 34, growSec: 300, sell: 75, xp: 14, head: 'star', leaf: 'narrow',
+        id: 'edelweiss', cost: 34, growSec: 300, sell: 75, xp: 14, head: 'edelweiss', leaf: 'woolly',
         pal: { petal: '#faf7ef', petalDeep: '#dfd8c6', center: '#e8c65a', centerDeep: '#c9a633', stem: '#8a9a72', leaf: '#9aa885' },
       },
       {
-        id: 'camellia', cost: 46, growSec: 370, sell: 104, xp: 20, head: 'rose', leaf: 'round',
+        id: 'camellia', cost: 46, growSec: 370, sell: 104, xp: 20, head: 'camellia', leaf: 'glossy',
         pal: { petal: '#e3588c', petalDeep: '#b8465f', center: '#8c2740', centerDeep: '#6b1930', stem: '#5f7f52', leaf: '#6f9a60' },
         alt: { petal: '#fdfbf6', petalDeep: '#e6ded1', center: '#e8ddc7', centerDeep: '#cbb999' },
       },
       // ── volcanic crater ─────────────────────────────────────────────────
       {
-        id: 'cactus', cost: 12, growSec: 130, sell: 26, xp: 4, head: 'cup', leaf: 'pad',
+        id: 'cactus', cost: 12, growSec: 130, sell: 26, xp: 4, head: 'cactus', leaf: 'pad',
         pal: { petal: '#f6c34a', petalDeep: '#d9a02a', center: '#c9603f', centerDeep: '#9c4529', stem: '#6f9a5e', leaf: '#7fae6a' },
         alt: { petal: '#f08a4b', petalDeep: '#c96a30' },
       },
       {
-        id: 'lehua', cost: 22, growSec: 200, sell: 46, xp: 8, head: 'pompom', leaf: 'round',
+        id: 'lehua', cost: 22, growSec: 200, sell: 46, xp: 8, head: 'pompom', leaf: 'leathery',
         pal: { petal: '#e34b3f', petalDeep: '#b93129', center: '#f6b23c', centerDeep: '#d18c1f', stem: '#6f7f52', leaf: '#7f9460' },
       },
       {
-        id: 'agave', cost: 36, growSec: 310, sell: 80, xp: 15, head: 'spike', leaf: 'rosette',
+        id: 'agave', cost: 36, growSec: 310, sell: 80, xp: 15, head: 'agave', leaf: 'rosette',
         pal: { petal: '#e8d98a', petalDeep: '#c9b85c', center: '#b8a24a', centerDeep: '#8f7c2e', stem: '#7f9a6a', leaf: '#9aa885' },
-        headOpts: { rows: 4, wide: true },
       },
       {
-        id: 'silversword', cost: 52, growSec: 420, sell: 120, xp: 23, head: 'spike', leaf: 'rosette',
-        pal: { petal: '#b48ad6', petalDeep: '#8f68b8', center: '#d3bde8', centerDeep: '#a98cc9', stem: '#9aa8a0', leaf: '#b6c2bb' },
-        headOpts: { rows: 5 },
+        id: 'silversword', cost: 52, growSec: 420, sell: 120, xp: 23, head: 'silversword', leaf: 'silver',
+        pal: { petal: '#b3567f', petalDeep: '#83365a', center: '#e6c47c', centerDeep: '#b08d3c', stem: '#9aa8a0', leaf: '#b6c2bb' },
       },
       {
-        id: 'plumeria', cost: 64, growSec: 500, sell: 152, xp: 29, head: 'bloom5', leaf: 'broad',
+        id: 'plumeria', cost: 64, growSec: 500, sell: 152, xp: 29, head: 'plumeria', leaf: 'paddle',
         pal: { petal: '#fdf4f6', petalDeep: '#efd3dc', center: '#f7cf5a', centerDeep: '#d9ab2c', stem: '#7f8f62', leaf: '#8fa870' },
         alt: { petal: '#f3a8bf', petalDeep: '#dc7f9c' },
       },
       // ── lakeside ────────────────────────────────────────────────────────
       {
-        id: 'pickerel', cost: 14, growSec: 140, sell: 30, xp: 4, head: 'spike', leaf: 'broad',
+        id: 'pickerel', cost: 14, growSec: 140, sell: 30, xp: 4, head: 'pickerel', leaf: 'arrow',
         pal: { petal: '#7d8ee0', petalDeep: '#5f6fc4', center: '#a9b6ef', centerDeep: '#818fce', stem: '#6f9a72', leaf: '#7fae80' },
-        headOpts: { rows: 5 },
       },
       {
-        id: 'loosestrife', cost: 26, growSec: 220, sell: 55, xp: 10, head: 'spike', leaf: 'narrow',
+        id: 'loosestrife', cost: 26, growSec: 220, sell: 55, xp: 10, head: 'loosestrife', leaf: 'opposite',
         pal: { petal: '#c95a9c', petalDeep: '#a53e7c', center: '#e3a0c4', centerDeep: '#c478a2', stem: '#6f9a62', leaf: '#82ae6c' },
-        headOpts: { rows: 7 },
       },
       {
-        id: 'iris', cost: 38, growSec: 300, sell: 82, xp: 15, head: 'iris', leaf: 'strap',
+        id: 'iris', cost: 38, growSec: 300, sell: 82, xp: 15, head: 'iris', leaf: 'sword',
         pal: { petal: '#f2c53d', petalDeep: '#d3a521', center: '#c98a2a', centerDeep: '#9c671a', stem: '#6f9a5c', leaf: '#82ae6a' },
         alt: { petal: '#f7f2e6', petalDeep: '#ded4c0' },
       },
       {
-        id: 'waterlily', cost: 54, growSec: 400, sell: 120, xp: 22, head: 'waterlily', leaf: 'pad',
+        id: 'waterlily', cost: 54, growSec: 400, sell: 120, xp: 22, head: 'waterlily', leaf: 'float',
         pal: { petal: '#fdf3f7', petalDeep: '#efc9da', center: '#f2c33c', centerDeep: '#d09d1f', stem: '#5f8f7a', leaf: '#6f9a78' },
         alt: { petal: '#f3b7cf', petalDeep: '#dd8fae' },
       },
       {
-        id: 'lotus', cost: 70, growSec: 520, sell: 165, xp: 30, head: 'lotus', leaf: 'pad',
+        id: 'lotus', cost: 70, growSec: 520, sell: 165, xp: 30, head: 'lotus', leaf: 'peltate',
         pal: { petal: '#f29ac0', petalDeep: '#d974a0', center: '#f8d96a', centerDeep: '#d8b53a', stem: '#6f9a6a', leaf: '#7fae74' },
         alt: { petal: '#fdfbf7', petalDeep: '#e8e0d2' },
       },
@@ -642,6 +1057,7 @@ window.__ModuleLoader__.load({
     /** Shop goods: consumables sit in the bag, the basket upgrade has levels. */
     const ITEMS = [
       { id: 'fertilizer', price: 35, kind: 'consumable' },
+      { id: 'compost', price: 25, kind: 'consumable' },
       { id: 'sprinkler', price: 90, kind: 'consumable' },
       { id: 'charm', price: 120, kind: 'consumable' },
       { id: 'basket', price: 150, kind: 'upgrade', maxLevel: 2 },
@@ -652,6 +1068,85 @@ window.__ModuleLoader__.load({
       return BASKET_CAPACITY + 6 * (state.basketLevel ?? 0)
     }
     const ORDER_SLOTS = 2
+
+    /** The flower market favours one species a day. */
+    const MARKET_BONUS = 1.5
+
+    /**
+     * Keeping the garden in balance. Soil tires with every harvest and faster
+     * under the same crop; rotation, rest and compost restore it. The market
+     * tires of a flower sold in bulk and recovers with time. Facilities cost
+     * more at every level and, past the first, ribbons from the flower show.
+     */
+    const SOIL_HARVEST = 14
+    const SOIL_REPEAT = 10
+    const SOIL_ROTATE = 8
+    const SOIL_REST_MS = 60 * 1000
+    const SOIL_FLOOR = 0.55
+    const COMPOST_GAIN = 60
+    const GLUT_STEP = 0.05
+    const GLUT_FLOOR = 0.5
+    const GLUT_RECOVER_MS = 2 * 60 * 1000
+    const TRAIT_PRICE = 2
+    const HYBRID_PRICE = 1.5
+    const HYBRID_CHANCE = 0.45
+    const FACILITIES = [
+      { id: 'hive', base: 200, step: 0.025 },
+      { id: 'greenhouse', base: 300, step: 0.1 },
+      { id: 'bench', base: 250, step: 0.05 },
+    ]
+    const FACILITY_BY_ID = new Map(FACILITIES.map(entry => [entry.id, entry]))
+    const FACILITY_MAX = 8
+    const FACILITY_GROWTH = 1.8
+
+    /** The flower show: a themed, time-limited exhibition that pays in ribbons, not coins. */
+    const SHOW_MS = 6 * 60 * 60 * 1000
+    const SHOW_SLOTS = 8
+    const SHOW_TIERS = [{ points: 6, ribbons: 1 }, { points: 14, ribbons: 2 }, { points: 24, ribbons: 3 }]
+    const SEASONS = ['spring', 'summer', 'autumn', 'winter']
+    const SEASON_SCENE = { spring: 'meadow', summer: 'volcano', autumn: 'lake', winter: 'snow' }
+    const SHOW_THEMES = ['ground', 'warm', 'cool', 'rare']
+
+    /**
+     * Visitors come to open flowers. A plot's visitor is a pure function of the
+     * clock, so it needs no timers and survives a reload: each `VISIT_MS` window
+     * rolls once per plot. `when` is day, night or any; `dry` visitors stay away in rain.
+     */
+    const VISIT_MS = 45 * 1000
+    const VISIT_CHANCE = 0.34
+    const VISITORS = [
+      { id: 'bee', scenes: ['meadow', 'volcano', 'lake'], when: 'day', weight: 5, tip: 2 },
+      { id: 'butterfly', scenes: ['meadow', 'lake'], when: 'day', dry: true, weight: 3, tip: 3 },
+      { id: 'ladybug', scenes: ['meadow'], when: 'any', weight: 2, tip: 3 },
+      { id: 'dragonfly', scenes: ['lake'], when: 'day', dry: true, weight: 3, tip: 4 },
+      { id: 'firefly', scenes: ['meadow', 'lake'], when: 'night', weight: 4, tip: 5 },
+      { id: 'moth', scenes: ['meadow', 'volcano', 'lake'], when: 'night', weight: 2, tip: 6 },
+      { id: 'robin', scenes: ['snow'], when: 'any', weight: 3, tip: 5 },
+      { id: 'honeycreeper', scenes: ['volcano'], when: 'day', weight: 2, tip: 8 },
+      { id: 'kingfisher', scenes: ['lake'], when: 'day', weight: 1, tip: 12 },
+    ]
+    const VISITOR_BY_ID = new Map(VISITORS.map(visitor => [visitor.id, visitor]))
+
+    /** Long-term goals. `metric` names a counter in `achievementValue`. */
+    const ACHIEVEMENTS = [
+      { id: 'firstBloom', metric: 'harvested', target: 1, coins: 10 },
+      { id: 'harvest30', metric: 'harvested', target: 30, coins: 60 },
+      { id: 'harvest150', metric: 'harvested', target: 150, coins: 300 },
+      { id: 'firstGuest', metric: 'visitorKinds', target: 1, coins: 20 },
+      { id: 'pollinator', metric: 'pollinated', target: 12, coins: 120 },
+      { id: 'naturalist', metric: 'visitorKinds', target: VISITORS.length, coins: 400 },
+      { id: 'florist5', metric: 'delivered', target: 5, coins: 80 },
+      { id: 'florist25', metric: 'delivered', target: 25, coins: 350 },
+      { id: 'firstSpirit', metric: 'spiritKinds', target: 1, coins: 80 },
+      { id: 'spirit8', metric: 'spiritKinds', target: 8, coins: 400 },
+      { id: 'meadowBook', metric: 'meadowKinds', target: 10, coins: 150 },
+      { id: 'allGrounds', metric: 'grounds', target: 4, coins: 250 },
+      { id: 'breeder', metric: 'hybridKinds', target: 5, coins: 200 },
+      { id: 'curio', metric: 'traitKinds', target: 4, coins: 250 },
+      { id: 'ribbons', metric: 'ribbonsEarned', target: 10, coins: 300 },
+      { id: 'fullBook', metric: 'entries', target: CODEX_ENTRIES.length, coins: 1500 },
+    ]
+    const ACHIEVEMENT_BY_ID = new Map(ACHIEVEMENTS.map(entry => [entry.id, entry]))
     const MAX_OFFLINE_MS = 12 * 60 * 60 * 1000
     const DRY_SHARE = 0.75
 
@@ -686,10 +1181,37 @@ window.__ModuleLoader__.load({
     }
 
     /** The palette a plot or a codex entry draws with. */
-    function paletteOf(species, variant) {
+    function paletteOf(species, variant, tintId) {
       if (variant === 'hidden') return { ...species.pal, ...HIDDEN_PAL }
+      // A hybrid keeps its mother's form and wears the pollen parent's petal colours.
+      const tint = tintId === undefined ? undefined : SPECIES_BY_ID.get(tintId)
+      if (tint !== undefined) return { ...species.pal, petal: tint.pal.petal, petalDeep: tint.pal.petalDeep }
       if (variant === 'alt' && species.alt !== undefined) return { ...species.pal, ...species.alt }
       return species.pal
+    }
+
+    /**
+     * Curiosities: rare forms a plant takes after an unusual life. `pal` and
+     * `stops` repaint the petals; twin, giant and variegated change the plant itself.
+     * `chance` is rolled at harvest once the cause in `traitCauses` holds.
+     */
+    const TRAITS = [
+      { id: 'twin', chance: 0.4 },
+      { id: 'giant', chance: 0.35 },
+      { id: 'rainbow', chance: 0.12, pal: { petal: '#f7a8c8', petalDeep: '#8f7be0' }, stops: [[0, '#7d6be0'], [25, '#4fb8e8'], [50, '#6fd49a'], [72, '#f6d95a'], [100, '#f58ab0']] },
+      { id: 'frost', chance: 0.12, pal: { petal: '#dff1fb', petalDeep: '#9cc7e6', center: '#f4fbff', centerDeep: '#a9cfe8' }, stops: [[0, '#8fbfe6'], [50, '#dff1fb'], [100, '#ffffff']] },
+      { id: 'ember', chance: 0.12, pal: { petal: '#ff8a2b', petalDeep: '#c2261a', center: '#ffd35a', centerDeep: '#e2781c' }, stops: [[0, '#7a1410'], [40, '#e4361e'], [78, '#ff9a2e'], [100, '#ffe27a']] },
+      { id: 'pearl', chance: 0.12, pal: { petal: '#f3eef8', petalDeep: '#c9bfe6', center: '#fff6d8', centerDeep: '#d9c48a' }, stops: [[0, '#c7b8ea'], [35, '#f6e6f1'], [70, '#dff3f1'], [100, '#ffffff']] },
+      { id: 'ink', chance: 0.1, pal: { petal: '#3b2a4a', petalDeep: '#1c1426', center: '#c9a24a', centerDeep: '#7a5a1e' }, stops: [[0, '#120c1a'], [55, '#3b2a4a'], [100, '#7a4a8a']] },
+      { id: 'variegated', chance: 0.14 },
+    ]
+    const TRAIT_BY_ID = new Map(TRAITS.map(trait => [trait.id, trait]))
+    /** The weather each ground turns into a curiosity: harvest in it for a chance. */
+    const SCENE_TRAIT = {
+      meadow: { trait: 'rainbow', weather: 'rain' },
+      snow: { trait: 'frost', weather: 'rain' },
+      volcano: { trait: 'ember', weather: 'clear' },
+      lake: { trait: 'pearl', weather: 'rain' },
     }
 
     /** Plots #1, #3 and #5 (even indexes) grow the species' second colour. */
@@ -703,6 +1225,82 @@ window.__ModuleLoader__.load({
 
     function bloomPrice(species, variant) {
       return Math.round(species.sell * variantMultiplier(variant))
+    }
+
+    /** Uniform value in [0, 1) from three integers; the same inputs always agree. */
+    function hashUnit(a, b, c) {
+      let x = (Math.imul(a | 0, 0x9e3779b1) ^ Math.imul(b | 0, 0x85ebca6b) ^ Math.imul(c | 0, 0xc2b2ae35)) | 0
+      x = Math.imul(x ^ (x >>> 16), 0x7feb352d)
+      x = Math.imul(x ^ (x >>> 15), 0x846ca68b)
+      x ^= x >>> 16
+      return (x >>> 0) / 4294967296
+    }
+
+    /** Local calendar day, so the market turns over at the player's midnight. */
+    function localDay(now) {
+      return Math.floor((now - new Date(now).getTimezoneOffset() * 60000) / 86400000)
+    }
+
+    /**
+     * Today's market favourite: the best-ranked species among the opened grounds.
+     * Ranking by a per-day hash keeps the pick stable until a new ground opens.
+     */
+    function featuredSpecies(state, now) {
+      if (now === undefined) return null
+      const day = localDay(now)
+      let best = null
+      let bestRank = -1
+      for (const [index, species] of SPECIES.entries()) {
+        const slot = state.scenes[SCENE_ID_OF.get(species.id)]
+        if (slot === undefined || slot.unlocked <= 0) continue
+        const rank = hashUnit(day, index, 77)
+        if (rank > bestRank) {
+          best = species.id
+          bestRank = rank
+        }
+      }
+      return best
+    }
+
+    /** What one bloom sells for, market favourite included. */
+    function salePrice(species, variant, featuredId) {
+      const base = species.sell * variantMultiplier(variant)
+      return Math.round(species.id === featuredId ? base * MARKET_BONUS : base)
+    }
+
+    /** Dusk to dawn, when the night visitors fly. */
+    function isNight(now) {
+      const hour = new Date(now).getHours()
+      return hour >= 19 || hour < 6
+    }
+
+    function visitBucket(now) {
+      return Math.floor(now / VISIT_MS)
+    }
+
+    /** The visitor at one plot right now, or null. Only open flowers attract one. */
+    function visitorAt(sceneId, index, plot, now, weather, hiveLevel) {
+      if (plot === null || plot === undefined) return null
+      const species = SPECIES_BY_ID.get(plot.species)
+      if (species === undefined || plot.growthMs < growMsOf(species)) return null
+      const bucket = visitBucket(now)
+      if (plot.greeted === bucket) return null
+      const sceneIndex = SCENES.findIndex(scene => scene.id === sceneId)
+      if (sceneIndex === -1) return null
+      const spot = sceneIndex * 16 + index
+      if (hashUnit(bucket, spot, 1) >= VISIT_CHANCE + FACILITY_BY_ID.get('hive').step * (hiveLevel ?? 0)) return null
+      const night = isNight(now)
+      const pool = VISITORS.filter(visitor => visitor.scenes.includes(sceneId)
+        && (visitor.when === 'any' || (visitor.when === 'night') === night)
+        && !(visitor.dry === true && weather === 'rain'))
+      const total = pool.reduce((sum, visitor) => sum + visitor.weight, 0)
+      if (total === 0) return null
+      let pick = hashUnit(bucket, spot, 2) * total
+      for (const visitor of pool) {
+        pick -= visitor.weight
+        if (pick < 0) return visitor
+      }
+      return pool[pool.length - 1]
     }
 
     /** Chance that a harvest turns up the gold bloom; the flower book lists these. */
@@ -721,11 +1319,40 @@ window.__ModuleLoader__.load({
     // §3 State model: plain JSON, pure transitions, exact time integration.
     // ---------------------------------------------------------------------
     function emptyScene(unlocked) {
-      return { unlocked, plots: new Array(PLOT_COUNT).fill(null), sprinklerUntil: 0 }
+      return {
+        unlocked,
+        plots: new Array(PLOT_COUNT).fill(null),
+        sprinklerUntil: 0,
+        soil: new Array(PLOT_COUNT).fill(100),
+        last: new Array(PLOT_COUNT).fill(null),
+      }
     }
 
     function emptyBag() {
-      return { fertilizer: 0, sprinkler: 0, charm: 0 }
+      return { fertilizer: 0, compost: 0, sprinkler: 0, charm: 0 }
+    }
+
+    /** Soil fertility of one plot, 0–100; snapshots from before soil existed read as rich. */
+    function soilOf(slot, index) {
+      const value = slot === undefined || !Array.isArray(slot.soil) ? undefined : slot.soil[index]
+      return typeof value === 'number' && Number.isFinite(value) ? Math.max(0, Math.min(100, value)) : 100
+    }
+
+    function withSoil(slot, index, value, lastSpecies) {
+      const soil = new Array(PLOT_COUNT).fill(100).map((_, at) => soilOf(slot, at))
+      soil[index] = Math.max(0, Math.min(100, value))
+      const last = new Array(PLOT_COUNT).fill(null).map((_, at) => (Array.isArray(slot.last) ? slot.last[at] ?? null : null))
+      if (lastSpecies !== undefined) last[index] = lastSpecies
+      return { soil, last }
+    }
+
+    /** Tired soil slows growth, down to `SOIL_FLOOR` of the normal pace. */
+    function soilFactor(soil) {
+      return SOIL_FLOOR + (1 - SOIL_FLOOR) * ((soil ?? 100) / 100)
+    }
+
+    function facilityLevel(state, id) {
+      return Math.max(0, Math.min(FACILITY_MAX, Math.floor(state.facilities?.[id] ?? 0)))
     }
 
     function freshState(now) {
@@ -744,6 +1371,20 @@ window.__ModuleLoader__.load({
         charm: false,
         orders: [],
         seen: {},
+        visitors: {},
+        claimed: {},
+        delivered: 0,
+        pollinated: 0,
+        planted: 0,
+        ribbons: 0,
+        ribbonsEarned: 0,
+        facilities: {},
+        glut: {},
+        show: null,
+        seeds: {},
+        hybrids: {},
+        exotics: {},
+        specimens: {},
         seed: 20261116,
         orderSeq: 1,
         lastTick: now,
@@ -768,6 +1409,12 @@ window.__ModuleLoader__.load({
           moisture: Math.min(finiteOr(plot.moisture, 0), 100),
           dried: plot.dried === true,
         }
+        if (typeof plot.dna === 'number' && plot.dna > 0) plots[index].dna = Math.floor(plot.dna)
+        if (typeof plot.tint === 'string' && SPECIES_BY_ID.has(plot.tint) && plot.tint !== species.id) plots[index].tint = plot.tint
+        if (finiteOr(plot.fed, 0) > 0) plots[index].fed = Math.floor(plot.fed)
+        if (finiteOr(plot.visits, 0) > 0) plots[index].visits = Math.floor(plot.visits)
+        if (plot.pollinated === true) plots[index].pollinated = true
+        if (typeof plot.greeted === 'number' && Number.isFinite(plot.greeted)) plots[index].greeted = plot.greeted
       }
       return plots
     }
@@ -793,6 +1440,62 @@ window.__ModuleLoader__.load({
       return seen
     }
 
+    function sanitizeVisitors(raw) {
+      const visitors = {}
+      if (raw === null || typeof raw !== 'object') return visitors
+      for (const visitor of VISITORS) {
+        const count = Math.floor(finiteOr(raw[visitor.id], 0))
+        if (count > 0) visitors[visitor.id] = count
+      }
+      return visitors
+    }
+
+    /** Counters keyed by `a~b` or `a:b` where both halves must be known ids. */
+    function sanitizeCounts(raw, separator, rightKnown) {
+      const out = {}
+      if (raw === null || typeof raw !== 'object') return out
+      for (const [key, count] of Object.entries(raw)) {
+        const [left, right] = key.split(separator)
+        const value = Math.floor(finiteOr(count, 0))
+        if (value > 0 && SPECIES_BY_ID.has(left) && rightKnown(right) && left !== right) out[key] = value
+      }
+      return out
+    }
+
+    /** Keep one real representative of each complete flower kind after it leaves the basket. */
+    function sanitizeSpecimens(raw) {
+      const result = {}
+      if (raw === null || typeof raw !== 'object') return result
+      for (const item of Object.values(raw)) {
+        if (!item || !SPECIES_BY_ID.has(item.species) || !['base', 'alt', 'hidden'].includes(item.variant)) continue
+        if (item.trait !== undefined && (!TRAIT_BY_ID.has(item.trait) || item.variant === 'hidden')) continue
+        if (item.tint !== undefined && (!SPECIES_BY_ID.has(item.tint) || item.tint === item.species)) continue
+        const bloom = { species: item.species, variant: item.variant, count: Math.max(1, Math.floor(finiteOr(item.count, 1))) }
+        if (Number.isFinite(item.dna) && item.dna > 0) bloom.dna = Math.floor(item.dna)
+        if (item.trait !== undefined) bloom.trait = item.trait
+        if (item.tint !== undefined) bloom.tint = item.tint
+        result[itemKey(bloom)] = bloom
+      }
+      return result
+    }
+
+    function sanitizeShow(raw) {
+      if (raw === null || typeof raw !== 'object' || !Number.isFinite(raw.id)) return null
+      return {
+        id: raw.id,
+        points: Math.floor(finiteOr(raw.points, 0)),
+        entered: Math.floor(finiteOr(raw.entered, 0)),
+        kinds: Array.isArray(raw.kinds) ? raw.kinds.filter(id => SPECIES_BY_ID.has(id)) : [],
+      }
+    }
+
+    function sanitizeClaimed(raw) {
+      const claimed = {}
+      if (raw === null || typeof raw !== 'object') return claimed
+      for (const entry of ACHIEVEMENTS) if (raw[entry.id] === true) claimed[entry.id] = true
+      return claimed
+    }
+
     /** Coerce a parsed snapshot into a usable garden, migrating v1/v2 on the way. */
     function sanitize(raw, now) {
       if (raw === null || typeof raw !== 'object') return freshState(now)
@@ -816,6 +1519,8 @@ window.__ModuleLoader__.load({
           unlocked: open === 0 ? 0 : Math.max(START_PLOTS, open),
           plots: open === 0 ? emptyScene(0).plots : readPlots(source.plots),
           sprinklerUntil: finiteOr(source.sprinklerUntil, 0),
+          soil: new Array(PLOT_COUNT).fill(100).map((_, index) => soilOf(source, index)),
+          last: new Array(PLOT_COUNT).fill(null).map((_, index) => (Array.isArray(source.last) && scene.species.includes(source.last[index]) ? source.last[index] : null)),
         }
       }
       // An upgraded basket holds more, so the cap depends on the saved level.
@@ -826,7 +1531,11 @@ window.__ModuleLoader__.load({
           const species = item === null || typeof item !== 'object' ? undefined : SPECIES_BY_ID.get(item.species)
           if (species === undefined) continue
           const variant = item.variant === 'alt' || item.variant === 'hidden' ? item.variant : 'base'
-          basket.push({ species: species.id, variant })
+          const bloom = { species: species.id, variant }
+          if (typeof item.dna === 'number' && item.dna > 0) bloom.dna = Math.floor(item.dna)
+          if (variant !== 'hidden' && TRAIT_BY_ID.has(item.trait)) bloom.trait = item.trait
+          if (typeof item.tint === 'string' && SPECIES_BY_ID.has(item.tint) && item.tint !== species.id) bloom.tint = item.tint
+          basket.push(bloom)
         }
       }
       return fillOrders({
@@ -842,6 +1551,22 @@ window.__ModuleLoader__.load({
         charm: raw.charm === true,
         orders: Array.isArray(raw.orders) ? raw.orders.filter(validOrder).slice(0, ORDER_SLOTS) : [],
         seen: sanitizeSeen(raw.seen),
+        visitors: sanitizeVisitors(raw.visitors),
+        claimed: sanitizeClaimed(raw.claimed),
+        delivered: Math.floor(finiteOr(raw.delivered, 0)),
+        pollinated: Math.floor(finiteOr(raw.pollinated, 0)),
+        planted: Math.floor(finiteOr(raw.planted, 0)),
+        ribbons: Math.floor(finiteOr(raw.ribbons, 0)),
+        ribbonsEarned: Math.floor(finiteOr(raw.ribbonsEarned, 0)),
+        facilities: Object.fromEntries(FACILITIES.map(entry => [entry.id, Math.min(FACILITY_MAX, Math.floor(finiteOr(raw.facilities?.[entry.id], 0)))])),
+        glut: Object.fromEntries(Object.entries(raw.glut !== null && typeof raw.glut === 'object' ? raw.glut : {})
+          .filter(([id, entry]) => SPECIES_BY_ID.has(id) && entry !== null && typeof entry === 'object' && Number.isFinite(entry.n) && Number.isFinite(entry.at))
+          .map(([id, entry]) => [id, { n: Math.max(0, Math.floor(entry.n)), at: Math.min(entry.at, now) }])),
+        show: sanitizeShow(raw.show),
+        seeds: sanitizeCounts(raw.seeds, '~', id => SPECIES_BY_ID.has(id)),
+        hybrids: sanitizeCounts(raw.hybrids, '~', id => SPECIES_BY_ID.has(id)),
+        exotics: sanitizeCounts(raw.exotics, ':', id => TRAIT_BY_ID.has(id)),
+        specimens: sanitizeSpecimens(raw.specimens),
         seed: Math.floor(finiteOr(raw.seed, 20261116)) || 20261116,
         orderSeq: Math.max(1, Math.floor(finiteOr(raw.orderSeq, 1))),
         lastTick: Math.min(finiteOr(raw.lastTick, now), now),
@@ -860,11 +1585,11 @@ window.__ModuleLoader__.load({
      * Advance one planted plot by `ms` under one scene and weather segment.
      * @returns the same plot when nothing changes.
      */
-    function advancePlot(plot, ms, weather, scene, sprinkled) {
+    function advancePlot(plot, ms, weather, scene, sprinkled, soil) {
       const species = SPECIES_BY_ID.get(plot.species)
       if (species === undefined || ms <= 0) return plot
       const growMs = growMsOf(species)
-      const factor = scene !== undefined ? (scene.weather[weather] ?? 1) : weather === 'clear' ? 1.15 : 1
+      const factor = (scene !== undefined ? (scene.weather[weather] ?? 1) : weather === 'clear' ? 1.15 : 1) * soilFactor(soil)
       const wet = sprinkled === true || (scene !== undefined && scene.rainWets && weather === 'rain')
       const moisture = wet ? 100 : Math.max(0, plot.moisture - ms * decayPerMs(species))
       const wetMs = wet ? ms : Math.min(ms, (plot.moisture / 100) * growMs * DRY_SHARE)
@@ -893,18 +1618,28 @@ window.__ModuleLoader__.load({
           if (slot === undefined) continue
           const sprinkled = (slot.sprinklerUntil ?? 0) > cursor
           let plots = slot.plots
+          let soil = slot.soil
           let changed = false
           for (let index = 0; index < plots.length; index += 1) {
             const plot = plots[index]
-            if (plot === null) continue
-            const advanced = advancePlot(plot, dt, weather, scene, sprinkled)
+            if (plot === null) {
+              // An empty, opened plot lies fallow and slowly recovers.
+              const rich = soilOf(slot, index)
+              if (index < slot.unlocked && rich < 100) {
+                if (soil === slot.soil) soil = new Array(PLOT_COUNT).fill(100).map((_, at) => soilOf(slot, at))
+                soil[index] = Math.min(100, rich + dt / SOIL_REST_MS)
+                changed = true
+              }
+              continue
+            }
+            const advanced = advancePlot(plot, dt, weather, scene, sprinkled, soilOf(slot, index))
             if (advanced === plot) continue
-            if (!changed) plots = plots.slice()
+            if (plots === slot.plots) plots = plots.slice()
             changed = true
             plots[index] = advanced
           }
           if (!changed) continue
-          nextScenes[scene.id] = { ...slot, plots }
+          nextScenes[scene.id] = { ...slot, plots, soil }
           scenesChanged = true
         }
         cursor = segmentEnd
@@ -912,21 +1647,45 @@ window.__ModuleLoader__.load({
       return scenesChanged ? { ...state, scenes: nextScenes, lastTick: now } : { ...state, lastTick: now }
     }
 
-    function plantAt(state, sceneId, index, speciesId) {
+    /**
+     * Sow one plot. With `tintId` it sows a hybrid seed from the bag (free, it was
+     * bred); otherwise a bought seed. Every plant draws its own genes, and the soil
+     * answers the choice: the same crop again tires it, a different one rests it.
+     */
+    function plantAt(state, sceneId, index, speciesId, tintId) {
       const slot = state.scenes[sceneId]
       const scene = SCENE_BY_ID.get(sceneId)
       if (slot === undefined || scene === undefined) return null
       if (index < 0 || index >= slot.unlocked || slot.plots[index] !== null) return null
       if (!scene.species.includes(speciesId)) return null
       const species = SPECIES_BY_ID.get(speciesId)
-      if (species === undefined || state.coins < species.cost) return null
-      const plots = slot.plots.slice()
-      plots[index] = { species: species.id, growthMs: 0, moisture: 100, dried: false }
-      return {
-        ...state,
-        coins: state.coins - species.cost,
-        scenes: { ...state.scenes, [sceneId]: { ...slot, plots } },
+      if (species === undefined) return null
+      const seedKey = `${speciesId}~${tintId}`
+      if (tintId !== undefined) {
+        if (!SPECIES_BY_ID.has(tintId) || tintId === speciesId || (state.seeds?.[seedKey] ?? 0) <= 0) return null
+      } else if (state.coins < species.cost) {
+        return null
       }
+      const planted = state.planted ?? 0
+      const dna = 1 + Math.floor(hashUnit(state.seed, planted, SCENES.indexOf(scene) * 8 + index) * 2147483646)
+      const plots = slot.plots.slice()
+      plots[index] = { species: species.id, growthMs: 0, moisture: 100, dried: false, dna }
+      if (tintId !== undefined) plots[index].tint = tintId
+      const before = Array.isArray(slot.last) ? slot.last[index] ?? null : null
+      const shift = before === null ? 0 : before === species.id ? -SOIL_REPEAT : SOIL_ROTATE
+      const next = {
+        ...state,
+        planted: planted + 1,
+        coins: tintId !== undefined ? state.coins : state.coins - species.cost,
+        scenes: { ...state.scenes, [sceneId]: { ...slot, plots, ...withSoil(slot, index, soilOf(slot, index) + shift) } },
+      }
+      if (tintId !== undefined) {
+        const seeds = { ...state.seeds }
+        if (seeds[seedKey] > 1) seeds[seedKey] -= 1
+        else delete seeds[seedKey]
+        next.seeds = seeds
+      }
+      return next
     }
 
     function waterAt(state, sceneId, index) {
@@ -936,6 +1695,40 @@ window.__ModuleLoader__.load({
       const plots = slot.plots.slice()
       plots[index] = { ...plot, moisture: 100 }
       return { ...state, scenes: { ...state.scenes, [sceneId]: { ...slot, plots } } }
+    }
+
+    /** Water every thirsty plot of one ground. */
+    function waterAll(state, sceneId) {
+      const slot = state.scenes[sceneId]
+      if (slot === undefined) return null
+      let changed = false
+      const plots = slot.plots.map(plot => {
+        if (plot === null || plot.moisture >= 99.5) return plot
+        const species = SPECIES_BY_ID.get(plot.species)
+        if (species === undefined || plot.growthMs >= growMsOf(species)) return plot
+        changed = true
+        return { ...plot, moisture: 100 }
+      })
+      return changed ? { ...state, scenes: { ...state.scenes, [sceneId]: { ...slot, plots } } } : null
+    }
+
+    /**
+     * Greet the visitor on an open flower: it leaves a tip and pollinates the
+     * bloom, which then yields a second flower at harvest.
+     */
+    function greetVisitor(state, sceneId, index, now, weather) {
+      const slot = state.scenes[sceneId]
+      const plot = slot === undefined ? undefined : slot.plots[index]
+      const visitor = visitorAt(sceneId, index, plot, now, weather, facilityLevel(state, 'hive'))
+      if (visitor === null) return null
+      const plots = slot.plots.slice()
+      plots[index] = { ...plot, greeted: visitBucket(now), pollinated: true, visits: (plot.visits ?? 0) + 1 }
+      return {
+        ...state,
+        coins: state.coins + visitor.tip,
+        visitors: { ...state.visitors, [visitor.id]: (state.visitors[visitor.id] ?? 0) + 1 },
+        scenes: { ...state.scenes, [sceneId]: { ...slot, plots } },
+      }
     }
 
     function unlockAt(state, sceneId, index) {
@@ -976,34 +1769,195 @@ window.__ModuleLoader__.load({
       const chance = Math.min(state.charm === true ? 0.55 : 0.3, hiddenChance(plot, weather, now, scene) + bonus)
       const roll = nextRandom(state.seed)
       const hidden = roll.value < chance
-      const variant = hidden ? 'hidden' : plotVariant(species, index)
+      let cursor = roll.seed
+      const draw = () => {
+        const step = nextRandom(cursor)
+        cursor = step.seed
+        return step.value
+      }
+      const plain = plot.tint !== undefined ? 'base' : plotVariant(species, index)
+      const variant = hidden ? 'hidden' : plain
+      // A curiosity needs a cause in the plant's life, and then some luck.
+      let trait
+      if (!hidden) {
+        const boost = 1 + FACILITY_BY_ID.get('greenhouse').step * facilityLevel(state, 'greenhouse')
+        for (const id of traitCauses(plot, sceneId, weather, now)) {
+          if (draw() < Math.min(0.9, TRAIT_BY_ID.get(id).chance * boost)) {
+            trait = id
+            break
+          }
+        }
+      }
+      const first = { species: species.id, variant }
+      if (plot.dna !== undefined) first.dna = plot.dna
+      if (trait !== undefined) first.trait = trait
+      if (plot.tint !== undefined) first.tint = plot.tint
+      const blooms = [first]
+      // A pollinated flower sets a second bloom in the plot's own colour, room permitting.
+      const doubled = plot.pollinated === true && state.basket.length + 2 <= basketCapacity(state)
+      if (doubled) {
+        const second = { species: species.id, variant: plain }
+        if (plot.dna !== undefined) second.dna = 1 + ((plot.dna * 7919) % 2147483646)
+        if (plot.tint !== undefined) second.tint = plot.tint
+        blooms.push(second)
+      }
+      // Pollen from a different flower next door may set a hybrid seed.
+      let seeds = state.seeds ?? {}
+      const partner = plot.pollinated === true ? hybridPartner(slot, index) : null
+      let bred = false
+      if (partner !== null) {
+        const chance = Math.min(0.9, HYBRID_CHANCE + FACILITY_BY_ID.get('bench').step * facilityLevel(state, 'bench'))
+        if (draw() < chance) {
+          const key = `${species.id}~${partner}`
+          seeds = { ...seeds, [key]: (seeds[key] ?? 0) + 1 }
+          bred = true
+        }
+      }
+      const seen = { ...state.seen }
+      const hybrids = { ...state.hybrids }
+      const exotics = { ...state.exotics }
+      const specimens = { ...state.specimens }
+      for (const bloom of blooms) {
+        const key = itemKey(bloom)
+        const representative = specimens[key]
+        specimens[key] = { ...(representative ?? bloom), count: (representative?.count ?? 0) + 1 }
+        if (bloom.tint !== undefined) {
+          const key = `${bloom.species}~${bloom.tint}`
+          hybrids[key] = (hybrids[key] ?? 0) + 1
+        } else {
+          const key = `${bloom.species}:${bloom.variant}`
+          seen[key] = (seen[key] ?? 0) + 1
+        }
+        if (bloom.trait !== undefined) {
+          const key = `${bloom.species}:${bloom.trait}`
+          exotics[key] = (exotics[key] ?? 0) + 1
+        }
+      }
       const plots = slot.plots.slice()
       plots[index] = null
-      const key = `${species.id}:${variant}`
       return {
         ...state,
-        seed: roll.seed,
+        seed: cursor,
         charm: false,
         xp: state.xp + species.xp,
-        harvested: state.harvested + 1,
-        scenes: { ...state.scenes, [sceneId]: { ...slot, plots } },
-        basket: [...state.basket, { species: species.id, variant }],
-        seen: { ...state.seen, [key]: (state.seen[key] ?? 0) + 1 },
+        harvested: state.harvested + blooms.length,
+        pollinated: (state.pollinated ?? 0) + (doubled ? 1 : 0),
+        scenes: { ...state.scenes, [sceneId]: { ...slot, plots, ...withSoil(slot, index, soilOf(slot, index) - SOIL_HARVEST, species.id) } },
+        basket: [...state.basket, ...blooms],
+        seen,
+        hybrids,
+        exotics,
+        specimens,
+        seeds,
+        lastBred: bred ? `${species.id}~${partner}` : null,
       }
     }
 
-    /** Sell the blooms of one species (and variant), or the whole basket. */
-    function sellBasket(state, speciesId, variant) {
-      const match = item => speciesId === undefined
-        || (item.species === speciesId && (variant === undefined || item.variant === variant))
-      const selling = state.basket.filter(match)
-      if (selling.length === 0) return null
-      const coins = selling.reduce((sum, item) => sum + bloomPrice(SPECIES_BY_ID.get(item.species), item.variant), 0)
-      return { ...state, coins: state.coins + coins, basket: state.basket.filter(item => !match(item)) }
+    /** What in this plant's life could have made it a curiosity, most demanding first. */
+    function traitCauses(plot, sceneId, weather, now) {
+      const causes = []
+      if ((plot.visits ?? 0) >= 2) causes.push('twin')
+      if ((plot.fed ?? 0) >= 2) causes.push('giant')
+      const local = SCENE_TRAIT[sceneId]
+      if (local !== undefined && local.weather === weather) causes.push(local.trait)
+      const hour = new Date(now).getHours()
+      if (hour >= 22 || hour < 5) causes.push('ink')
+      if (plot.dried === true) causes.push('variegated')
+      return causes
     }
 
-    function basketValue(state) {
-      return state.basket.reduce((sum, item) => sum + bloomPrice(SPECIES_BY_ID.get(item.species), item.variant), 0)
+    /** The species flowering next door, if it differs: the pollen parent of a hybrid. */
+    function hybridPartner(slot, index) {
+      const own = slot.plots[index]
+      if (own === null || own === undefined) return null
+      for (const at of [index - 1, index + 1]) {
+        if (at < 0 || at >= slot.unlocked) continue
+        const other = slot.plots[at]
+        if (other === null || other === undefined || other.species === own.species) continue
+        const species = SPECIES_BY_ID.get(other.species)
+        if (species !== undefined && other.growthMs >= growMsOf(species)) return other.species
+      }
+      return null
+    }
+
+    /** One basket group: species, colour, curiosity and hybrid parent. */
+    function itemKey(item) {
+      return `${item.species}:${item.variant}${item.trait !== undefined ? `:${item.trait}` : ''}${item.tint !== undefined ? `~${item.tint}` : ''}`
+    }
+
+    /** List price of one bloom before the market has its say. */
+    function itemValue(item) {
+      const species = SPECIES_BY_ID.get(item.species)
+      const tint = item.tint === undefined ? undefined : SPECIES_BY_ID.get(item.tint)
+      const base = tint === undefined ? species.sell : ((species.sell + tint.sell) / 2) * HYBRID_PRICE
+      return base * variantMultiplier(item.variant) * (item.trait !== undefined ? TRAIT_PRICE : 1)
+    }
+
+    /** How many price steps a species is down right now; it climbs back one step at a time. */
+    function glutSteps(state, speciesId, now) {
+      const entry = state.glut?.[speciesId]
+      if (entry === undefined || now === undefined) return 0
+      return Math.max(0, entry.n - Math.floor(Math.max(0, now - entry.at) / GLUT_RECOVER_MS))
+    }
+
+    function glutFactor(steps) {
+      return Math.max(GLUT_FLOOR, 1 - GLUT_STEP * steps)
+    }
+
+    /**
+     * Price a batch sold one bloom after another. With a clock the market
+     * favourite pays its bonus and every sale pushes that species' price down a step.
+     */
+    function quoteSale(state, items, now) {
+      const featured = featuredSpecies(state, now)
+      const steps = new Map()
+      let coins = 0
+      for (const item of items) {
+        const down = steps.get(item.species) ?? glutSteps(state, item.species, now)
+        coins += Math.round(itemValue(item) * (item.species === featured ? MARKET_BONUS : 1) * glutFactor(down))
+        steps.set(item.species, now === undefined ? 0 : down + 1)
+      }
+      return { coins, steps }
+    }
+
+    function sellWhere(state, match, now) {
+      const selling = state.basket.filter(match)
+      if (selling.length === 0) return null
+      const quote = quoteSale(state, selling, now)
+      const next = { ...state, coins: state.coins + quote.coins, basket: state.basket.filter(item => !match(item)) }
+      if (now !== undefined) {
+        const glut = { ...state.glut }
+        for (const [id, down] of quote.steps) glut[id] = { n: Math.min(down, 14), at: now }
+        next.glut = glut
+      }
+      return next
+    }
+
+    /** Sell one basket group, addressed by `itemKey`. */
+    function sellIndividual(state, index, now) {
+      if (!Number.isInteger(index) || index < 0 || index >= state.basket.length) return null
+      const item = state.basket[index]
+      const quote = quoteSale(state, [item], now)
+      const next = { ...state, coins: state.coins + quote.coins, basket: state.basket.filter((_, at) => at !== index) }
+      if (now !== undefined) next.glut = { ...state.glut, [item.species]: { n: Math.min(quote.steps.get(item.species), 14), at: now } }
+      return next
+    }
+
+    function sellKind(state, key, now) {
+      return sellWhere(state, item => itemKey(item) === key, now)
+    }
+
+    /**
+     * Sell the blooms of one species (and variant), or the whole basket. With a
+     * clock, today's market favourite sells at the market bonus.
+     */
+    function sellBasket(state, speciesId, variant, now) {
+      return sellWhere(state, item => speciesId === undefined
+        || (item.species === speciesId && (variant === undefined || item.variant === variant)), now)
+    }
+
+    function basketValue(state, now) {
+      return quoteSale(state, state.basket, now).coins
     }
 
     function basketCount(state, speciesId) {
@@ -1012,7 +1966,12 @@ window.__ModuleLoader__.load({
 
     /** Blooms a bouquet may use: gold ones are kept for selling. */
     function basketPlainCount(state, speciesId) {
-      return state.basket.filter(item => item.species === speciesId && item.variant !== 'hidden').length
+      return state.basket.filter(item => item.species === speciesId && isPlainBloom(item)).length
+    }
+
+    /** Bouquets take ordinary blooms; spirits, curiosities and hybrids are for the counter and the show. */
+    function isPlainBloom(item) {
+      return item.variant !== 'hidden' && item.trait === undefined && item.tint === undefined
     }
 
     function nextRandom(seed) {
@@ -1091,7 +2050,7 @@ window.__ModuleLoader__.load({
       for (const item of order.items) {
         let remaining = item.count
         for (let cursor = basket.length - 1; cursor >= 0 && remaining > 0; cursor -= 1) {
-          if (basket[cursor].species !== item.species || basket[cursor].variant === 'hidden') continue
+          if (basket[cursor].species !== item.species || !isPlainBloom(basket[cursor])) continue
           basket.splice(cursor, 1)
           remaining -= 1
         }
@@ -1100,10 +2059,41 @@ window.__ModuleLoader__.load({
         ...state,
         coins: state.coins + order.coins,
         xp: state.xp + order.xp,
+        delivered: (state.delivered ?? 0) + 1,
         basket,
         orders: state.orders.filter(entry => entry.id !== orderId),
       }
       return fillOrders(next)
+    }
+
+    /** The counter an achievement watches. */
+    function achievementValue(state, metric) {
+      const grown = speciesId => ['base', 'alt', 'hidden'].some(variant => (state.seen[`${speciesId}:${variant}`] ?? 0) > 0)
+      switch (metric) {
+        case 'harvested': return state.harvested
+        case 'delivered': return state.delivered ?? 0
+        case 'pollinated': return state.pollinated ?? 0
+        case 'visitorKinds': return Object.keys(state.visitors ?? {}).length
+        case 'spiritKinds': return SPECIES.filter(species => (state.seen[`${species.id}:hidden`] ?? 0) > 0).length
+        case 'meadowKinds': return SCENES[0].species.filter(grown).length
+        case 'grounds': return SCENES.filter(scene => (state.scenes[scene.id]?.unlocked ?? 0) > 0).length
+        case 'hybridKinds': return Object.keys(state.hybrids ?? {}).length
+        case 'traitKinds': return new Set(Object.keys(state.exotics ?? {}).map(key => key.split(':')[1])).size
+        case 'ribbonsEarned': return state.ribbonsEarned ?? 0
+        case 'entries': return CODEX_ENTRIES.filter(entry => (state.seen[`${entry.species}:${entry.variant}`] ?? 0) > 0).length
+        default: return 0
+      }
+    }
+
+    function achievementReady(state, entry) {
+      return state.claimed?.[entry.id] !== true && achievementValue(state, entry.metric) >= entry.target
+    }
+
+    /** Collect the coins of a finished achievement, once. */
+    function claimAchievement(state, achievementId) {
+      const entry = ACHIEVEMENT_BY_ID.get(achievementId)
+      if (entry === undefined || !achievementReady(state, entry)) return null
+      return { ...state, coins: state.coins + entry.coins, claimed: { ...state.claimed, [entry.id]: true } }
     }
 
     /** Buy one shop good: consumables stack in the bag, the basket upgrade levels up. */
@@ -1135,6 +2125,122 @@ window.__ModuleLoader__.load({
       }
     }
 
+    /** Dig one compost into a plot, planted or not. */
+    function compostAt(state, sceneId, index) {
+      const slot = state.scenes[sceneId]
+      if (slot === undefined || index < 0 || index >= slot.unlocked) return null
+      if ((state.bag.compost ?? 0) <= 0 || soilOf(slot, index) >= 99.5) return null
+      return {
+        ...state,
+        bag: { ...state.bag, compost: state.bag.compost - 1 },
+        scenes: { ...state.scenes, [sceneId]: { ...slot, ...withSoil(slot, index, soilOf(slot, index) + COMPOST_GAIN) } },
+      }
+    }
+
+    /** What the next level of a facility costs: coins grow geometrically, ribbons by one a level. */
+    function facilityCost(id, level) {
+      const entry = FACILITY_BY_ID.get(id)
+      if (entry === undefined || level >= FACILITY_MAX) return null
+      return { coins: Math.round((entry.base * Math.pow(FACILITY_GROWTH, level)) / 10) * 10, ribbons: level }
+    }
+
+    function upgradeFacility(state, id) {
+      const level = facilityLevel(state, id)
+      const cost = facilityCost(id, level)
+      if (cost === null || state.coins < cost.coins || (state.ribbons ?? 0) < cost.ribbons) return null
+      return {
+        ...state,
+        coins: state.coins - cost.coins,
+        ribbons: (state.ribbons ?? 0) - cost.ribbons,
+        facilities: { ...state.facilities, [id]: level + 1 },
+      }
+    }
+
+    /** True for reds, pinks, oranges and yellows; whites, blues and purples are cool. */
+    function isWarm(color) {
+      const value = parseInt(color.slice(1), 16)
+      const r = (value >> 16) & 255
+      const g = (value >> 8) & 255
+      const b = value & 255
+      const max = Math.max(r, g, b)
+      const min = Math.min(r, g, b)
+      if (max - min < 26) return false
+      const hue = max === r ? ((g - b) / (max - min) + 6) % 6 : max === g ? (b - r) / (max - min) + 2 : (r - g) / (max - min) + 4
+      return hue < 1.2 || hue > 5.4
+    }
+
+    /** The show running at `now`: a season, a theme, and a closing time. */
+    function showAt(state, now) {
+      const id = Math.floor(now / SHOW_MS)
+      const season = SEASONS[((id % 4) + 4) % 4]
+      const sceneId = SEASON_SCENE[season]
+      let theme = SHOW_THEMES[Math.floor(hashUnit(id, 5, 11) * SHOW_THEMES.length)]
+      // A ground the player has not opened cannot be the theme.
+      if (theme === 'ground' && (state.scenes[sceneId]?.unlocked ?? 0) <= 0) theme = hashUnit(id, 6, 11) < 0.5 ? 'warm' : 'cool'
+      return { id, season, theme, sceneId, endsAt: (id + 1) * SHOW_MS }
+    }
+
+    /** This show's entry sheet; a sheet from an earlier show is void. */
+    function showEntry(state, now) {
+      const id = Math.floor(now / SHOW_MS)
+      return state.show !== null && state.show !== undefined && state.show.id === id
+        ? state.show
+        : { id, points: 0, entered: 0, kinds: [] }
+    }
+
+    function showAccepts(show, item) {
+      const rare = item.variant === 'hidden' || item.trait !== undefined || item.tint !== undefined
+      if (show.theme === 'rare') return rare
+      if (item.variant === 'hidden') return true
+      if (show.theme === 'ground') return SCENE_ID_OF.get(item.species) === show.sceneId
+      const species = SPECIES_BY_ID.get(item.species)
+      const warm = isWarm(paletteOf(species, item.variant, item.tint).petal)
+      return show.theme === 'warm' ? warm : !warm
+    }
+
+    /** Judges reward rarity and variety: a species new to this show scores two more. */
+    function showPoints(item, entry) {
+      return 1
+        + (item.variant === 'alt' ? 1 : 0)
+        + (item.tint !== undefined ? 2 : 0)
+        + (item.trait !== undefined ? 3 : 0)
+        + (item.variant === 'hidden' ? 4 : 0)
+        + (entry.kinds.includes(item.species) ? 0 : 2)
+    }
+
+    /** Give one bloom of a basket group to the show. It earns points, never coins. */
+    function exhibit(state, key, now, individualIndex) {
+      const show = showAt(state, now)
+      const entry = showEntry(state, now)
+      if (entry.entered >= SHOW_SLOTS) return null
+      let at = -1
+      if (individualIndex !== undefined) {
+        if (!Number.isInteger(individualIndex) || !state.basket[individualIndex] || itemKey(state.basket[individualIndex]) !== key) return null
+        at = individualIndex
+      } else {
+        for (let index = state.basket.length - 1; index >= 0; index -= 1) {
+          if (itemKey(state.basket[index]) === key) { at = index; break }
+        }
+      }
+      if (at === -1 || !showAccepts(show, state.basket[at])) return null
+      const item = state.basket[at]
+      const points = entry.points + showPoints(item, entry)
+      const won = SHOW_TIERS.filter(tier => entry.points < tier.points && points >= tier.points)
+        .reduce((sum, tier) => sum + tier.ribbons, 0)
+      return {
+        ...state,
+        basket: state.basket.filter((_, index) => index !== at),
+        ribbons: (state.ribbons ?? 0) + won,
+        ribbonsEarned: (state.ribbonsEarned ?? 0) + won,
+        show: {
+          id: show.id,
+          points,
+          entered: entry.entered + 1,
+          kinds: entry.kinds.includes(item.species) ? entry.kinds : [...entry.kinds, item.species],
+        },
+      }
+    }
+
     /** Arm one charm for the next harvest. */
     function useCharm(state) {
       if ((state.bag.charm ?? 0) <= 0 || state.charm === true) return null
@@ -1152,7 +2258,7 @@ window.__ModuleLoader__.load({
       const growMs = growMsOf(species)
       if (plot.growthMs >= growMs) return null
       const plots = slot.plots.slice()
-      plots[index] = { ...plot, growthMs: Math.min(growMs, plot.growthMs + growMs * 0.25) }
+      plots[index] = { ...plot, growthMs: Math.min(growMs, plot.growthMs + growMs * 0.25), fed: (plot.fed ?? 0) + 1 }
       return {
         ...state,
         bag: { ...state.bag, fertilizer: state.bag.fertilizer - 1 },
@@ -1282,673 +2388,1590 @@ window.__ModuleLoader__.load({
     let boundT = key => key
 
     // ---------------------------------------------------------------------
-    // §5 Artwork. Every head follows the real flower; `leaf` picks the foliage.
+    // §5 Artwork. Every plant is modelled on the real one: its habit (clump,
+    //    twig, pad, rosette, floating leaf), its foliage and its flower, with
+    //    base-to-tip shading and veins on the petals. `PLANTS[species.head]`
+    //    draws the bud and bloom stages; the ground follows the species' scene.
     // ---------------------------------------------------------------------
     const SVG_PROPS = { viewBox: '0 0 100 100', 'aria-hidden': 'true', focusable: 'false' }
     const HEAD_X = 50
     const HEAD_Y = 36
-    const STEM_BASE = 88
+    const GROUND_Y = 87
+    const UP = { x1: '0.5', y1: '1', x2: '0.5', y2: '0' }
 
-    function soil() {
-      return h('g', { key: 'soil' },
-        h('ellipse', { cx: 50, cy: 89, rx: 21, ry: 5.5, fill: '#6f4a30' }),
-        h('ellipse', { cx: 50, cy: 87, rx: 21, ry: 5, fill: '#8a5e3d' }),
+    function n(value) {
+      return Math.round(value * 100) / 100
+    }
+
+    function mix(a, b, t) {
+      const x = parseInt(a.slice(1), 16)
+      const y = parseInt(b.slice(1), 16)
+      let out = '#'
+      for (const shift of [16, 8, 0]) {
+        const from = (x >> shift) & 255
+        const to = (y >> shift) & 255
+        out += Math.round(from + (to - from) * t).toString(16).padStart(2, '0')
+      }
+      return out
+    }
+
+    function lighten(color, t) {
+      return mix(color, '#ffffff', t)
+    }
+
+    function darken(color, t) {
+      return mix(color, '#1d1620', t)
+    }
+
+    /** Deterministic jitter in [-0.5, 0.5): petals and leaves are never perfectly regular. */
+    let artSalt = 0
+    function jit(i, salt) {
+      const v = Math.sin(i * 12.9898 + (salt + artSalt) * 78.233) * 43758.5453
+      return v - Math.floor(v) - 0.5
+    }
+
+    /** Point at distance `r` from (x, y); 0° points up and angles run clockwise. */
+    function polar(x, y, r, deg) {
+      const a = (deg * Math.PI) / 180
+      return [n(x + r * Math.sin(a)), n(y - r * Math.cos(a))]
+    }
+
+    /**
+     * Paints for one drawing. Gradients are created on demand and collected in
+     * `defs`; ids are unique per species and variant, so identical copies on
+     * other cards are harmless.
+     */
+    /** No two plants share a shade: each individual's genes nudge its colours. */
+    function individualPal(pal, dna) {
+      const a = hashUnit(dna, 1, 9) - 0.5
+      const b = hashUnit(dna, 2, 9) - 0.5
+      const c = hashUnit(dna, 3, 9) - 0.5
+      const shade = color => mix(a >= 0 ? lighten(color, a * 0.34) : darken(color, -a * 0.24), b >= 0 ? '#ffc48a' : '#a9b8ff', Math.abs(b) * 0.18)
+      const green = color => (c >= 0 ? lighten(color, c * 0.22) : darken(color, -c * 0.22))
+      return { ...pal, petal: shade(pal.petal), petalDeep: shade(pal.petalDeep), leaf: green(pal.leaf), stem: green(pal.stem) }
+    }
+
+    function makeInk(species, variant, look) {
+      const hidden = variant === 'hidden'
+      const dna = look?.dna ?? 0
+      const trait = hidden ? undefined : TRAIT_BY_ID.get(look?.trait)
+      const repaint = trait !== undefined && trait.stops !== undefined
+      let pal = paletteOf(species, variant, look?.tint)
+      if (repaint) pal = { ...pal, ...trait.pal }
+      if (!hidden && dna !== 0) pal = individualPal(pal, dna)
+      const prefix = (hidden ? `fg-hid-${species.id}` : `fg-${species.id}-${variant}`)
+        + (look?.tint !== undefined ? `-x${look.tint}` : '')
+        + (trait !== undefined ? `-${trait.id}` : '')
+        + (dna !== 0 ? `-${dna.toString(36)}` : '')
+      const defs = []
+      const made = new Map()
+      const add = (tag, name, props, stops) => {
+        if (!made.has(name)) {
+          defs.push(h(tag, { key: name, id: `${prefix}-${name}`, ...props },
+            ...stops.map(([offset, color, alpha], index) => h('stop', {
+              key: index, offset: `${offset}%`, stopColor: color, stopOpacity: alpha,
+            }))))
+          made.set(name, `url(#${prefix}-${name})`)
+        }
+        return made.get(name)
+      }
+      const ink = {
+        pal, hidden, variant, defs,
+        lin: (name, stops, dir) => add('linearGradient', name, dir ?? UP, stops),
+        rad: (name, stops, props) => add('radialGradient', name, props ?? {}, stops),
+        /** A species-specific petal gradient; the spirit bloom keeps its pearl paint. */
+        tone: (name, stops) => (hidden || repaint ? ink.petal : ink.lin(name, stops)),
+        line: hidden ? '#d8c08e' : darken(pal.petalDeep, 0.2),
+        leafLine: darken(pal.leaf, 0.34),
+        rib: lighten(pal.leaf, 0.38),
+      }
+      const lazy = (name, build) => Object.defineProperty(ink, name, { get: build })
+      lazy('petal', () => ink.lin('petal', hidden
+        ? [[0, HIDDEN_GOLD.tip], [55, HIDDEN_PAL.petal], [100, HIDDEN_GOLD.light]]
+        : repaint
+          ? trait.stops
+          : [[0, pal.petalDeep], [52, pal.petal], [100, lighten(pal.petal, 0.3)]]))
+      lazy('back', () => ink.lin('back', hidden
+        ? [[0, '#e6c5e0'], [60, HIDDEN_PAL.petalDeep], [100, HIDDEN_PAL.petal]]
+        : [[0, darken(pal.petalDeep, 0.14)], [58, mix(pal.petal, pal.petalDeep, 0.6)], [100, pal.petal]]))
+      lazy('core', () => ink.rad('core',
+        [[0, lighten(pal.center, 0.4)], [55, pal.center], [100, pal.centerDeep]], { cx: '40%', cy: '34%', r: '72%' }))
+      // Variegated plants carry cream margins on every leaf.
+      const across = { x1: '0', y1: '0.5', x2: '1', y2: '0.5' }
+      const margin = (edge, heart) => [[0, edge], [20, edge], [34, heart], [66, heart], [80, edge], [100, edge]]
+      const striped = trait !== undefined && trait.id === 'variegated'
+      lazy('leaf', () => (striped
+        ? ink.lin('leaf', margin('#f6efc8', pal.leaf), across)
+        : ink.lin('leaf', [[0, darken(pal.leaf, 0.22)], [100, lighten(pal.leaf, 0.14)]])))
+      lazy('leafBack', () => (striped
+        ? ink.lin('leafBack', margin('#e6dcae', darken(pal.leaf, 0.16)), across)
+        : ink.lin('leafBack', [[0, darken(pal.leaf, 0.36)], [100, darken(pal.leaf, 0.08)]])))
+      return ink
+    }
+
+    /** Petal outline: base at the origin, tip straight up; `belly` is where it is widest. */
+    function petalD(len, w, tip, belly) {
+      const hw = w / 2
+      const L = -len
+      const B = -len * (belly ?? 0.58)
+      const m = B + (L - B) * 0.62
+      const rise = `M0,0C${n(-hw * 0.6)},${n(L * 0.06)} ${n(-hw)},${n(B * 0.5)} ${n(-hw)},${n(B)}`
+      const fall = `C${n(hw)},${n(B * 0.5)} ${n(hw * 0.6)},${n(L * 0.06)} 0,0Z`
+      if (tip === 'point') {
+        return `${rise}C${n(-hw)},${n(m)} ${n(-hw * 0.28)},${n(L * 0.94)} 0,${n(L)}`
+          + `C${n(hw * 0.28)},${n(L * 0.94)} ${n(hw)},${n(m)} ${n(hw)},${n(B)}${fall}`
+      }
+      if (tip === 'notch') {
+        return `${rise}C${n(-hw)},${n(m)} ${n(-hw * 0.8)},${n(L)} ${n(-hw * 0.36)},${n(L)}`
+          + `Q${n(-hw * 0.08)},${n(L)} 0,${n(L * 0.9)}Q${n(hw * 0.08)},${n(L)} ${n(hw * 0.36)},${n(L)}`
+          + `C${n(hw * 0.8)},${n(L)} ${n(hw)},${n(m)} ${n(hw)},${n(B)}${fall}`
+      }
+      return `${rise}C${n(-hw)},${n(m)} ${n(-hw * 0.62)},${n(L)} 0,${n(L)}`
+        + `C${n(hw * 0.62)},${n(L)} ${n(hw)},${n(m)} ${n(hw)},${n(B)}${fall}`
+    }
+
+    function place(o) {
+      return `translate(${n(o.x ?? HEAD_X)} ${n(o.y ?? HEAD_Y)}) rotate(${n(o.rot ?? 0)})`
+    }
+
+    /** One petal with an optional midrib and a soft sheen. */
+    function petal(key, o) {
+      const kids = [h('path', {
+        key: 'p', d: o.d ?? petalD(o.len, o.w, o.tip, o.belly),
+        fill: o.fill, stroke: o.stroke, strokeWidth: o.sw ?? 0.4, strokeLinejoin: 'round',
+      })]
+      if (o.vein !== undefined) {
+        kids.push(h('path', {
+          key: 'v', d: `M0,${n(-o.len * 0.14)}L0,${n(-o.len * 0.8)}`,
+          fill: 'none', stroke: o.vein, strokeWidth: 0.32, strokeLinecap: 'round', opacity: o.veinOpacity ?? 0.45,
+        }))
+      }
+      if (o.sheen === true) {
+        kids.push(h('path', {
+          key: 's', d: `M${n(-o.w * 0.2)},${n(-o.len * 0.3)}Q${n(-o.w * 0.3)},${n(-o.len * 0.6)} ${n(-o.w * 0.12)},${n(-o.len * 0.84)}`,
+          fill: 'none', stroke: '#ffffff', strokeWidth: n(o.w * 0.09), strokeLinecap: 'round', opacity: 0.32,
+        }))
+      }
+      return h('g', { key, opacity: o.opacity, transform: place(o) }, ...kids)
+    }
+
+    /** Many round dots as one path. */
+    function dots(key, points, r, color, opacity) {
+      return h('path', {
+        key, d: points.map(([x, y]) => `M${n(x)},${n(y)}h.01`).join(''),
+        fill: 'none', stroke: color, strokeWidth: n(r * 2), strokeLinecap: 'round', opacity,
+      })
+    }
+
+    /** Many straight hairs (stamens, veins, spines) as one path. */
+    function strokes(key, segments, w, color, opacity) {
+      return h('path', {
+        key, d: segments.map(([x1, y1, x2, y2]) => `M${n(x1)},${n(y1)}L${n(x2)},${n(y2)}`).join(''),
+        fill: 'none', stroke: color, strokeWidth: w, strokeLinecap: 'round', opacity,
+      })
+    }
+
+    const LEAF_SHAPES = {
+      serrate: (t, i) => (i % 2 === 0 ? 1 : 0.86),
+      runcinate: (t, i) => (i % 3 === 0 ? 0.3 : i % 3 === 1 ? 1 : 0.62),
+      pinnate: (t, i) => (i % 4 === 0 ? 0.26 : i % 4 === 2 ? 1 : 0.7),
+    }
+
+    /** Leaf outline from a half-width profile: one routine gives toothed and lobed blades. */
+    function profileD(len, w, steps, shape, pow) {
+      const left = []
+      const right = []
+      for (let i = 1; i < steps; i += 1) {
+        const t = i / steps
+        const half = (w / 2) * Math.sin(Math.PI * Math.pow(t, pow ?? 0.72)) * shape(t, i)
+        left.push(`${n(-half)},${n(-len * t)}`)
+        right.unshift(`${n(half)},${n(-len * t)}`)
+      }
+      return `M0,0L${left.join(' ')} 0,${n(-len)} ${right.join(' ')}Z`
+    }
+
+    /** A leaf growing from (x, y) toward `rot`, with a midrib and side veins. */
+    function leaf(ink, key, o) {
+      const { len, w } = o
+      const d = o.d ?? (o.shape !== undefined
+        ? profileD(len, w, o.steps ?? 16, LEAF_SHAPES[o.shape], o.pow)
+        : petalD(len, w, o.tip ?? 'point', o.belly ?? 0.42))
+      const rib = o.rib ?? ink.rib
+      const kids = [
+        h('path', { key: 'b', d, fill: o.fill ?? ink.leaf, stroke: o.stroke ?? ink.leafLine, strokeWidth: 0.38, strokeLinejoin: 'round' }),
+        h('path', { key: 'm', d: `M0,0L0,${n(-len * 0.9)}`, fill: 'none', stroke: rib, strokeWidth: 0.4, strokeLinecap: 'round', opacity: 0.8 }),
+      ]
+      const veins = o.veins ?? 3
+      if (veins > 0) {
+        let vd = ''
+        for (let k = 1; k <= veins; k += 1) {
+          const t = k / (veins + 1.3)
+          const reach = (w / 2) * 0.7 * Math.sin(Math.PI * Math.pow(Math.min(1, t + 0.12), 0.72))
+          vd += `M0,${n(-len * t)}L${n(-reach)},${n(-len * (t + 0.13))}M0,${n(-len * t)}L${n(reach)},${n(-len * (t + 0.13))}`
+        }
+        kids.push(h('path', { key: 'v', d: vd, fill: 'none', stroke: rib, strokeWidth: 0.25, opacity: 0.6 }))
+      }
+      if (o.sheen === true) {
+        kids.push(h('path', {
+          key: 's', d: `M${n(-w * 0.2)},${n(-len * 0.25)}Q${n(-w * 0.32)},${n(-len * 0.55)} ${n(-w * 0.1)},${n(-len * 0.8)}`,
+          fill: 'none', stroke: '#ffffff', strokeWidth: n(w * 0.1), strokeLinecap: 'round', opacity: 0.3,
+        }))
+      }
+      return h('g', { key, transform: place(o) }, ...kids)
+    }
+
+    /** A strap or sword leaf whose tip leans `curve` units sideways. */
+    function blade(ink, key, o) {
+      const { len, w } = o
+      const curve = o.curve ?? 0
+      const kids = [
+        h('path', {
+          key: 'b',
+          d: `M${n(-w * 0.3)},0C${n(-w / 2)},${n(-len * 0.35)} ${n(curve * 0.35 - w / 2)},${n(-len * 0.72)} ${n(curve)},${n(-len)}`
+            + `C${n(curve * 0.5 + w / 2)},${n(-len * 0.68)} ${n(w / 2)},${n(-len * 0.3)} ${n(w * 0.3)},0Z`,
+          fill: o.fill ?? ink.leaf, stroke: o.stroke ?? ink.leafLine, strokeWidth: o.sw ?? 0.38, strokeLinejoin: 'round',
+        }),
+      ]
+      if (o.plain !== true) {
+        kids.push(h('path', {
+          key: 'm', d: `M0,0Q${n(curve * 0.1)},${n(-len * 0.6)} ${n(curve * 0.9)},${n(-len * 0.93)}`,
+          fill: 'none', stroke: o.rib ?? ink.rib, strokeWidth: 0.35, strokeLinecap: 'round', opacity: 0.7,
+        }))
+      }
+      if (o.spine !== undefined) {
+        kids.push(h('path', {
+          key: 'sp', d: `M${n(curve)},${n(-len)}l${n(curve * 0.04)},-1.7`,
+          fill: 'none', stroke: o.spine, strokeWidth: 0.55, strokeLinecap: 'round',
+        }))
+      }
+      return h('g', { key, transform: place(o) }, ...kids)
+    }
+
+    /** A rounded stalk: dark body plus a lit edge. */
+    function stemPath(key, d, color, w) {
+      return h('g', { key },
+        h('path', { d, fill: 'none', stroke: darken(color, 0.2), strokeWidth: w, strokeLinecap: 'round' }),
+        h('path', {
+          d, fill: 'none', stroke: lighten(color, 0.16), strokeWidth: n(w * 0.42), strokeLinecap: 'round',
+          transform: `translate(${n(-w * 0.14)} 0)`,
+        }),
       )
     }
 
-    /** Asteraceae head: radiating ray florets around a disc of disc florets. */
-    function headDaisy(pal) {
-      const parts = []
-      const tips = []
-      for (let index = 0; index < 13; index += 1) {
-        const angle = (360 / 13) * index - 90
-        const rad = (angle * Math.PI) / 180
-        const x = HEAD_X + 10 * Math.cos(rad)
-        const y = HEAD_Y + 10 * Math.sin(rad)
-        parts.push(h('ellipse', {
-          key: `p${index}`, cx: x, cy: y, rx: 3.4, ry: 8.4,
-          fill: pal.petal, stroke: pal.petalDeep, strokeWidth: 0.8,
-          transform: `rotate(${angle + 90} ${x} ${y})`,
-        }))
-        tips.push(h('circle', {
-          key: `t${index}`,
-          cx: HEAD_X + 16.6 * Math.cos(rad),
-          cy: HEAD_Y + 16.6 * Math.sin(rad),
-          r: 1.5,
-          fill: '#f0aec0',
-          opacity: 0.5,
-        }))
-      }
-      return [...parts, ...tips,
-        h('circle', { key: 'disc', cx: HEAD_X, cy: HEAD_Y, r: 6.2, fill: pal.center, stroke: pal.centerDeep, strokeWidth: 1 }),
-        h('circle', { key: 'discIn', cx: HEAD_X, cy: HEAD_Y, r: 3.4, fill: pal.centerDeep, opacity: 0.35 }),
-      ]
+    function stem(ink, topY, o) {
+      const w = o?.w ?? 2.4
+      const bend = o?.bend ?? 2
+      const x = o?.x ?? HEAD_X
+      const bx = o?.bx ?? 50
+      const by = o?.by ?? GROUND_Y
+      const span = by - topY
+      return stemPath(o?.key ?? 'stem',
+        `M${bx},${by}C${n(bx + bend)},${n(by - span * 0.35)} ${n(x - bend)},${n(topY + span * 0.3)} ${x},${n(topY)}`,
+        o?.color ?? ink.pal.stem, w)
     }
 
-    function headDandelion(pal) {
-      const rays = []
-      for (let index = 0; index < 16; index += 1) {
-        const angle = (360 / 16) * index
-        const rad = (angle * Math.PI) / 180
-        const x = HEAD_X + 5.5 * Math.cos(rad)
-        const y = HEAD_Y + 5.5 * Math.sin(rad)
-        rays.push(h('ellipse', {
-          key: `r${index}`, cx: x, cy: y, rx: 1.5, ry: 7,
-          fill: pal.petal, stroke: pal.petalDeep, strokeWidth: 0.5,
-          transform: `rotate(${angle + 90} ${x} ${y})`,
-        }))
-      }
-      return [...rays,
-        h('circle', { key: 'core', cx: HEAD_X, cy: HEAD_Y, r: 4.6, fill: pal.center, stroke: pal.centerDeep, strokeWidth: 0.9 }),
-      ]
+    /** A closed bud held by two sepals, growing from (x, y). */
+    function bud(ink, key, x, y, o) {
+      const len = o?.len ?? 12
+      const w = o?.w ?? 7
+      const sepal = petalD(len * 0.64, w * 0.66, 'point', 0.4)
+      return h('g', { key, transform: place({ x, y, rot: o?.rot ?? 0 }) },
+        h('path', { d: petalD(len, w, 'point', 0.45), fill: o?.fill ?? ink.petal, stroke: ink.line, strokeWidth: 0.4 }),
+        h('path', { d: `M0,${n(-len * 0.3)}L0,${n(-len * 0.88)}`, fill: 'none', stroke: ink.line, strokeWidth: 0.3, opacity: 0.5 }),
+        h('path', { d: sepal, fill: ink.leaf, stroke: ink.leafLine, strokeWidth: 0.33, transform: `translate(${n(-w * 0.16)} 0) rotate(-20)` }),
+        h('path', { d: sepal, fill: ink.leaf, stroke: ink.leafLine, strokeWidth: 0.33, transform: `translate(${n(w * 0.16)} 0) rotate(20)` }),
+      )
     }
 
-    function headSunflower(pal) {
-      const rays = []
-      for (let index = 0; index < 18; index += 1) {
-        const angle = (360 / 18) * index
-        const rad = (angle * Math.PI) / 180
-        const x = HEAD_X + 12 * Math.cos(rad)
-        const y = HEAD_Y + 12 * Math.sin(rad)
-        rays.push(h('ellipse', {
-          key: `ray${index}`, cx: x, cy: y, rx: 3, ry: 8.2,
-          fill: pal.petal, stroke: pal.petalDeep, strokeWidth: 0.7,
-          transform: `rotate(${angle + 90} ${x} ${y})`,
-        }))
+    const LAKE = '#9ccfd2'
+
+    /** What the plant stands in: meadow soil, a snow drift, cooled lava, or lake water. */
+    function ground(sceneId) {
+      if (sceneId === 'snow') {
+        return h('g', { key: 'ground' },
+          h('ellipse', { cx: 50, cy: 90.2, rx: 23, ry: 4.6, fill: '#6f5a4b' }),
+          h('path', { d: 'M26,89.5C28,83.6 40,81.6 50,82C60,81.6 72,83.6 74,89.5C66,93 34,93 26,89.5Z', fill: '#f6f9fd', stroke: '#c3d1e2', strokeWidth: 0.5 }),
+          h('path', { d: 'M32,89.4C40,91.6 60,91.6 68,89.2', fill: 'none', stroke: '#cbd9ea', strokeWidth: 1.3, strokeLinecap: 'round', opacity: 0.85 }),
+          h('path', { d: 'M35,85.6h.01M62,85h.01M44,84h.01M56,86.4h.01', fill: 'none', stroke: '#ffffff', strokeWidth: 1.1, strokeLinecap: 'round' }),
+        )
       }
-      const seeds = []
-      for (let ring = 0; ring < 3; ring += 1) {
-        const radius = 2.4 + ring * 2.6
-        const count = 5 + ring * 3
-        for (let index = 0; index < count; index += 1) {
-          const angle = (360 / count) * index + ring * 14
-          seeds.push(h('circle', {
-            key: `s${ring}-${index}`,
-            cx: HEAD_X + radius * Math.cos((angle * Math.PI) / 180),
-            cy: HEAD_Y + radius * Math.sin((angle * Math.PI) / 180),
-            r: 0.95,
-            fill: '#a9743f',
-            opacity: 0.85,
-          }))
-        }
+      if (sceneId === 'volcano') {
+        return h('g', { key: 'ground' },
+          h('ellipse', { cx: 50, cy: 90, rx: 23, ry: 5, fill: '#2b2523' }),
+          h('path', { d: 'M27,89C29,84 38,82.4 50,82.6C62,82.4 71,84 73,89C66,92.4 34,92.4 27,89Z', fill: '#473d3a' }),
+          h('path', { d: 'M31,87.6l5,-3 6,1.4 -3,3.4ZM58,84.4l7,.4 3,3.2 -6,.8Z', fill: '#5d524e' }),
+          h('path', { d: 'M40,90.2l4,-2.2 5,1M55,90.6l5,-1.6 4,.4', fill: 'none', stroke: '#f08a3c', strokeWidth: 0.6, strokeLinecap: 'round', opacity: 0.9 }),
+          h('path', { d: 'M46,85h.01M69,88.6h.01', fill: 'none', stroke: '#f6b45a', strokeWidth: 0.9, strokeLinecap: 'round' }),
+        )
       }
-      return [...rays,
-        h('circle', { key: 'disc', cx: HEAD_X, cy: HEAD_Y, r: 8.6, fill: pal.center, stroke: pal.centerDeep, strokeWidth: 1.2 }),
-        ...seeds,
-      ]
+      if (sceneId === 'lake') {
+        return h('g', { key: 'ground' },
+          h('ellipse', { cx: 50, cy: 88.6, rx: 26, ry: 5.8, fill: '#7fb9c2' }),
+          h('ellipse', { cx: 50, cy: 88, rx: 26, ry: 5.4, fill: LAKE }),
+          h('path', { d: 'M30,88.4c5,-1.6 11,-1.6 15,0M56,90.4c4,-1.2 9,-1.2 13,0M40,91.6c3,-.8 7,-.8 10,0', fill: 'none', stroke: '#e9f7f7', strokeWidth: 0.55, strokeLinecap: 'round', opacity: 0.9 }),
+        )
+      }
+      return h('g', { key: 'ground' },
+        h('ellipse', { cx: 50, cy: 90, rx: 22, ry: 5, fill: '#5f402a' }),
+        h('path', { d: 'M28,89C30,84.4 40,82.8 50,83C60,82.8 70,84.4 72,89C65,92.2 35,92.2 28,89Z', fill: '#8b5f3c' }),
+        h('path', { d: 'M33,87.4c6,-2.6 14,-3 20,-2.6', fill: 'none', stroke: '#a67a52', strokeWidth: 1, strokeLinecap: 'round', opacity: 0.8 }),
+        h('path', { d: 'M38,89.6h.01M60,88h.01M52,90.4h.01M66,89.4h.01', fill: 'none', stroke: '#5f402a', strokeWidth: 1, strokeLinecap: 'round' }),
+        h('path', { d: 'M31,88.6q-.6,-3.4 -2.4,-5M32.4,88.4q.6,-2.6 2,-3.8M68,88.6q.4,-3.2 2.2,-4.6M66.6,88.4q-.4,-2.4 -1.6,-3.4', fill: 'none', stroke: '#7fae5c', strokeWidth: 0.8, strokeLinecap: 'round' }),
+      )
     }
 
-    /** Tulip: a cup of three visible tepals with the darker basal blotch. */
-    function headTulip(pal) {
+    function seedArt(ink, sceneId) {
       return [
-        h('path', {
-          key: 'cup',
-          d: `M${HEAD_X - 9},${HEAD_Y + 8} C${HEAD_X - 10.5},${HEAD_Y - 4} ${HEAD_X - 7},${HEAD_Y - 13} ${HEAD_X - 4},${HEAD_Y - 16}`
-            + ` C${HEAD_X - 2},${HEAD_Y - 10} ${HEAD_X - 1},${HEAD_Y - 4} ${HEAD_X},${HEAD_Y - 2}`
-            + ` C${HEAD_X + 1},${HEAD_Y - 4} ${HEAD_X + 2},${HEAD_Y - 10} ${HEAD_X + 4},${HEAD_Y - 16}`
-            + ` C${HEAD_X + 7},${HEAD_Y - 13} ${HEAD_X + 10.5},${HEAD_Y - 4} ${HEAD_X + 9},${HEAD_Y + 8}`
-            + ` C${HEAD_X + 6},${HEAD_Y + 11} ${HEAD_X - 6},${HEAD_Y + 11} ${HEAD_X - 9},${HEAD_Y + 8} Z`,
-          fill: pal.petal, stroke: pal.petalDeep, strokeWidth: 1.1,
-        }),
-        h('path', {
-          key: 'blotch',
-          d: `M${HEAD_X - 5},${HEAD_Y + 8} C${HEAD_X - 3},${HEAD_Y + 3} ${HEAD_X + 3},${HEAD_Y + 3} ${HEAD_X + 5},${HEAD_Y + 8}`
-            + ` C${HEAD_X + 3},${HEAD_Y + 10} ${HEAD_X - 3},${HEAD_Y + 10} ${HEAD_X - 5},${HEAD_Y + 8} Z`,
-          fill: pal.petalDeep, opacity: 0.55,
-        }),
+        h('ellipse', { key: 'seed', cx: 50, cy: 85, rx: 3.8, ry: 2.8, fill: '#4a3423', stroke: '#2f2016', strokeWidth: 0.4, transform: 'rotate(-14 50 85)' }),
+        h('path', { key: 'shine', d: 'M48,84.2q1.4,-1.2 3,-.8', fill: 'none', stroke: '#8a6a4c', strokeWidth: 0.5, strokeLinecap: 'round' }),
+        h('path', { key: 'crack', d: 'M51,83.2c.4,-2.4 2.2,-3.8 4.2,-3.6', fill: 'none', stroke: ink.pal.leaf, strokeWidth: 1.3, strokeLinecap: 'round' }),
+        h('path', { key: 'tip', d: petalD(3.4, 2.2, 'point', 0.5), fill: lighten(ink.pal.leaf, 0.15), transform: 'translate(55.2 79.6) rotate(58)' }),
+        sceneId === 'lake' ? h('path', { key: 'ring', d: 'M44,87.4c3,1.4 9,1.4 12,0', fill: 'none', stroke: '#e9f7f7', strokeWidth: 0.5 }) : null,
       ]
     }
 
-    /** Cherry blossom: five notched petals and a fan of stamens. */
-    function headCherry(pal) {
-      const parts = []
-      const petal = 'M0,3 C-4,1 -8,-5 -8,-9.5 C-8,-12 -6,-13.5 -4,-13 L0,-10.5 L4,-13 C6,-13.5 8,-12 8,-9.5 C8,-5 4,1 0,3 Z'
-      for (let index = 0; index < 5; index += 1) {
-        parts.push(h('path', {
-          key: `p${index}`, d: petal, fill: pal.petal, stroke: pal.petalDeep, strokeWidth: 0.7,
-          transform: `translate(${HEAD_X} ${HEAD_Y}) rotate(${index * 72})`,
+    /** The young plant: each habit starts differently. */
+    function sproutArt(ink, species) {
+      const { pal } = ink
+      const kind = species.leaf
+      if (kind === 'pad') {
+        return [
+          h('path', { key: 'pad', d: padD(6.5, 8), fill: ink.leaf, stroke: ink.leafLine, strokeWidth: 0.45, transform: 'translate(50 88) rotate(3)' }),
+          dots('areole', [[48, 80], [52.4, 78], [49.6, 74.6], [52, 83]], 0.5, '#efe6c0'),
+        ]
+      }
+      if (kind === 'rosette' || kind === 'silver') {
+        return [-58, 54, -30, 28, 0].map((rot, i) => blade(ink, `b${i}`, {
+          x: 50, y: GROUND_Y, rot, len: 11 + (i % 2) * 2, w: kind === 'silver' ? 2 : 3.6, curve: rot * 0.03,
+          fill: kind === 'silver' ? lighten(pal.leaf, 0.25) : ink.leaf,
         }))
       }
-      for (let index = 0; index < 9; index += 1) {
-        const rad = (((360 / 9) * index + 12) * Math.PI) / 180
-        parts.push(h('line', {
-          key: `st${index}`, x1: HEAD_X, y1: HEAD_Y,
-          x2: HEAD_X + 6.5 * Math.cos(rad), y2: HEAD_Y + 6.5 * Math.sin(rad),
-          stroke: pal.centerDeep, strokeWidth: 0.6,
-        }))
-        parts.push(h('circle', {
-          key: `an${index}`, cx: HEAD_X + 7.4 * Math.cos(rad), cy: HEAD_Y + 7.4 * Math.sin(rad),
-          r: 0.9, fill: pal.centerDeep,
+      if (kind === 'float') {
+        return [
+          h('ellipse', { key: 'pad', cx: 50, cy: 84, rx: 11, ry: 3.6, fill: ink.leaf, stroke: ink.leafLine, strokeWidth: 0.4 }),
+          h('path', { key: 'cut', d: 'M50,84L57,87.6 60,86.2Z', fill: LAKE }),
+          blade(ink, 'roll', { x: 44, y: 85, rot: -8, len: 9, w: 2.4, curve: 1 }),
+        ]
+      }
+      if (kind === 'peltate') {
+        return [
+          stem(ink, 70, { w: 1.5, bend: 1 }),
+          h('path', { key: 'roll', d: petalD(11, 4.4, 'point', 0.5), fill: ink.leaf, stroke: ink.leafLine, strokeWidth: 0.4, transform: 'translate(50 73) rotate(-12)' }),
+          h('ellipse', { key: 'pad', cx: 61, cy: 85.4, rx: 7, ry: 2.2, fill: ink.leafBack }),
+        ]
+      }
+      if (kind === 'strap' || kind === 'sword' || kind === 'needle') {
+        const thin = kind === 'needle'
+        return [-16, 13, -2].map((rot, i) => blade(ink, `b${i}`, {
+          x: 50 + rot * 0.08, y: GROUND_Y, rot, len: 15 + i * 3.5, w: thin ? 1.6 : 4, curve: rot * 0.2,
+          fill: i === 2 ? ink.leaf : ink.leafBack,
         }))
       }
-      parts.push(h('circle', { key: 'core', cx: HEAD_X, cy: HEAD_Y, r: 2.2, fill: pal.center }))
+      const woody = kind === 'twig' || kind === 'glossy' || kind === 'leathery' || kind === 'paddle'
+      const parts = [stem(ink, 71, { w: woody ? 2 : 1.6, bend: 1.2 })]
+      parts.push(leaf(ink, 'c1', { x: 50, y: 79, rot: -66, len: 8, w: 5.4, tip: 'round', belly: 0.6, veins: 0, fill: ink.leafBack }))
+      parts.push(leaf(ink, 'c2', { x: 50, y: 79, rot: 62, len: 8, w: 5.4, tip: 'round', belly: 0.6, veins: 0 }))
+      parts.push(leaf(ink, 't1', { x: 50, y: 71.4, rot: -34, len: 7.5, w: 3.8, veins: 2 }))
+      parts.push(leaf(ink, 't2', { x: 50, y: 71.4, rot: 30, len: 8.5, w: 4, veins: 2 }))
       return parts
     }
 
-    /** Lavender-type spike: whorls of small florets packed along the stem top. */
-    function headSpike(pal, opts) {
-      const rows = opts?.rows ?? 6
-      const wide = opts?.wide === true ? 1.5 : 1
-      const parts = []
-      for (let row = 0; row < rows; row += 1) {
-        const y = HEAD_Y + 10 - row * 3.8
-        const scale = 1 - row * 0.07
-        const offset = (row % 2 === 0 ? 3.1 : -3.1) * wide
-        parts.push(h('ellipse', {
-          key: `l${row}`, cx: HEAD_X + offset, cy: y,
-          rx: 2.7 * scale * wide, ry: 3.2 * scale,
-          fill: row % 2 === 0 ? pal.petal : pal.petalDeep,
-          stroke: pal.centerDeep, strokeWidth: 0.4,
-        }))
-        parts.push(h('ellipse', {
-          key: `r${row}`, cx: HEAD_X - offset * 0.72, cy: y - 1.4,
-          rx: 2.3 * scale * wide, ry: 2.9 * scale,
-          fill: pal.center, stroke: pal.centerDeep, strokeWidth: 0.4,
-        }))
-      }
-      parts.push(h('ellipse', {
-        key: 'tip', cx: HEAD_X, cy: HEAD_Y + 11.6, rx: 2.1 * wide, ry: 2.6,
-        fill: pal.petal, stroke: pal.centerDeep, strokeWidth: 0.4,
-      }))
-      return parts
-    }
+    // ── meadow ────────────────────────────────────────────────────────────
 
-    /** Corn poppy: four broad, slightly translucent petals over a dark centre. */
-    function headPoppy(pal) {
+    /** Dandelion: a dense head of strap florets on a hollow scape, over a toothed rosette. */
+    function plantDandelion(ink, st) {
+      const { pal } = ink
       const parts = []
-      for (let index = 0; index < 4; index += 1) {
-        const angle = index * 90 + 45
-        parts.push(h('ellipse', {
-          key: `p${index}`, cx: HEAD_X, cy: HEAD_Y, rx: 9.4, ry: 8.4,
-          fill: pal.petal, opacity: 0.93, stroke: pal.petalDeep, strokeWidth: 0.6,
-          transform: `rotate(${angle} ${HEAD_X} ${HEAD_Y}) translate(0 -4.2)`,
+      ;[-76, 74, -50, 48, -24, 22].forEach((rot, i) => {
+        parts.push(leaf(ink, `l${i}`, {
+          x: 50 + rot * 0.025, y: GROUND_Y, rot, len: (16 + (i % 3) * 3) * st.k + 4, w: 7, shape: 'runcinate', steps: 19, pow: 1.3,
+          veins: 0, fill: i < 2 ? ink.leafBack : ink.leaf,
         }))
-        parts.push(h('circle', {
-          key: `b${index}`, cx: HEAD_X, cy: HEAD_Y - 2.6, r: 2.2,
-          fill: pal.centerDeep, opacity: 0.35,
-          transform: `rotate(${angle} ${HEAD_X} ${HEAD_Y})`,
-        }))
+      })
+      parts.push(stem(ink, st.top + 1, { w: 1.8, bend: 1.6, color: mix(pal.stem, '#dcc7b4', 0.35) }))
+      if (!st.bloom) {
+        parts.push(h('path', { key: 'tuft', d: petalD(9, 4.6, 'round', 0.7), fill: ink.petal, stroke: ink.line, strokeWidth: 0.4, transform: `translate(50 ${st.top + 1})` }))
+        parts.push(h('path', { key: 'cup', d: petalD(8, 6.6, 'point', 0.36), fill: ink.leaf, stroke: ink.leafLine, strokeWidth: 0.4, transform: `translate(50 ${st.top + 3.4})` }))
+        return parts
       }
-      parts.push(h('circle', { key: 'core', cx: HEAD_X, cy: HEAD_Y, r: 2.9, fill: pal.center }))
-      for (let index = 0; index < 10; index += 1) {
-        const rad = (((360 / 10) * index) * Math.PI) / 180
-        parts.push(h('circle', {
-          key: `d${index}`, cx: HEAD_X + 4.1 * Math.cos(rad), cy: HEAD_Y + 4.1 * Math.sin(rad),
-          r: 0.8, fill: pal.center, opacity: 0.9,
-        }))
-      }
-      return parts
-    }
-
-    /** Lily: six pointed tepals in a star, with the long stamens showing. */
-    function headLily(pal) {
-      const parts = []
-      const shape = 'M0,-14 C3.4,-9 4.8,-3 0,3.2 C-4.8,-3 -3.4,-9 0,-14 Z'
-      for (let index = 0; index < 3; index += 1) {
-        parts.push(h('path', {
-          key: `outer${index}`, d: shape, fill: pal.petal, stroke: pal.petalDeep, strokeWidth: 0.7, opacity: 0.85,
-          transform: `translate(${HEAD_X} ${HEAD_Y}) rotate(${index * 120 + 60}) scale(1.06)`,
-        }))
-      }
-      for (let index = 0; index < 3; index += 1) {
-        parts.push(h('path', {
-          key: `inner${index}`, d: shape, fill: pal.petal, stroke: pal.petalDeep, strokeWidth: 0.7,
-          transform: `translate(${HEAD_X} ${HEAD_Y}) rotate(${index * 120})`,
-        }))
-      }
-      for (let index = 0; index < 6; index += 1) {
-        const rad = (((360 / 6) * index) * Math.PI) / 180
-        parts.push(h('line', {
-          key: `st${index}`,
-          x1: HEAD_X + 1.2 * Math.cos(rad), y1: HEAD_Y + 1.2 * Math.sin(rad),
-          x2: HEAD_X + 6.4 * Math.cos(rad), y2: HEAD_Y + 6.4 * Math.sin(rad),
-          stroke: pal.center, strokeWidth: 0.8,
-        }))
-        parts.push(h('ellipse', {
-          key: `an${index}`, cx: HEAD_X + 6.9 * Math.cos(rad), cy: HEAD_Y + 6.9 * Math.sin(rad),
-          rx: 1.1, ry: 0.7, fill: pal.centerDeep,
-        }))
-      }
-      parts.push(h('circle', { key: 'core', cx: HEAD_X, cy: HEAD_Y, r: 1.3, fill: pal.center }))
-      return parts
-    }
-
-    /** Rose: overlapping petals in shrinking rings around a rolled centre. */
-    function headRose(pal) {
-      const parts = []
-      const rings = [
-        { count: 6, ring: 7.2, rx: 7.4, ry: 9, fill: pal.petal, stroke: pal.petalDeep },
-        { count: 5, ring: 4.6, rx: 5.8, ry: 7, fill: pal.petal, stroke: pal.petalDeep },
-        { count: 4, ring: 2.4, rx: 4.2, ry: 5, fill: pal.petalDeep, stroke: pal.center },
-      ]
-      for (let layer = 0; layer < rings.length; layer += 1) {
-        const spec = rings[layer]
-        for (let index = 0; index < spec.count; index += 1) {
-          const angle = (360 / spec.count) * index + layer * 26
-          const rad = (angle * Math.PI) / 180
-          const x = HEAD_X + spec.ring * Math.cos(rad)
-          const y = HEAD_Y + spec.ring * Math.sin(rad)
-          parts.push(h('ellipse', {
-            key: `p${layer}-${index}`, cx: x, cy: y, rx: spec.rx, ry: spec.ry,
-            fill: spec.fill, stroke: spec.stroke, strokeWidth: 0.7,
-            transform: `rotate(${angle + 90} ${x} ${y})`,
+      const rings = [[24, 15.5, 2.7, ink.back, 0], [19, 12, 2.6, ink.petal, 6], [14, 8.6, 2.4, ink.petal, 14], [9, 5.4, 2.1, ink.petal, 3]]
+      rings.forEach(([count, len, w, fill, off], r) => {
+        for (let i = 0; i < count; i += 1) {
+          parts.push(petal(`r${r}-${i}`, {
+            y: st.top, rot: (360 / count) * i + off + jit(i, r) * 5, len: len + jit(i, r + 9) * 1.4, w,
+            tip: 'round', belly: 0.8, fill, stroke: ink.line, sw: 0.28,
           }))
         }
+      })
+      parts.push(h('circle', { key: 'eye', cx: 50, cy: st.top, r: 2.3, fill: ink.core }))
+      return parts
+    }
+
+    /** Daisy: white rays flushed pink at the tip around a domed yellow disc. */
+    function plantDaisy(ink, st) {
+      const { pal } = ink
+      const parts = []
+      ;[-78, 76, -50, 46, -20, 18].forEach((rot, i) => {
+        parts.push(leaf(ink, `l${i}`, {
+          x: 50 + rot * 0.02, y: GROUND_Y, rot, len: 12 + (i % 2) * 2.5, w: 6.4, tip: 'round', belly: 0.68, veins: 2,
+          fill: i < 2 ? ink.leafBack : ink.leaf,
+        }))
+      })
+      parts.push(stem(ink, st.top + 1, { w: 1.6, bend: 2.2 }))
+      if (!st.bloom) {
+        parts.push(bud(ink, 'bud', 50, st.top + 3, { len: 9, w: 6.5 }))
+        return parts
       }
+      const ray = ink.tone('ray', [[0, pal.petalDeep], [40, pal.petal], [82, pal.petal], [100, mix(pal.petal, '#ee9db6', 0.42)]])
+      for (let i = 0; i < 17; i += 1) {
+        parts.push(petal(`b${i}`, { y: st.top, rot: (360 / 17) * i + 10.6, len: 16 + jit(i, 1) * 1.2, w: 4, tip: 'round', belly: 0.66, fill: ink.back, stroke: ink.line, sw: 0.3 }))
+      }
+      for (let i = 0; i < 17; i += 1) {
+        parts.push(petal(`f${i}`, { y: st.top, rot: (360 / 17) * i + jit(i, 2) * 4, len: 15 + jit(i, 3) * 1.2, w: 3.8, tip: 'round', belly: 0.66, fill: ray, stroke: ink.line, sw: 0.3, vein: ink.line, veinOpacity: 0.3 }))
+      }
+      parts.push(h('circle', { key: 'disc', cx: 50, cy: st.top, r: 5.7, fill: ink.core, stroke: pal.centerDeep, strokeWidth: 0.5 }))
+      const florets = []
+      for (let i = 0; i < 34; i += 1) florets.push(polar(50, st.top, 5 * Math.sqrt((i + 0.5) / 34), i * 137.5))
+      parts.push(dots('florets', florets, 0.36, darken(pal.centerDeep, 0.1), 0.55))
+      parts.push(h('ellipse', { key: 'shine', cx: 48.2, cy: st.top - 2, rx: 2, ry: 1.2, fill: '#ffffff', opacity: 0.35 }))
+      return parts
+    }
+
+    /** One five-petalled Prunus blossom with its fan of stamens. */
+    function blossom(ink, key, x, y, r, o) {
+      const { pal } = ink
+      const fill = ink.tone('blossom', [[0, o.flush], [34, pal.petal], [100, lighten(pal.petal, 0.4)]])
+      const parts = []
+      for (let i = 0; i < 5; i += 1) {
+        parts.push(petal(`p${i}`, { x, y, rot: i * 72 + o.spin, len: r, w: r * o.wide, tip: o.tip, belly: 0.64, fill, stroke: ink.line, sw: 0.32 }))
+      }
+      const hairs = []
+      const anthers = []
+      for (let i = 0; i < o.stamens; i += 1) {
+        const angle = (360 / o.stamens) * i + jit(i, 5) * 16
+        const reach = r * o.reach * (0.82 + jit(i, 6) * 0.4)
+        const [tx, ty] = polar(x, y, reach, angle)
+        hairs.push([x, y, tx, ty])
+        anthers.push([tx, ty])
+      }
+      parts.push(strokes('hair', hairs, 0.28, o.filament))
+      parts.push(dots('anther', anthers, r * 0.055 + 0.2, '#e9b23a'))
+      parts.push(h('circle', { key: 'eye', cx: x, cy: y, r: r * 0.09 + 0.3, fill: '#a9bd62' }))
+      return h('g', { key }, ...parts)
+    }
+
+    function roundBud(ink, key, x, y, r, calyx) {
+      return h('g', { key },
+        h('circle', { cx: x, cy: y, r, fill: ink.petal, stroke: ink.line, strokeWidth: 0.35 }),
+        h('path', { d: `M${n(x - r)},${n(y + r * 0.1)}A${r},${r} 0 0 0 ${n(x + r)},${n(y + r * 0.1)}Q${n(x)},${n(y - r * 0.5)} ${n(x - r)},${n(y + r * 0.1)}Z`, fill: calyx }),
+      )
+    }
+
+    /** Cherry and plum flower on bare wood, so the plant is a twig with spurs. */
+    function plantTwig(ink, st, o) {
+      const { pal } = ink
+      const top = st.top
+      const bark = pal.stem
+      const parts = [
+        stemPath('trunk', `M50,${GROUND_Y}C51.5,77 46.5,69 49,${n(top + 24)}C50.5,${n(top + 16)} 51,${n(top + 10)} 50,${n(top + 4)}`, bark, 2.8),
+        stemPath('spurL', `M48.8,${n(top + 27)}C45,${n(top + 23)} 40,${n(top + 21)} 36.6,${n(top + 16.6)}`, bark, 1.5),
+        stemPath('spurR', `M50.2,${n(top + 19)}C54,${n(top + 17)} 59,${n(top + 15)} 63,${n(top + 10)}`, bark, 1.4),
+        strokes('lenticel', [[49.4, 80, 50.8, 80], [48.6, 72, 49.8, 71.6], [49.6, top + 30, 50.8, top + 30]], 0.4, lighten(bark, 0.35), 0.8),
+      ]
+      const calyx = mix(pal.centerDeep, bark, 0.45)
+      if (o.leaves) {
+        parts.push(leaf(ink, 'lf1', { x: 49, y: top + 34, rot: -62, len: 9, w: 4.4, shape: 'serrate', veins: 2 }))
+        parts.push(leaf(ink, 'lf2', { x: 50.4, y: top + 28, rot: 58, len: 8, w: 4, shape: 'serrate', veins: 2, fill: ink.leafBack }))
+      }
+      if (!st.bloom) {
+        parts.push(roundBud(ink, 'b0', 50, top + 2.6, 3, calyx))
+        parts.push(roundBud(ink, 'b1', 36.2, top + 15.2, 2.4, calyx))
+        parts.push(roundBud(ink, 'b2', 63.4, top + 8.8, 2.2, calyx))
+        return parts
+      }
+      const look = { ...o, flush: o.flush ?? mix(pal.petalDeep, pal.centerDeep, 0.5) }
+      parts.push(roundBud(ink, 'b1', 64, top + 8.4, 2.5, calyx))
+      parts.push(roundBud(ink, 'b2', 57.6, top + 15.4, 1.9, calyx))
+      parts.push(roundBud(ink, 'b3', 44, top + 22.4, 1.7, calyx))
+      parts.push(blossom(ink, 'side', 35.6, top + 14.6, 8.2, { ...look, spin: 24 }))
+      parts.push(blossom(ink, 'main', 50, top, 13.4, { ...look, spin: 0 }))
+      return parts
+    }
+
+    function plantCherry(ink, st) {
+      return plantTwig(ink, st, { leaves: true, tip: 'notch', wide: 1.02, stamens: 13, reach: 0.46, filament: lighten(ink.pal.centerDeep, 0.2) })
+    }
+
+    function plantPlum(ink, st) {
+      return plantTwig(ink, st, { leaves: false, tip: 'round', wide: 1.08, stamens: 19, reach: 0.66, filament: '#fff6dc' })
+    }
+
+    /** Tulip: a cup of overlapping pointed tepals above broad glaucous leaves. */
+    function plantTulip(ink, st) {
+      const { pal } = ink
+      const base = st.top + 11
+      const parts = [
+        blade(ink, 'l0', { x: 49, y: GROUND_Y, rot: -9, len: 37 * st.k, w: 9.5, curve: -9, fill: ink.leafBack }),
+        blade(ink, 'l1', { x: 51, y: GROUND_Y, rot: 11, len: 31 * st.k, w: 9, curve: 9 }),
+        stem(ink, base, { w: 2.8, bend: 1.4 }),
+      ]
+      if (!st.bloom) {
+        const green = ink.lin('tbud', [[0, pal.leaf], [55, mix(pal.leaf, pal.petal, 0.55)], [100, pal.petal]])
+        parts.push(petal('bud', { x: 50, y: base + 1, len: 16, w: 8, tip: 'point', belly: 0.46, fill: green, stroke: ink.leafLine, vein: ink.leafLine }))
+        return parts
+      }
+      const tepal = { tip: 'point', belly: 0.5, stroke: ink.line, sw: 0.4 }
+      parts.push(petal('bl', { ...tepal, x: 48.6, y: base, rot: -17, len: 22.5, w: 11.5, fill: ink.back }))
+      parts.push(petal('br', { ...tepal, x: 51.4, y: base, rot: 17, len: 22.5, w: 11.5, fill: ink.back }))
+      parts.push(petal('fl', { ...tepal, x: 46.6, y: base, rot: -7, len: 22, w: 11.4, fill: ink.petal, vein: ink.line }))
+      parts.push(petal('fr', { ...tepal, x: 53.4, y: base, rot: 7, len: 22, w: 11.4, fill: ink.petal, vein: ink.line }))
+      parts.push(petal('fc', { ...tepal, x: 50, y: base + 0.5, len: 20.5, w: 12, fill: ink.petal, vein: ink.line, sheen: true }))
+      return parts
+    }
+
+    /** A lavender spike: whorls of tubular florets, the lowest whorl set apart. */
+    function whorlSpike(ink, key, x, yBot, yTop, s, green) {
+      const { pal } = ink
+      const tones = green
+        ? [mix(pal.petal, pal.leaf, 0.6), mix(pal.petalDeep, pal.leaf, 0.5), pal.leaf]
+        : [pal.petal, pal.petalDeep, mix(pal.petal, pal.petalDeep, 0.5)]
+      const rows = Math.max(3, Math.round((yBot - yTop) / (3 * s)))
+      const parts = []
+      const open = []
+      for (let r = 0; r < rows; r += 1) {
+        const t = r / (rows - 1)
+        const y = yBot - (yBot - yTop) * t + (r === 0 ? 2.4 * s : 0)
+        const size = s * (1.08 - t * 0.5)
+        for (const [j, dx] of [[0, -1.9], [1, 1.9], [2, 0]]) {
+          const cx = x + dx * size
+          parts.push(h('ellipse', {
+            key: `${r}-${j}`, cx: n(cx), cy: n(y - (j === 2 ? 0.8 : 0)), rx: n(1.5 * size), ry: n(2.2 * size),
+            fill: ink.hidden ? ink.petal : tones[(r + j) % 3], stroke: darken(pal.petalDeep, 0.28), strokeWidth: 0.25,
+            transform: `rotate(${dx * 13} ${n(cx)} ${n(y)})`,
+          }))
+          if (!green && jit(r * 3 + j, 4) > -0.1) open.push([cx + dx * 0.35, y - 1.1 * size])
+        }
+      }
+      if (open.length > 0) parts.push(dots('open', open, 0.5 * s, lighten(pal.petal, 0.45)))
+      return h('g', { key }, ...parts)
+    }
+
+    function plantLavender(ink, st) {
+      const { pal } = ink
+      const top = st.top
+      const parts = []
+      for (let i = 0; i < 9; i += 1) {
+        const rot = -52 + i * 13
+        parts.push(blade(ink, `n${i}`, { x: 50 + rot * 0.05, y: GROUND_Y, rot, len: 12 + (i % 3) * 4, w: 1.7, curve: rot * 0.04, plain: true, fill: i % 2 === 0 ? ink.leafBack : ink.leaf }))
+      }
+      parts.push(stemPath('sL', `M49,${GROUND_Y}C46,72 41,62 39.6,${n(top + 20)}`, pal.stem, 1.1))
+      parts.push(stemPath('sR', `M51,${GROUND_Y}C54,74 59,64 60.6,${n(top + 17)}`, pal.stem, 1.1))
+      parts.push(stemPath('sM', `M50,${GROUND_Y}C50.6,70 49.4,56 50,${n(top + 10)}`, pal.stem, 1.3))
+      parts.push(whorlSpike(ink, 'kL', 39.6, top + 20, st.bloom ? top + 5 : top + 12, 0.8, !st.bloom))
+      parts.push(whorlSpike(ink, 'kR', 60.6, top + 17, st.bloom ? top + 3 : top + 10, 0.8, !st.bloom))
+      parts.push(whorlSpike(ink, 'kM', 50, top + 10, st.bloom ? top - 13 : top - 1, 1, !st.bloom))
+      return parts
+    }
+
+    /** A fan-shaped, crinkled petal (poppy): narrow claw, wavy outer edge. */
+    function fanD(len, half, seed) {
+      const points = []
+      for (let i = 0; i <= 14; i += 1) {
+        const angle = -half + (2 * half * i) / 14
+        const reach = len * (1 + 0.05 * Math.sin(i * 2.3 + seed) + 0.03 * jit(i, seed))
+        points.push(polar(0, 0, reach, angle).join(','))
+      }
+      const [sx] = polar(0, 0, len * 0.45, -half)
+      return `M0,0Q${n(sx * 1.25)},${n(-len * 0.2)} ${points.join(' ')}Q${n(-sx * 1.25)},${n(-len * 0.2)} 0,0Z`
+    }
+
+    /** Corn poppy: four silky petals with black basal blotches round a ribbed capsule. */
+    function plantPoppy(ink, st) {
+      const { pal } = ink
+      const top = st.top
+      const parts = [
+        leaf(ink, 'l0', { x: 50, y: GROUND_Y - 6, rot: -64, len: 19, w: 9, shape: 'pinnate', steps: 21, veins: 0, fill: ink.leafBack }),
+        leaf(ink, 'l1', { x: 50, y: GROUND_Y - 10, rot: 60, len: 18, w: 9, shape: 'pinnate', steps: 21, veins: 0 }),
+        leaf(ink, 'l2', { x: 50, y: GROUND_Y - 2, rot: -32, len: 14, w: 7, shape: 'pinnate', steps: 17, veins: 0 }),
+        stem(ink, top + 2, { w: 1.6, bend: 3 }),
+      ]
+      const hairs = []
+      for (let i = 0; i < 9; i += 1) {
+        const y = GROUND_Y - 6 - i * 4.6
+        if (y < top + 12) break
+        hairs.push([50, y, 50 + (i % 2 === 0 ? -1.5 : 1.5), y - 0.8])
+      }
+      parts.push(strokes('hairs', hairs, 0.25, darken(pal.stem, 0.2), 0.8))
+      const podFill = ink.lin('pod', [[0, darken(pal.leaf, 0.15)], [100, lighten(pal.leaf, 0.2)]])
+      if (!st.bloom) {
+        parts.push(stemPath('hook', `M50,${n(top + 6)}C50,${n(top - 4)} 57,${n(top - 5)} 57.4,${n(top + 2)}`, pal.stem, 1.3))
+        parts.push(h('ellipse', { key: 'pod', cx: 57.4, cy: top + 6.4, rx: 3.6, ry: 5.2, fill: podFill, stroke: ink.leafLine, strokeWidth: 0.4 }))
+        parts.push(h('path', { key: 'slit', d: `M57.4,${n(top + 2.4)}v7.6`, stroke: ink.hidden ? pal.petalDeep : pal.petal, strokeWidth: 0.7, strokeLinecap: 'round' }))
+        return parts
+      }
+      // The nodding bud beside the open flower is as characteristic as the bloom.
+      parts.push(stemPath('side', `M50,${n(top + 34)}C55,${n(top + 26)} 60,${n(top + 16)} 64,${n(top + 15)}C67,${n(top + 14.6)} 68.4,${n(top + 17)} 68,${n(top + 20)}`, pal.stem, 1.1))
+      parts.push(h('ellipse', { key: 'pod', cx: 67.8, cy: top + 23.4, rx: 2.7, ry: 4, fill: podFill, stroke: ink.leafLine, strokeWidth: 0.35, transform: `rotate(8 67.8 ${n(top + 23.4)})` }))
+      const silk = ink.tone('silk', [[0, '#221620'], [15, '#221620'], [27, darken(pal.petalDeep, 0.1)], [62, pal.petal], [100, lighten(pal.petal, 0.14)]])
+      ;[[90, 17.5, 66, 1], [270, 17.5, 66, 2], [0, 16.5, 60, 3], [180, 16, 60, 4]].forEach(([rot, len, half, seed], i) => {
+        const folds = [-0.5, 0, 0.5].map(f => {
+          const [x1, y1] = polar(0, 0, len * 0.36, f * half)
+          const [x2, y2] = polar(0, 0, len * 0.9, f * half * 1.1)
+          return [x1, y1, x2, y2]
+        })
+        parts.push(h('g', { key: `p${i}`, transform: place({ y: top, rot }) },
+          h('path', { d: fanD(len, half, seed), fill: silk, stroke: ink.line, strokeWidth: 0.4, strokeLinejoin: 'round', opacity: 0.96 }),
+          strokes('fold', folds, 0.3, darken(pal.petalDeep, 0.2), 0.3),
+        ))
+      })
+      const stamens = []
+      for (let i = 0; i < 30; i += 1) stamens.push(polar(50, top, 3.9 + (i % 3) * 0.9, i * 12 + jit(i, 2) * 8))
+      parts.push(dots('stamens', stamens, 0.55, '#2c2030'))
+      parts.push(h('circle', { key: 'ovary', cx: 50, cy: top, r: 3, fill: '#b9c77c', stroke: '#6c7a3a', strokeWidth: 0.4 }))
+      parts.push(strokes('stigma', [0, 45, 90, 135, 180, 225, 270, 315].map(a => [50, top, ...polar(50, top, 2.5, a)]), 0.4, '#4c5528'))
+      return parts
+    }
+
+    /** Sunflower: two rows of rays round a disc whose florets follow the golden angle. */
+    function plantSunflower(ink, st) {
+      const { pal } = ink
+      const top = st.top
+      const heart = (len, w) => `M0,0C${n(-w * 0.72)},${n(len * 0.14)} ${n(-w * 0.62)},${n(-len * 0.52)} 0,${n(-len)}C${n(w * 0.62)},${n(-len * 0.52)} ${n(w * 0.72)},${n(len * 0.14)} 0,0Z`
+      const parts = [
+        strokes('petiole', [[50, top + 30, 45, top + 27], [50, top + 39, 55, top + 36]], 1.1, darken(pal.stem, 0.1)),
+        leaf(ink, 'l0', { x: 45, y: top + 27, rot: -64, len: 19 * st.k, w: 17 * st.k, d: heart(19 * st.k, 17 * st.k), veins: 3, fill: ink.leafBack }),
+        leaf(ink, 'l1', { x: 55, y: top + 36, rot: 62, len: 17 * st.k, w: 15 * st.k, d: heart(17 * st.k, 15 * st.k), veins: 3 }),
+        stem(ink, top + 3, { w: 3.2, bend: 1.6 }),
+      ]
+      if (!st.bloom) {
+        for (let i = 0; i < 9; i += 1) {
+          parts.push(petal(`s${i}`, { y: top + 5, rot: -64 + i * 16, len: 10 + (i % 2) * 2, w: 5, tip: 'point', belly: 0.4, fill: i % 2 === 0 ? ink.leafBack : ink.leaf, stroke: ink.leafLine }))
+        }
+        parts.push(petal('peek', { y: top - 1, len: 6, w: 4.6, tip: 'point', fill: ink.petal, stroke: ink.line }))
+        return parts
+      }
+      for (let i = 0; i < 16; i += 1) {
+        parts.push(petal(`b${i}`, { y: top, rot: 22.5 * i + 11.25, len: 19.5 + jit(i, 1) * 1.2, w: 5.6, tip: 'point', belly: 0.64, fill: ink.back, stroke: ink.line, sw: 0.3 }))
+      }
+      for (let i = 0; i < 16; i += 1) {
+        parts.push(petal(`f${i}`, { y: top, rot: 22.5 * i + jit(i, 2) * 4, len: 18 + jit(i, 3) * 1.4, w: 5.2, tip: 'point', belly: 0.64, fill: ink.petal, stroke: ink.line, sw: 0.3, vein: ink.line }))
+      }
+      const disc = ink.rad('disc', [[0, mix(pal.centerDeep, '#7c8a3a', 0.4)], [34, pal.centerDeep], [72, pal.center], [100, mix(pal.center, '#e0a53a', 0.5)]])
+      parts.push(h('circle', { key: 'disc', cx: 50, cy: top, r: 8.6, fill: disc, stroke: darken(pal.centerDeep, 0.1), strokeWidth: 0.5 }))
+      const inner = []
+      const outer = []
+      for (let i = 0; i < 72; i += 1) {
+        const point = polar(50, top, 8 * Math.sqrt((i + 0.5) / 72), i * 137.5)
+        if (i < 40) inner.push(point)
+        else outer.push(point)
+      }
+      parts.push(dots('seedIn', inner, 0.42, darken(pal.centerDeep, 0.3), 0.75))
+      parts.push(dots('seedOut', outer, 0.5, '#e2b04e', 0.9))
+      return parts
+    }
+
+    /** Lily: six recurved tepals, long stamens with heavy rust anthers, leaves up the stem. */
+    function plantLily(ink, st) {
+      const { pal } = ink
+      const top = st.top
+      const parts = []
+      const span = GROUND_Y - 6 - (top + 15)
+      for (let i = 0; i < 8; i += 1) {
+        const t = i / 7
+        const side = i % 2 === 0 ? -1 : 1
+        parts.push(leaf(ink, `l${i}`, {
+          x: 50, y: GROUND_Y - 6 - span * t, rot: side * (64 - t * 22), len: 13 - t * 4, w: 2.9, veins: 0,
+          fill: side < 0 ? ink.leafBack : ink.leaf,
+        }))
+      }
+      parts.push(stem(ink, top + 4, { w: 2.2, bend: 1.2 }))
+      const pale = ink.lin('lbud', [[0, mix(pal.petal, '#a8c66c', 0.6)], [100, pal.petal]])
+      if (!st.bloom) {
+        parts.push(petal('bud', { y: top + 6, rot: 4, len: 17, w: 5.6, tip: 'round', belly: 0.6, fill: pale, stroke: ink.line, vein: ink.line }))
+        return parts
+      }
+      parts.push(strokes('pedicel', [[50, top + 14, 59, top + 9]], 1, pal.stem))
+      parts.push(petal('side', { x: 59, y: top + 9, rot: 42, len: 13, w: 4.4, tip: 'round', belly: 0.6, fill: pale, stroke: ink.line, vein: ink.line }))
+      const throat = ink.tone('throat', [[0, mix(pal.petal, '#a8c66c', 0.5)], [26, pal.petal], [100, lighten(pal.petal, 0.35)]])
+      for (let i = 0; i < 3; i += 1) {
+        parts.push(petal(`o${i}`, { y: top, rot: i * 120 + 60, len: 18, w: 7.4, tip: 'point', belly: 0.52, fill: ink.back, stroke: ink.line, vein: ink.line }))
+      }
+      for (let i = 0; i < 3; i += 1) {
+        parts.push(petal(`i${i}`, { y: top, rot: i * 120, len: 18.5, w: 9, tip: 'point', belly: 0.52, fill: throat, stroke: ink.line, vein: ink.line, sheen: i === 0 }))
+      }
+      if (ink.variant === 'alt') {
+        const specks = []
+        for (let i = 0; i < 18; i += 1) specks.push(polar(50, top, 4 + (i % 3) * 2.2, i * 20 + jit(i, 3) * 10))
+        parts.push(dots('speck', specks, 0.4, darken(pal.petalDeep, 0.3), 0.7))
+      }
+      const filaments = []
+      const anthers = []
+      for (let i = 0; i < 6; i += 1) {
+        const angle = i * 60 + 30
+        const [x, y] = polar(50, top, 8.4, angle)
+        filaments.push([50, top, x, y])
+        anthers.push(h('ellipse', { key: `a${i}`, cx: x, cy: y, rx: 2, ry: 0.85, fill: '#c5651f', stroke: '#8e4313', strokeWidth: 0.3, transform: `rotate(${angle} ${x} ${y})` }))
+      }
+      parts.push(strokes('filament', filaments, 0.45, '#dbe6b4'), ...anthers)
+      const [px, py] = polar(50, top, 10.4, 196)
+      parts.push(strokes('style', [[50, top, px, py]], 0.6, '#c9dba0'))
+      parts.push(h('circle', { key: 'stigma', cx: px, cy: py, r: 1.15, fill: '#8fb552', stroke: '#5f7f35', strokeWidth: 0.3 }))
+      return parts
+    }
+
+    /** Rings of petals sharing one centre, widest first: roses and camellias. */
+    function petalRings(key, x, y, rings, look) {
+      const parts = []
+      rings.forEach(([count, len, w, off, fill], r) => {
+        for (let i = 0; i < count; i += 1) {
+          parts.push(petal(`${r}-${i}`, {
+            x, y, rot: (360 / count) * i + off + jit(i, r) * 6, len: len + jit(i, r + 4) * 0.8, w,
+            tip: look.tip, belly: look.belly, fill, stroke: look.stroke, sw: 0.36,
+          }))
+        }
+      })
+      return h('g', { key }, ...parts)
+    }
+
+    /** A pinnate rose leaf: a terminal leaflet and one pair, all toothed. */
+    function roseLeaf(ink, key, x, y, rot, s, back) {
+      const fill = back ? ink.leafBack : ink.leaf
+      return h('g', { key, transform: place({ x, y, rot }) },
+        h('path', { d: `M0,0L0,${n(-9 * s)}`, stroke: darken(ink.pal.stem, 0.15), strokeWidth: 0.7, strokeLinecap: 'round' }),
+        leaf(ink, 'a', { x: 0, y: -4.6 * s, rot: -62, len: 7.4 * s, w: 4.6 * s, shape: 'serrate', steps: 12, veins: 2, fill }),
+        leaf(ink, 'b', { x: 0, y: -4.6 * s, rot: 62, len: 7.4 * s, w: 4.6 * s, shape: 'serrate', steps: 12, veins: 2, fill }),
+        leaf(ink, 'c', { x: 0, y: -9 * s, rot: 0, len: 9.4 * s, w: 5.8 * s, shape: 'serrate', steps: 14, veins: 3, fill }),
+      )
+    }
+
+    /** Rose: a spiral of cupped petals, darkest at the heart, on a thorned cane. */
+    function plantRose(ink, st) {
+      const { pal } = ink
+      const top = st.top
+      const cane = darken(pal.stem, 0.08)
+      const parts = [
+        roseLeaf(ink, 'l0', 50, top + 34, -58, st.k, true),
+        roseLeaf(ink, 'l1', 50, top + 26, 56, st.k, false),
+        stem(ink, top + 5, { w: 2.2, bend: 2, color: cane }),
+        h('path', { key: 'thorns', d: `M50.6,${n(top + 42)}l2.6,-1.4 -1.8,2.4ZM49.6,${n(top + 30)}l-2.6,-1.4 1.8,2.4ZM50.4,${n(top + 19)}l2.4,-1.4 -1.6,2.2Z`, fill: mix(cane, '#a05a4a', 0.5) }),
+      ]
+      if (!st.bloom) {
+        parts.push(bud(ink, 'bud', 50, top + 8, { len: 14, w: 8 }))
+        return parts
+      }
+      for (let i = 0; i < 5; i += 1) {
+        parts.push(petal(`s${i}`, { y: top, rot: i * 72 + 36, len: 19.5, w: 4.6, tip: 'point', belly: 0.4, fill: ink.leaf, stroke: ink.leafLine }))
+      }
+      const cup = ink.tone('cup', [[0, darken(pal.petalDeep, 0.34)], [46, pal.petalDeep], [80, pal.petal], [100, lighten(pal.petal, 0.3)]])
+      const heart = ink.tone('heart', [[0, darken(pal.petalDeep, 0.4)], [60, darken(pal.petalDeep, 0.1)], [100, pal.petal]])
+      parts.push(petalRings('rings', 50, top, [
+        [5, 17.6, 19, 0, cup], [5, 14.2, 15.6, 36, cup], [4, 10.8, 12.4, 14, cup], [3, 7.4, 8.8, 52, heart],
+      ], { tip: 'round', belly: 0.64, stroke: ink.line }))
       parts.push(h('path', {
-        key: 'heart',
-        d: `M${HEAD_X - 2.4},${HEAD_Y + 1.6} C${HEAD_X - 3.4},${HEAD_Y - 1.4} ${HEAD_X - 1},${HEAD_Y - 3} ${HEAD_X},${HEAD_Y - 1.4}`
-          + ` C${HEAD_X + 1},${HEAD_Y - 3} ${HEAD_X + 3.4},${HEAD_Y - 1.4} ${HEAD_X + 2.4},${HEAD_Y + 1.6}`
-          + ` C${HEAD_X + 1.4},${HEAD_Y + 3} ${HEAD_X - 1.4},${HEAD_Y + 3} ${HEAD_X - 2.4},${HEAD_Y + 1.6} Z`,
-        fill: pal.center, opacity: 0.9,
+        key: 'swirl',
+        d: `M47.4,${n(top + 0.6)}C47.2,${n(top - 2.8)} 52.6,${n(top - 3)} 52.8,${top}C52.9,${n(top + 2.3)} 49,${n(top + 2.6)} 48.7,${n(top + 0.6)}C48.6,${n(top - 1)} 50.9,${n(top - 1.2)} 51.1,${n(top + 0.1)}`,
+        fill: 'none', stroke: ink.hidden ? ink.line : darken(pal.petalDeep, 0.42), strokeWidth: 0.6, strokeLinecap: 'round',
       }))
       return parts
     }
 
-    /** Hydrangea mophead: a rounded cluster of four-sepal showy florets. */
-    function headMophead(pal) {
-      const parts = []
-      const spots = []
-      for (let ring = 0; ring < 3; ring += 1) {
-        const radius = ring === 0 ? 0 : ring * 5.4
-        const count = ring === 0 ? 1 : ring === 1 ? 5 : 8
-        for (let index = 0; index < count; index += 1) {
-          const angle = (360 / count) * index + ring * 20
-          spots.push({
-            x: HEAD_X + radius * Math.cos((angle * Math.PI) / 180),
-            y: HEAD_Y + radius * Math.sin((angle * Math.PI) / 180),
-            scale: ring === 0 ? 1.05 : ring === 1 ? 0.98 : 0.86,
-          })
-        }
-      }
-      for (const [spotIndex, spot] of spots.entries()) {
-        for (let petal = 0; petal < 4; petal += 1) {
-          const rad = ((petal * 90 + 45) * Math.PI) / 180
-          const cx = spot.x + 2.4 * spot.scale * Math.cos(rad)
-          const cy = spot.y + 2.4 * spot.scale * Math.sin(rad)
-          parts.push(h('ellipse', {
-            key: `f${spotIndex}-${petal}`, cx, cy,
-            rx: 2.1 * spot.scale, ry: 2.7 * spot.scale,
-            fill: petal % 2 === 0 ? pal.petal : pal.center,
-            stroke: pal.petalDeep, strokeWidth: 0.4,
-            transform: `rotate(${petal * 90} ${cx} ${cy})`,
-          }))
-        }
-        parts.push(h('circle', {
-          key: `fc${spotIndex}`, cx: spot.x, cy: spot.y, r: 0.9 * spot.scale, fill: pal.centerDeep,
-        }))
-      }
-      return parts
-    }
-
-    /** Snowdrop: three drooping white tepals with the green inner mark. */
-    function headDroop(pal) {
-      const top = HEAD_Y + 2
-      return [
-        h('path', {
-          key: 'outer',
-          d: `M${HEAD_X},${top - 12} C${HEAD_X + 7},${top - 8} ${HEAD_X + 8},${top + 4} ${HEAD_X + 3},${top + 9}`
-            + ` C${HEAD_X},${top + 11} ${HEAD_X - 3},${top + 11} ${HEAD_X - 6},${top + 8}`
-            + ` C${HEAD_X - 11},${top + 3} ${HEAD_X - 7},${top - 9} ${HEAD_X},${top - 12} Z`,
-          fill: pal.petal, stroke: pal.petalDeep, strokeWidth: 0.9,
-        }),
-        h('path', {
-          key: 'inner',
-          d: `M${HEAD_X - 1},${top - 3} C${HEAD_X + 3},${top} ${HEAD_X + 3},${top + 5} ${HEAD_X},${top + 7}`
-            + ` C${HEAD_X - 3},${top + 5} ${HEAD_X - 3},${top} ${HEAD_X - 1},${top - 3} Z`,
-          fill: pal.center, opacity: 0.9,
-        }),
-        h('path', {
-          key: 'cap',
-          d: `M${HEAD_X - 2},${top - 13} q2 -3 4 0`,
-          fill: 'none', stroke: pal.centerDeep, strokeWidth: 1.2, strokeLinecap: 'round',
-        }),
+    /** Hydrangea mophead: a dome of four-sepalled florets, lit from the upper left. */
+    function plantHydrangea(ink, st) {
+      const { pal } = ink
+      const top = st.top
+      const big = { shape: 'serrate', steps: 16, veins: 4 }
+      const parts = [
+        leaf(ink, 'l0', { ...big, x: 50, y: top + 36, rot: -60, len: 17 * st.k, w: 11 * st.k, fill: ink.leafBack }),
+        leaf(ink, 'l1', { ...big, x: 50, y: top + 36, rot: 62, len: 17 * st.k, w: 11 * st.k }),
+        leaf(ink, 'l2', { ...big, x: 50, y: top + 20, rot: -76, len: 20 * st.k, w: 13 * st.k }),
+        leaf(ink, 'l3', { ...big, x: 50, y: top + 20, rot: 74, len: 20 * st.k, w: 13 * st.k, fill: ink.leafBack }),
+        stem(ink, top + 8, { w: 2.5, bend: 1.4 }),
       ]
-    }
-
-    /** Five round petals (plum, hellebore, plumeria) with a ring of stamens. */
-    function headBloom5(pal, opts) {
-      const radius = opts?.radius ?? 8
-      const width = opts?.width ?? 6.4
-      const parts = []
-      for (let index = 0; index < 5; index += 1) {
-        const angle = index * 72 + (opts?.spin ?? 0)
-        const rad = (angle * Math.PI) / 180
-        const x = HEAD_X + radius * 0.55 * Math.cos(rad)
-        const y = HEAD_Y + radius * 0.55 * Math.sin(rad)
-        parts.push(h('ellipse', {
-          key: `p${index}`, cx: x, cy: y, rx: width * 0.62, ry: width,
-          fill: pal.petal, stroke: pal.petalDeep, strokeWidth: 0.7,
-          transform: `rotate(${angle + 90} ${x} ${y})`,
-        }))
-      }
-      for (let index = 0; index < 8; index += 1) {
-        const rad = (((360 / 8) * index + 10) * Math.PI) / 180
-        parts.push(h('line', {
-          key: `st${index}`,
-          x1: HEAD_X, y1: HEAD_Y,
-          x2: HEAD_X + 5.4 * Math.cos(rad), y2: HEAD_Y + 5.4 * Math.sin(rad),
-          stroke: pal.centerDeep, strokeWidth: 0.6,
-        }))
-        parts.push(h('circle', {
-          key: `an${index}`, cx: HEAD_X + 5.9 * Math.cos(rad), cy: HEAD_Y + 5.9 * Math.sin(rad),
-          r: 0.85, fill: pal.center,
-        }))
-      }
-      parts.push(h('circle', { key: 'core', cx: HEAD_X, cy: HEAD_Y, r: 2, fill: pal.center }))
-      return parts
-    }
-
-    /** Edelweiss: a felted star of narrow bracts around a cluster of discs. */
-    function headStar(pal) {
-      const parts = [h('circle', { key: 'felt', cx: HEAD_X, cy: HEAD_Y, r: 9.5, fill: pal.petalDeep, opacity: 0.45 })]
-      for (let index = 0; index < 10; index += 1) {
-        const angle = (360 / 10) * index
-        const rad = (angle * Math.PI) / 180
-        const x = HEAD_X + 8 * Math.cos(rad)
-        const y = HEAD_Y + 8 * Math.sin(rad)
-        parts.push(h('ellipse', {
-          key: `b${index}`, cx: x, cy: y, rx: 2.6, ry: 7.4,
-          fill: pal.petal, stroke: pal.petalDeep, strokeWidth: 0.6,
-          transform: `rotate(${angle + 90} ${x} ${y})`,
-        }))
-      }
-      for (let index = 0; index < 5; index += 1) {
-        const rad = (((360 / 5) * index + 18) * Math.PI) / 180
-        parts.push(h('circle', {
-          key: `d${index}`, cx: HEAD_X + 3.2 * Math.cos(rad), cy: HEAD_Y + 3.2 * Math.sin(rad),
-          r: 1.9, fill: pal.center, stroke: pal.centerDeep, strokeWidth: 0.4,
-        }))
+      const count = st.bloom ? 25 : 9
+      const reach = st.bloom ? 13.6 : 6
+      const cy = st.bloom ? top : top + 6
+      const sepal = petalD(4.7, 4.5, 'round', 0.62)
+      parts.push(h('circle', { key: 'under', cx: 50, cy, r: reach + 1.4, fill: st.bloom ? darken(pal.petalDeep, 0.2) : darken(pal.leaf, 0.1) }))
+      for (let i = count - 1; i >= 0; i -= 1) {
+        const [x, y] = polar(50, cy, reach * Math.sqrt((i + 0.5) / count), i * 137.5)
+        const shade = Math.max(0, Math.min(1, 0.45 + ((x - 50) * 0.6 + (y - cy)) / 30 + jit(i, 3) * 0.3))
+        const tone = st.bloom ? mix(lighten(pal.petal, 0.22), pal.petalDeep, shade) : mix(lighten(pal.leaf, 0.3), mix(pal.leaf, pal.petal, 0.5), shade)
+        const size = (st.bloom ? 1.06 : 0.62) - (i / count) * 0.14
+        const spin = 45 + jit(i, 7) * 50
+        parts.push(h('g', { key: `f${i}`, transform: `translate(${x} ${y}) rotate(${n(spin)}) scale(${n(size)})` },
+          ...[0, 90, 180, 270].map(a => h('path', {
+            key: a, d: sepal, transform: `rotate(${a})`,
+            fill: ink.hidden ? ink.petal : (a % 180 === 0 ? tone : mix(tone, pal.center, 0.4)),
+            stroke: ink.hidden ? ink.line : darken(tone, 0.22), strokeWidth: 0.3,
+          })),
+          h('circle', { r: 0.75, fill: ink.hidden ? pal.centerDeep : darken(pal.centerDeep, 0.15) }),
+        ))
       }
       return parts
     }
 
-    /** Cup-shaped cactus flower: many narrow petals fanning out of a tube. */
-    function headCup(pal) {
-      const parts = []
-      for (let index = 0; index < 12; index += 1) {
-        const angle = -150 + index * 27
-        const rad = (angle * Math.PI) / 180
-        const x = HEAD_X + 4 * Math.cos(rad)
-        const y = HEAD_Y + 6 + 4 * Math.sin(rad)
-        parts.push(h('ellipse', {
-          key: `p${index}`, cx: x, cy: y, rx: 2.4, ry: 7.6,
-          fill: index % 3 === 0 ? pal.petalDeep : pal.petal,
-          stroke: pal.petalDeep, strokeWidth: 0.5,
-          transform: `rotate(${angle + 90} ${x} ${y})`,
-        }))
+    // ── snowfield ─────────────────────────────────────────────────────────
+
+    /** Snowdrop: one nodding flower on an arched scape; the inner cup carries the green mark. */
+    function plantSnowdrop(ink, st) {
+      const { pal } = ink
+      const top = st.top
+      const parts = [
+        blade(ink, 'l0', { x: 47, y: GROUND_Y, rot: -7, len: 31 * st.k, w: 4.4, curve: -5, fill: ink.leafBack }),
+        blade(ink, 'l1', { x: 52, y: GROUND_Y, rot: 9, len: 27 * st.k, w: 4.4, curve: 6 }),
+        stemPath('scape', `M49.5,${GROUND_Y}C49,72 46.6,${n(top + 8)} 47,${n(top - 8)}C47.4,${n(top - 14.6)} 52.6,${n(top - 15)} 53,${n(top - 10.4)}`, pal.stem, 1.5),
+        blade(ink, 'spathe', { x: 47.6, y: top - 11, rot: 22, len: 7.5, w: 1.8, curve: 2, plain: true }),
+      ]
+      const hx = 53
+      const hy = top - 6
+      parts.push(h('ellipse', { key: 'ovary', cx: hx, cy: top - 8.4, rx: 2.1, ry: 2.7, fill: pal.center, stroke: pal.centerDeep, strokeWidth: 0.4 }))
+      if (!st.bloom) {
+        parts.push(petal('bud', { x: hx, y: hy, rot: 176, len: 10.5, w: 4.6, tip: 'round', belly: 0.62, fill: ink.petal, stroke: ink.line, vein: ink.line }))
+        return parts
       }
-      parts.push(h('circle', { key: 'throat', cx: HEAD_X, cy: HEAD_Y + 8, r: 3.4, fill: pal.center, stroke: pal.centerDeep, strokeWidth: 0.6 }))
-      for (let index = 0; index < 6; index += 1) {
-        const rad = (((360 / 6) * index) * Math.PI) / 180
-        parts.push(h('circle', {
-          key: `s${index}`, cx: HEAD_X + 1.9 * Math.cos(rad), cy: HEAD_Y + 8 + 1.9 * Math.sin(rad),
-          r: 0.7, fill: pal.centerDeep,
-        }))
-      }
+      parts.push(petal('back', { x: hx, y: hy, rot: 180, len: 15, w: 7, tip: 'round', belly: 0.64, fill: ink.back, stroke: ink.line }))
+      parts.push(h('g', { key: 'cup', transform: place({ x: hx, y: hy, rot: 180 }) },
+        h('path', { d: petalD(9.6, 6.6, 'notch', 0.7), fill: ink.hidden ? ink.petal : lighten(pal.petal, 0.5), stroke: ink.line, strokeWidth: 0.4 }),
+        h('path', { d: 'M-2.4,-6.2C-2.4,-8.8 2.4,-8.8 2.4,-6.2C1.2,-7.5 -1.2,-7.5 -2.4,-6.2Z', fill: pal.center, stroke: pal.centerDeep, strokeWidth: 0.25 }),
+      ))
+      parts.push(petal('left', { x: hx, y: hy, rot: 212, len: 16.5, w: 7.6, tip: 'round', belly: 0.64, fill: ink.petal, stroke: ink.line, vein: ink.line, veinOpacity: 0.3 }))
+      parts.push(petal('right', { x: hx, y: hy, rot: 148, len: 16.5, w: 7.6, tip: 'round', belly: 0.64, fill: ink.petal, stroke: ink.line, vein: ink.line, veinOpacity: 0.3, sheen: true }))
       return parts
     }
 
-    /** ʻŌhiʻa lehua: a pompom of long stamens around a small core. */
-    function headPompom(pal) {
-      const parts = [h('circle', { key: 'base', cx: HEAD_X, cy: HEAD_Y, r: 4.4, fill: pal.centerDeep })]
-      for (let index = 0; index < 26; index += 1) {
-        const angle = (360 / 26) * index + (index % 2 === 0 ? 0 : 7)
-        const rad = (angle * Math.PI) / 180
-        const length = index % 3 === 0 ? 11 : 9.2
-        parts.push(h('line', {
-          key: `f${index}`,
-          x1: HEAD_X, y1: HEAD_Y,
-          x2: HEAD_X + length * Math.cos(rad), y2: HEAD_Y + length * Math.sin(rad),
-          stroke: index % 4 === 0 ? pal.petal : pal.petalDeep,
-          strokeWidth: 1.9,
-          strokeLinecap: 'round',
-        }))
-        parts.push(h('circle', {
-          key: `a${index}`,
-          cx: HEAD_X + length * Math.cos(rad), cy: HEAD_Y + length * Math.sin(rad),
-          r: 1.15, fill: pal.center,
-        }))
-      }
-      return parts
-    }
-
-    /** Iris: three upright standards over three drooping falls. */
-    function headIris(pal) {
-      const parts = []
-      for (let index = 0; index < 3; index += 1) {
-        const angle = index * 120
-        parts.push(h('path', {
-          key: `fall${index}`,
-          d: `M0,1 C-6,4 -9,10 -6,14 C-2,15 1,10 0,4 Z`,
-          fill: pal.petalDeep, stroke: pal.centerDeep, strokeWidth: 0.5, opacity: 0.95,
-          transform: `translate(${HEAD_X} ${HEAD_Y}) rotate(${angle + 60})`,
-        }))
-      }
-      for (let index = 0; index < 3; index += 1) {
-        const angle = index * 120
-        parts.push(h('path', {
-          key: `std${index}`,
-          d: `M0,2 C-5,-3 -5,-11 0,-14 C5,-11 5,-3 0,2 Z`,
-          fill: pal.petal, stroke: pal.petalDeep, strokeWidth: 0.6,
-          transform: `translate(${HEAD_X} ${HEAD_Y}) rotate(${angle})`,
-        }))
-      }
-      parts.push(h('circle', { key: 'core', cx: HEAD_X, cy: HEAD_Y, r: 2.4, fill: pal.center, stroke: pal.centerDeep, strokeWidth: 0.5 }))
-      for (let index = 0; index < 5; index += 1) {
-        const rad = (((360 / 5) * index + 20) * Math.PI) / 180
-        parts.push(h('circle', {
-          key: `dot${index}`, cx: HEAD_X + 3.6 * Math.cos(rad), cy: HEAD_Y + 3.6 * Math.sin(rad),
-          r: 0.75, fill: pal.centerDeep,
-        }))
-      }
-      return parts
-    }
-
-    /** Water lily: a flat star of pointed petals on a lily pad. */
-    function headWaterlily(pal) {
-      const parts = [h('ellipse', { key: 'pad', cx: HEAD_X, cy: HEAD_Y + 12, rx: 22, ry: 7, fill: pal.leaf, opacity: 0.85 })]
-      for (let index = 0; index < 12; index += 1) {
-        const angle = (360 / 12) * index
-        const rad = (angle * Math.PI) / 180
-        const x = HEAD_X + 6.5 * Math.cos(rad)
-        const y = HEAD_Y + 1.5 * Math.sin(rad) + 6
-        parts.push(h('ellipse', {
-          key: `p${index}`, cx: x, cy: y, rx: 2.8, ry: 7.4,
-          fill: index % 2 === 0 ? pal.petal : pal.petalDeep,
-          stroke: pal.petalDeep, strokeWidth: 0.4,
-          transform: `rotate(${angle + 90} ${x} ${y})`,
-        }))
-      }
-      parts.push(h('circle', { key: 'core', cx: HEAD_X, cy: HEAD_Y + 6, r: 3.2, fill: pal.center, stroke: pal.centerDeep, strokeWidth: 0.6 }))
-      return parts
-    }
-
-    /** Lotus: layered pointed petals opening around a seed pod. */
-    function headLotus(pal) {
-      const parts = []
-      const shape = 'M0,-13 C4,-8 5,-2 0,3 C-5,-2 -4,-8 0,-13 Z'
-      for (let layer = 0; layer < 3; layer += 1) {
-        const count = layer === 0 ? 8 : layer === 1 ? 6 : 4
-        const scale = 1 - layer * 0.22
-        for (let index = 0; index < count; index += 1) {
-          parts.push(h('path', {
-            key: `p${layer}-${index}`, d: shape,
-            fill: layer === 0 ? pal.petalDeep : pal.petal,
-            stroke: pal.petalDeep, strokeWidth: 0.5,
-            opacity: layer === 0 ? 0.95 : 1,
-            transform: `translate(${HEAD_X} ${HEAD_Y}) rotate(${(360 / count) * index + layer * 18}) scale(${scale})`,
-          }))
-        }
-      }
-      parts.push(h('circle', { key: 'pod', cx: HEAD_X, cy: HEAD_Y, r: 2.6, fill: pal.center, stroke: pal.centerDeep, strokeWidth: 0.6 }))
-      for (let index = 0; index < 5; index += 1) {
-        const rad = (((360 / 5) * index) * Math.PI) / 180
-        parts.push(h('circle', {
-          key: `dot${index}`, cx: HEAD_X + 1.3 * Math.cos(rad), cy: HEAD_Y + 1.3 * Math.sin(rad),
-          r: 0.55, fill: pal.centerDeep,
-        }))
-      }
-      return parts
-    }
-
-    const HEADS = {
-      daisy: headDaisy,
-      dandelion: headDandelion,
-      sunflower: headSunflower,
-      tulip: headTulip,
-      cherry: headCherry,
-      spike: headSpike,
-      poppy: headPoppy,
-      lily: headLily,
-      rose: headRose,
-      mophead: headMophead,
-      droop: headDroop,
-      bloom5: headBloom5,
-      star: headStar,
-      cup: headCup,
-      pompom: headPompom,
-      iris: headIris,
-      waterlily: headWaterlily,
-      lotus: headLotus,
-    }
-
-    /** Foliage shapes: strap, narrow, broad, lobed, rosette (agave), pad (cactus, water lily). */
-    function foliage(kind, pal, stemTop) {
-      const y = stemTop + 6
-      switch (kind) {
-        case 'strap':
-          return h('g', { key: 'leaf' },
-            h('path', { d: `M50 ${y + 26} C40 ${y + 22} 34 ${y + 8} 36 ${y - 6} C42 ${y + 2} 48 ${y + 14} 50 ${y + 26} Z`, fill: pal.leaf }),
-            h('path', { d: `M50 ${y + 30} C60 ${y + 26} 66 ${y + 12} 64 ${y - 2} C58 ${y + 6} 52 ${y + 18} 50 ${y + 30} Z`, fill: pal.stem }),
-          )
-        case 'narrow':
-          return h('g', { key: 'leaf' },
-            h('path', { d: `M50 ${y + 20} C44 ${y + 12} 43 ${y - 2} 46 ${y - 10} C49 ${y - 2} 50 ${y + 8} 50 ${y + 20} Z`, fill: pal.leaf }),
-            h('path', { d: `M50 ${y + 24} C56 ${y + 16} 57 ${y + 2} 54 ${y - 6} C51 ${y + 2} 50 ${y + 12} 50 ${y + 24} Z`, fill: pal.stem }),
-          )
-        case 'broad':
-          return h('g', { key: 'leaf' },
-            h('path', { d: `M50 ${y + 18} C38 ${y + 18} 30 ${y + 8} 31 ${y - 4} C40 ${y - 8} 48 ${y + 2} 50 ${y + 18} Z`, fill: pal.leaf }),
-            h('path', { d: `M50 ${y + 24} C62 ${y + 24} 70 ${y + 14} 69 ${y + 2} C60 ${y - 2} 52 ${y + 8} 50 ${y + 24} Z`, fill: pal.stem }),
-          )
-        case 'lobed':
-          return h('g', { key: 'leaf' },
-            h('path', {
-              d: `M50 ${y + 16} C42 ${y + 18} 36 ${y + 12} 34 ${y + 4} C31 ${y + 6} 29 ${y + 2} 28 ${y - 2}`
-                + ` C34 ${y - 6} 40 ${y - 2} 43 ${y - 2} C42 ${y - 8} 45 ${y - 12} 49 ${y - 13}`
-                + ` C49 ${y - 6} 50 ${y + 4} 50 ${y + 16} Z`,
-              fill: pal.leaf,
-            }),
-            h('path', {
-              d: `M50 ${y + 22} C58 ${y + 24} 64 ${y + 18} 66 ${y + 10} C69 ${y + 12} 71 ${y + 8} 72 ${y + 4}`
-                + ` C66 ${y} 60 ${y + 4} 57 ${y + 4} C58 ${y - 2} 55 ${y - 6} 51 ${y - 7}`
-                + ` C51 ${y} 50 ${y + 10} 50 ${y + 22} Z`,
-              fill: pal.stem,
-            }),
-          )
-        case 'rosette':
-          return h('g', { key: 'leaf' },
-            h('path', { d: `M50 ${y + 16} C40 ${y + 20} 30 ${y + 16} 26 ${y + 6} C34 ${y + 2} 44 ${y + 6} 50 ${y + 16} Z`, fill: pal.leaf }),
-            h('path', { d: `M50 ${y + 16} C60 ${y + 20} 70 ${y + 16} 74 ${y + 6} C66 ${y + 2} 56 ${y + 6} 50 ${y + 16} Z`, fill: pal.stem }),
-            h('path', { d: `M50 ${y + 14} C45 ${y + 6} 44 ${y - 6} 47 ${y - 14} C50 ${y - 6} 52 ${y + 2} 50 ${y + 14} Z`, fill: pal.leaf, opacity: 0.9 }),
-          )
-        case 'pad':
-          return h('g', { key: 'leaf' },
-            h('ellipse', { cx: 50, cy: y + 14, rx: 20, ry: 7, fill: pal.leaf }),
-            h('path', { d: `M50 ${y + 14} L62 ${y + 10}`, stroke: pal.stem, strokeWidth: 1.2, opacity: 0.6 }),
-            h('ellipse', { cx: 50, cy: y + 6, rx: 11, ry: 5, fill: pal.leaf, opacity: 0.75 }),
-          )
-        default:
-          return h('g', { key: 'leaf' },
-            h('path', { d: `M50 ${y + 14} C42 ${y + 14} 36 ${y + 6} 36 ${y - 1} C44 ${y - 4} 49 ${y + 4} 50 ${y + 14} Z`, fill: pal.leaf }),
-            h('path', { d: `M50 ${y + 20} C58 ${y + 20} 64 ${y + 12} 64 ${y + 5} C56 ${y + 2} 51 ${y + 10} 50 ${y + 20} Z`, fill: pal.stem }),
-          )
-      }
-    }
-
-    function FlowerArt({ speciesId, stage, variant }) {
-      const species = SPECIES_BY_ID.get(speciesId) ?? SPECIES[0]
-      const hidden = (variant ?? 'base') === 'hidden'
-      const flat = paletteOf(species, variant ?? 'base')
-      // The hidden bloom paints its petals with a pearl-to-petal gradient.
-      const pal = hidden ? { ...flat, petal: `url(#fg-hid-${species.id}-petal)` } : flat
-      const parts = []
-      if (hidden) {
-        parts.push(hiddenDefs(species.id))
-        parts.push(...hiddenAura(species.id))
-      }
-      parts.push(soil())
-      if (stage === 'seed') {
-        parts.push(h('ellipse', { key: 'seed', cx: 50, cy: 85.5, rx: 4, ry: 3.2, fill: '#4a3423' }))
-        parts.push(h('path', {
-          key: 'crack', d: 'M50 82.5c2.6.4 4.4-.8 4.8-2.6', fill: 'none', stroke: pal.leaf, strokeWidth: 1.6, strokeLinecap: 'round',
-        }))
-      } else if (stage === 'sprout') {
-        parts.push(h('path', { key: 'stem', d: `M50 ${STEM_BASE}V${STEM_BASE - 22}`, fill: 'none', stroke: pal.stem, strokeWidth: 3, strokeLinecap: 'round' }))
-        parts.push(foliage(species.leaf === 'pad' ? 'round' : species.leaf, pal, STEM_BASE - 22))
-      } else if (stage === 'bud') {
-        parts.push(h('path', { key: 'stem', d: `M50 ${STEM_BASE}V${HEAD_Y + 20}`, fill: 'none', stroke: pal.stem, strokeWidth: 3.4, strokeLinecap: 'round' }))
-        parts.push(foliage(species.leaf === 'pad' ? 'round' : species.leaf, pal, HEAD_Y + 20))
-        parts.push(h('ellipse', { key: 'bud', cx: HEAD_X, cy: HEAD_Y + 12, rx: 6, ry: 9.5, fill: pal.petal, stroke: pal.petalDeep, strokeWidth: 1.2 }))
-        parts.push(h('path', { key: 'sepal', d: `M${HEAD_X} ${HEAD_Y + 21}l-7 7 7-3 7 3z`, fill: pal.leaf }))
-      } else {
-        const shortHead = species.head === 'waterlily'
-        parts.push(h('path', {
-          key: 'stem',
-          d: `M50 ${STEM_BASE}V${HEAD_Y + (species.head === 'spike' ? 12 : shortHead ? 16 : 8)}`,
-          fill: 'none',
-          stroke: pal.stem,
-          strokeWidth: species.head === 'tulip' ? 3.8 : 3.4,
-          strokeLinecap: 'round',
-        }))
-        parts.push(foliage(species.leaf, pal, HEAD_Y + 14))
-        parts.push(h('g', { key: 'head' }, HEADS[species.head](pal, species.headOpts)))
-      }
-      if (hidden && stage === 'bloom') parts.push(...hiddenLights())
-      return h('svg', SVG_PROPS, h('g', { className: stage === 'seed' ? undefined : 'fg-plant' }, parts))
-    }
-
-    /** Gradient ids in one drawing are unique per species; identical copies across cards are harmless. */
-    function hiddenDefs(speciesId) {
-      const key = `fg-hid-${speciesId}`
-      return h('defs', { key: 'defs' },
-        h('linearGradient', { id: `${key}-petal`, x1: '0', y1: '0', x2: '0.35', y2: '1' },
-          h('stop', { offset: '0%', stopColor: HIDDEN_GOLD.light }),
-          h('stop', { offset: '55%', stopColor: HIDDEN_PAL.petal }),
-          h('stop', { offset: '100%', stopColor: HIDDEN_GOLD.tip }),
-        ),
-        h('radialGradient', { id: `${key}-aura` },
-          h('stop', { offset: '0%', stopColor: HIDDEN_GOLD.aura, stopOpacity: '0.9' }),
-          h('stop', { offset: '52%', stopColor: HIDDEN_GOLD.auraEdge, stopOpacity: '0.34' }),
-          h('stop', { offset: '100%', stopColor: HIDDEN_GOLD.auraEdge, stopOpacity: '0' }),
-        ),
+    /** A hellebore leaf: five toothed leaflets fanning from the petiole. */
+    function palmate(ink, key, x, y, rot, s, back) {
+      return h('g', { key, transform: place({ x, y, rot }) },
+        h('path', { d: `M0,0L0,${n(-8 * s)}`, stroke: darken(ink.pal.stem, 0.1), strokeWidth: 0.9, strokeLinecap: 'round' }),
+        ...[-70, 70, -35, 35, 0].map((a, i) => leaf(ink, `f${i}`, {
+          x: 0, y: -8 * s, rot: a, len: (a === 0 ? 13 : 11.5) * s, w: 3.9 * s, shape: 'serrate', steps: 14, veins: 0,
+          fill: back || i < 2 ? ink.leafBack : ink.leaf,
+        })),
       )
     }
 
-    function hiddenAura(speciesId) {
-      const key = `fg-hid-${speciesId}`
+    /** Hellebore: five broad sepals, a ring of green nectaries, a boss of pale stamens. */
+    function plantHellebore(ink, st) {
+      const { pal } = ink
+      const top = st.top
+      const stalk = mix(pal.stem, '#8a5266', 0.3)
+      const parts = [
+        palmate(ink, 'l0', 50, GROUND_Y - 2, -50, st.k, true),
+        palmate(ink, 'l1', 50, GROUND_Y - 3, 48, st.k, false),
+        stem(ink, top + 4, { w: 2.2, bend: 3, color: stalk }),
+        leaf(ink, 'bract', { x: 50, y: top + 15, rot: 118, len: 8, w: 4, veins: 0 }),
+      ]
+      if (!st.bloom) {
+        parts.push(bud(ink, 'bud', 50, top + 6, { len: 11, w: 8, rot: 14 }))
+        return parts
+      }
+      const sepal = ink.tone('sepal', [[0, mix(pal.petal, '#a9c47a', 0.6)], [34, pal.petal], [100, lighten(pal.petal, 0.3)]])
+      for (let i = 0; i < 5; i += 1) {
+        parts.push(petal(`p${i}`, { y: top, rot: i * 72 + 8, len: 16, w: 16, tip: 'round', belly: 0.6, fill: i < 2 ? ink.back : sepal, stroke: ink.line, vein: ink.line, veinOpacity: 0.3 }))
+      }
+      parts.push(h('circle', { key: 'boss', cx: 50, cy: top, r: 6, fill: '#ece5bb', opacity: 0.55 }))
+      const nectary = []
+      for (let i = 0; i < 11; i += 1) nectary.push(polar(50, top, 4.9, i * (360 / 11)))
+      parts.push(dots('nectary', nectary, 0.7, '#9cbd58'))
+      const stamens = []
+      for (let i = 0; i < 30; i += 1) stamens.push(polar(50, top, 4.2 * Math.sqrt((i + 0.5) / 30), i * 137.5))
+      parts.push(dots('stamenRim', stamens, 0.68, '#cdb658'))
+      parts.push(dots('stamens', stamens, 0.5, '#f6e9a8'))
+      parts.push(dots('carpel', [[49.3, top - 0.4], [50.8, top - 0.3], [50, top + 0.8]], 0.6, '#8fae4e'))
+      return parts
+    }
+
+    /** Edelweiss: felted, uneven bracts round a cluster of small yellowish flower heads. */
+    function plantEdelweiss(ink, st) {
+      const { pal } = ink
+      const top = st.top
+      const parts = []
+      ;[-70, 66, -40, 38].forEach((rot, i) => {
+        parts.push(leaf(ink, `b${i}`, { x: 50, y: GROUND_Y, rot, len: 12, w: 3.6, tip: 'round', belly: 0.6, veins: 0, fill: i < 2 ? ink.leafBack : ink.leaf }))
+      })
+      for (let i = 0; i < 5; i += 1) {
+        const side = i % 2 === 0 ? -1 : 1
+        parts.push(leaf(ink, `s${i}`, { x: 50, y: GROUND_Y - 12 - i * 6.4 * st.k, rot: side * (52 - i * 4), len: 9.5 - i * 0.7, w: 2.5, veins: 0 }))
+      }
+      parts.push(stem(ink, top + 3, { w: 1.7, bend: 1.5, color: lighten(pal.stem, 0.12) }))
+      const felt = ink.tone('felt', [[0, mix(pal.petal, '#c2c9a6', 0.6)], [44, pal.petal], [100, lighten(pal.petal, 0.3)]])
+      const edge = ink.hidden ? ink.line : darken(pal.petalDeep, 0.16)
+      if (!st.bloom) {
+        for (let i = 0; i < 5; i += 1) {
+          parts.push(petal(`p${i}`, { y: top + 5, rot: -56 + i * 28, len: 9, w: 3.6, tip: 'point', belly: 0.42, fill: felt, stroke: edge }))
+        }
+        return parts
+      }
+      const fuzz = { fill: 'none', stroke: '#ffffff', strokeWidth: 0.7, strokeDasharray: '0.5 1.1', strokeLinecap: 'round', opacity: 0.85 }
+      const bract = (key, rot, len, w, fill) => h('g', { key, transform: place({ y: top, rot }) },
+        h('path', { d: petalD(len, w, 'point', 0.42), fill, stroke: edge, strokeWidth: 0.4, strokeLinejoin: 'round' }),
+        h('path', { d: `M0,${n(-len * 0.24)}L0,${n(-len * 0.86)}`, ...fuzz }),
+      )
+      for (let i = 0; i < 8; i += 1) parts.push(bract(`o${i}`, i * 45 + 12 + jit(i, 1) * 12, 16 + jit(i, 2) * 5, 5.4, ink.hidden ? ink.back : felt))
+      for (let i = 0; i < 6; i += 1) parts.push(bract(`i${i}`, i * 60 + 38 + jit(i, 3) * 10, 10.5 + jit(i, 4) * 3, 4.8, felt))
+      const heads = [[50, top, 2.5], ...[0, 1, 2, 3, 4, 5].map(i => [...polar(50, top, 4.3, i * 60 + 12), 1.9])]
+      heads.slice(1).concat([heads[0]]).forEach(([x, y, r], i) => {
+        parts.push(h('circle', { key: `h${i}`, cx: x, cy: y, r, fill: ink.core, stroke: '#fffbea', strokeWidth: 0.55 }))
+        parts.push(dots(`hd${i}`, [[x - r * 0.3, y - r * 0.2], [x + r * 0.35, y + r * 0.1], [x, y + r * 0.45], [x + r * 0.1, y - r * 0.5]], 0.28, darken(pal.centerDeep, 0.2), 0.7))
+      })
+      return parts
+    }
+
+    /** Camellia: two tiers of rounded petals round a golden boss, glossy leaves on wood. */
+    function plantCamellia(ink, st) {
+      const { pal } = ink
+      const top = st.top
+      const wood = mix(pal.stem, '#7a6450', 0.7)
+      const glossy = { tip: 'point', belly: 0.5, veins: 3, sheen: true }
+      const parts = [
+        leaf(ink, 'l0', { ...glossy, x: 50, y: top + 38, rot: -62, len: 15 * st.k, w: 8.4 * st.k, fill: ink.leafBack }),
+        leaf(ink, 'l1', { ...glossy, x: 50, y: top + 30, rot: 60, len: 16 * st.k, w: 8.8 * st.k }),
+        leaf(ink, 'l2', { ...glossy, x: 50, y: top + 19, rot: -72, len: 14 * st.k, w: 8 * st.k }),
+        stem(ink, top + 5, { w: 2.4, bend: 1.6, color: wood }),
+      ]
+      if (!st.bloom) {
+        parts.push(bud(ink, 'bud', 50, top + 8, { len: 12, w: 9 }))
+        return parts
+      }
+      const satin = ink.tone('satin', [[0, darken(pal.petalDeep, 0.2)], [42, pal.petal], [100, lighten(pal.petal, 0.26)]])
+      parts.push(petalRings('rings', 50, top, [
+        [6, 17.4, 16.4, 0, ink.back], [6, 14, 14, 30, satin], [5, 10.4, 11, 8, satin],
+      ], { tip: 'notch', belly: 0.66, stroke: ink.line }))
+      const hairs = []
+      const anthers = []
+      for (let i = 0; i < 26; i += 1) {
+        const [x, y] = polar(50, top, 3 + (i % 3) * 0.9, i * (360 / 26) + jit(i, 2) * 6)
+        hairs.push([50, top, x, y])
+        anthers.push([x, y])
+      }
+      parts.push(h('circle', { key: 'boss', cx: 50, cy: top, r: 5, fill: '#f3e3a2', stroke: '#d8b545', strokeWidth: 0.3 }))
+      parts.push(strokes('hair', hairs, 0.3, '#fbf3cf'))
+      parts.push(dots('anther', anthers, 0.6, '#e2a72a'))
+      return parts
+    }
+
+    // ── volcanic crater ───────────────────────────────────────────────────
+
+    /** Obovate cactus pad: base at the origin, `2 × ry` tall. */
+    function padD(rx, ry) {
+      return `M0,0C${n(-rx * 1.25)},${n(-ry * 0.5)} ${n(-rx * 1.05)},${n(-ry * 2)} 0,${n(-ry * 2)}`
+        + `C${n(rx * 1.05)},${n(-ry * 2)} ${n(rx * 1.25)},${n(-ry * 0.5)} 0,0Z`
+    }
+
+    /** Prickly pear: flat pads studded with areoles; the satin flower sits on a pad's rim. */
+    function plantCactus(ink, st) {
+      const { pal } = ink
+      const top = st.top
+      const height = GROUND_Y + 1 - (top + 12)
+      const rx = Math.min(13, height * 0.36)
+      const skin = ink.lin('pad', [[0, darken(pal.leaf, 0.24)], [100, lighten(pal.leaf, 0.12)]], { x1: '1', y1: '0.6', x2: '0', y2: '0.4' })
+      const parts = []
+      const areoles = []
+      const spines = []
+      const stud = (x, y) => {
+        areoles.push([x, y])
+        spines.push([x, y, x - 1.5, y - 1.2], [x, y, x + 1.6, y - 1], [x, y, x + 0.2, y - 1.9])
+      }
+      if (st.bloom) {
+        parts.push(h('path', { key: 'side', d: padD(7, 9), fill: skin, stroke: ink.leafLine, strokeWidth: 0.45, transform: `translate(40.6 ${n(top + 31)}) rotate(-36)` }))
+        parts.push(h('ellipse', { key: 'fruit', cx: 30.4, cy: top + 15.4, rx: 2.5, ry: 3.3, fill: '#b53a5c', stroke: '#7e2440', strokeWidth: 0.35, transform: `rotate(-36 30.4 ${n(top + 15.4)})` }))
+        ;[[38, top + 27], [34.6, top + 22], [39, top + 20.6], [35.6, top + 17.4]].forEach(([x, y]) => stud(x, y))
+      }
+      parts.push(h('path', { key: 'pad', d: padD(rx, height / 2), fill: skin, stroke: ink.leafLine, strokeWidth: 0.5, transform: `translate(50 ${GROUND_Y + 1}) rotate(3)` }))
+      for (let row = 1; row <= 5; row += 1) {
+        const t = 0.1 + row * 0.15
+        const half = rx * 0.95 * Math.sin(Math.PI * Math.pow(t, 0.75)) * 0.8
+        const y = GROUND_Y + 1 - height * t
+        const lean = (GROUND_Y + 1 - y) * 0.05
+        const cols = row % 2 === 0 ? [-0.62, 0, 0.62] : [-0.3, 0.3]
+        for (const c of cols) stud(50 + lean + c * half, y)
+      }
+      parts.push(strokes('spines', spines, 0.25, '#f6efd2', 0.95))
+      parts.push(dots('areoles', areoles, 0.55, '#e7dcae'))
+      const bx = 52
+      const by = top + 12.6
+      if (!st.bloom) {
+        parts.push(bud(ink, 'bud', bx - 1, by + 0.6, { len: 8, w: 5.4, rot: 4 }))
+        return parts
+      }
+      parts.push(bud(ink, 'bud2', 60.6, top + 22, { len: 6.5, w: 4.2, rot: 38 }))
+      parts.push(h('ellipse', { key: 'tube', cx: bx, cy: by + 0.4, rx: 3.6, ry: 3, fill: ink.leaf, stroke: ink.leafLine, strokeWidth: 0.4 }))
+      // The open flower is seen from a little above: a face-on rosette, foreshortened.
+      const satin = ink.tone('satin', [[0, mix(pal.petalDeep, '#d9641e', 0.45)], [40, pal.petal], [100, lighten(pal.petal, 0.4)]])
+      const flower = []
+      for (let i = 0; i < 11; i += 1) {
+        flower.push(petal(`b${i}`, { x: 0, y: 0, rot: (360 / 11) * i + 8, len: 15.5 + jit(i, 1) * 1.4, w: 7.6, tip: 'point', belly: 0.66, fill: ink.back, stroke: ink.line }))
+      }
+      for (let i = 0; i < 9; i += 1) {
+        flower.push(petal(`f${i}`, { x: 0, y: 0, rot: 40 * i + 26, len: 11.5 + jit(i, 3), w: 7, tip: 'point', belly: 0.66, fill: satin, stroke: ink.line, vein: ink.line, veinOpacity: 0.3 }))
+      }
+      flower.push(h('circle', { key: 'boss', r: 4.4, fill: '#f6de7c', stroke: '#d6b03c', strokeWidth: 0.4 }))
+      const pollen = []
+      for (let i = 0; i < 22; i += 1) pollen.push(polar(0, 0, 3.7 * Math.sqrt((i + 0.5) / 22), i * 137.5))
+      flower.push(dots('pollen', pollen, 0.5, '#e0a52c'))
+      flower.push(dots('stigma', [[-0.9, -0.3], [0.9, -0.3], [0, 0.9]], 0.75, '#8fb552'))
+      parts.push(h('g', { key: 'flower', transform: `translate(${bx} ${n(by - 8.6)}) scale(1 0.66)` }, ...flower))
+      return parts
+    }
+
+    /** ʻŌhiʻa lehua: no showy petals at all, only a pompom of long stamens. */
+    function plantLehua(ink, st) {
+      const { pal } = ink
+      const top = st.top
+      const wood = mix(pal.stem, '#7d6652', 0.65)
+      const leather = { tip: 'round', belly: 0.56, veins: 0 }
+      const parts = [
+        leaf(ink, 'l0', { ...leather, x: 50, y: top + 40, rot: -66, len: 12 * st.k, w: 8 * st.k, fill: ink.leafBack }),
+        leaf(ink, 'l1', { ...leather, x: 50, y: top + 40, rot: 68, len: 12 * st.k, w: 8 * st.k }),
+        leaf(ink, 'l2', { ...leather, x: 50, y: top + 27, rot: -58, len: 11 * st.k, w: 7.4 * st.k }),
+        leaf(ink, 'l3', { ...leather, x: 50, y: top + 27, rot: 60, len: 11 * st.k, w: 7.4 * st.k, fill: ink.leafBack }),
+        leaf(ink, 'l4', { ...leather, x: 50, y: top + 15, rot: -48, len: 8, w: 5.4, fill: ink.lin('young', [[0, pal.leaf], [100, mix(pal.leaf, '#c98a7a', 0.5)]]) }),
+        leaf(ink, 'l5', { ...leather, x: 50, y: top + 15, rot: 50, len: 8, w: 5.4 }),
+        stem(ink, top + 6, { w: 2.2, bend: 1.8, color: wood }),
+      ]
+      if (!st.bloom) {
+        const knobs = [[50, top + 3, 2.6], [46.4, top + 5.6, 2.1], [53.6, top + 5.6, 2.1]]
+        knobs.forEach(([x, y, r], i) => parts.push(h('circle', { key: `k${i}`, cx: x, cy: y, r, fill: lighten(pal.leaf, 0.3), stroke: ink.leafLine, strokeWidth: 0.35 })))
+        parts.push(dots('peek', knobs.map(([x, y]) => [x, y - 0.6]), 0.7, ink.hidden ? pal.petalDeep : pal.petal))
+        return parts
+      }
+      parts.push(h('circle', { key: 'glow', cx: 50, cy: top, r: 10.5, fill: pal.petalDeep, opacity: 0.28 }))
+      const passes = [[30, 14.2, 3.4, pal.petalDeep, 0.6], [24, 11.6, 3.4, pal.petal, 0.55], [18, 7.2, 3, lighten(pal.petal, 0.25), 0.5]]
+      passes.forEach(([count, len, vary, color, w], pass) => {
+        const hairs = []
+        const tips = []
+        for (let i = 0; i < count; i += 1) {
+          const angle = (360 / count) * i + jit(i, pass) * 9 + pass * 5
+          const [x1, y1] = polar(50, top, 1.4, angle)
+          const [x2, y2] = polar(50, top, len + jit(i, pass + 5) * vary, angle + jit(i, pass + 9) * 6)
+          hairs.push([x1, y1, x2, y2])
+          tips.push([x2, y2])
+        }
+        parts.push(strokes(`hair${pass}`, hairs, w, ink.hidden ? [pal.petalDeep, HIDDEN_GOLD.tip, '#ffffff'][pass] : color))
+        parts.push(dots(`tip${pass}`, tips, 0.48, pal.center))
+      })
+      parts.push(h('circle', { key: 'eye', cx: 50, cy: top, r: 1.9, fill: darken(pal.petalDeep, 0.3) }))
+      return parts
+    }
+
+    /** A flat-topped cluster of upright agave florets with their protruding stamens. */
+    function umbel(ink, key, x, y, s) {
+      const { pal } = ink
+      const parts = []
+      const hairs = []
+      const tips = []
+      for (let i = 0; i < 6; i += 1) {
+        const dx = (i - 2.5) * 1.15 * s
+        const fy = y - Math.abs(i - 2.5) * -0.3 * s
+        parts.push(h('ellipse', { key: i, cx: n(x + dx), cy: n(fy - 1.6 * s), rx: n(0.8 * s), ry: n(2 * s), fill: i % 2 === 0 ? pal.petal : pal.petalDeep, stroke: darken(pal.petalDeep, 0.25), strokeWidth: 0.22, transform: `rotate(${n(dx * 5)} ${n(x + dx)} ${n(fy)})` }))
+        hairs.push([x + dx, fy - 3 * s, x + dx * 1.25, fy - 5.2 * s])
+        tips.push([x + dx * 1.25, fy - 5.2 * s])
+      }
+      parts.push(strokes('h', hairs, 0.22, lighten(pal.petal, 0.3)))
+      parts.push(dots('t', tips, 0.34 * s + 0.1, lighten(pal.petal, 0.45)))
+      return h('g', { key }, ...parts)
+    }
+
+    function agaveRosette(ink) {
+      const { pal } = ink
+      const flesh = ink.lin('flesh', [[0, darken(pal.leaf, 0.26)], [100, lighten(pal.leaf, 0.2)]])
+      return [0, -14, 14, -30, 30, -48, 48, -66, 66, -84, 84].map((rot, i) => blade(ink, `r${i}`, {
+        x: 50 + rot * 0.03, y: GROUND_Y + 0.5, rot, len: 27 - Math.abs(rot) * 0.07, w: 7, curve: rot * 0.07,
+        fill: flesh, stroke: lighten(pal.leaf, 0.42), sw: 0.55, rib: darken(pal.leaf, 0.2), spine: '#5a3b2a',
+      }))
+    }
+
+    /** Agave: a rosette of armed leaves and, once in a lifetime, a tall branching mast. */
+    function plantAgave(ink, st) {
+      const { pal } = ink
+      const top = st.top
+      const mastColor = mix(pal.stem, '#bcc58c', 0.4)
+      const parts = []
+      if (!st.bloom) {
+        parts.push(stemPath('mast', `M50,${GROUND_Y - 12}L50,${n(top - 4)}`, mastColor, 2.6))
+        parts.push(petal('tip', { y: top - 2, len: 8, w: 3.6, tip: 'point', belly: 0.3, fill: lighten(pal.leaf, 0.2), stroke: ink.leafLine }))
+        parts.push(strokes('scale', [[48.8, top + 8, 50, top + 6], [51.2, top + 14, 50, top + 12], [48.8, top + 20, 50, top + 18]], 0.5, ink.leafLine, 0.7))
+        parts.push(...agaveRosette(ink))
+        return parts
+      }
+      parts.push(stemPath('mast', `M50,${GROUND_Y - 12}L50,${n(top - 17)}`, mastColor, 2))
+      const levels = [top + 17, top + 11, top + 5, top - 1, top - 7, top - 12]
+      levels.forEach((y, i) => {
+        const reach = 15.5 - i * 2.1
+        for (const side of [-1, 1]) {
+          const by = y + (side > 0 ? 2.4 : 0)
+          const ex = 50 + side * reach
+          parts.push(h('path', { key: `br${i}${side}`, d: `M50,${n(by)}Q${n(50 + side * reach * 0.6)},${n(by - 0.4)} ${n(ex)},${n(by - 3.4)}`, fill: 'none', stroke: darken(mastColor, 0.18), strokeWidth: 0.9, strokeLinecap: 'round' }))
+          parts.push(umbel(ink, `u${i}${side}`, ex, by - 3.2, 1.06 - i * 0.07))
+        }
+      })
+      parts.push(umbel(ink, 'crown', 50, top - 17, 0.72))
+      parts.push(...agaveRosette(ink))
+      return parts
+    }
+
+    /** Silversword: a silver sphere of sword leaves, then a column of nodding wine-red heads. */
+    function plantSilversword(ink, st) {
+      const { pal } = ink
+      const top = st.top
+      const silver = ink.lin('silver', [[0, darken(pal.leaf, 0.24)], [100, lighten(pal.leaf, 0.62)]])
+      const parts = []
+      const rosette = []
+      for (let i = 0; i < 31; i += 1) {
+        const rot = -88 + i * (176 / 30)
+        rosette.push([Math.abs(rot), blade(ink, `r${i}`, {
+          x: 50 + rot * 0.035, y: GROUND_Y + 1, rot, len: 16.5 + jit(i, 1) * 3 - Math.abs(rot) * 0.02, w: 2, curve: rot * 0.02,
+          fill: silver, stroke: darken(pal.leaf, 0.3), sw: 0.25, plain: true,
+        })])
+      }
+      rosette.sort((a, b) => a[0] - b[0])
+      const apex = st.bloom ? top - 21 : top + 2
+      const foot = GROUND_Y - 12
+      parts.push(h('path', { key: 'column', d: `M47.2,${foot}L49,${n(apex)}Q50,${n(apex - 2)} 51,${n(apex)}L52.8,${foot}Z`, fill: mix(pal.stem, '#6f6a55', 0.5), stroke: darken(pal.stem, 0.3), strokeWidth: 0.4 }))
+      const rays = []
+      const stalks = []
+      const discs = []
+      const rows = Math.floor((foot - 2 - apex) / 4.4)
+      for (let j = 0; j <= rows; j += 1) {
+        const y = foot - 3 - j * 4.4
+        const size = (st.bloom ? 1 : 0.6) * (1 - j * 0.036)
+        const half = 6.6 - j * 0.36
+        for (const [x, hy] of [[50 - half, y], [50 + half, y + 1.8], [50 + jit(j, 2) * 2, y - 2.2]]) {
+          stalks.push([50, hy + 1.6, x, hy])
+          for (let a = 0; a < 9; a += 1) rays.push([x, hy, ...polar(x, hy, 2.5 * size, a * 40 + j * 13)])
+          discs.push([x, hy, size])
+        }
+      }
+      parts.push(strokes('stalks', stalks, 0.5, darken(pal.stem, 0.25)))
+      if (st.bloom) parts.push(strokes('rays', rays, 0.85, ink.hidden ? HIDDEN_GOLD.tip : pal.petal))
+      parts.push(dots('discRim', discs, st.bloom ? 1.3 : 1.1, st.bloom ? pal.petalDeep : darken(pal.leaf, 0.2)))
+      parts.push(dots('disc', discs, 0.8, st.bloom ? pal.center : lighten(pal.leaf, 0.3)))
+      parts.push(...rosette.map(entry => entry[1]))
+      return parts
+    }
+
+    /** One plumeria flower: five overlapping pinwheel petals, yellow at the throat. */
+    function pinwheel(ink, key, x, y, r, spin) {
+      const { pal } = ink
+      const d = `M0,0C${n(-r * 0.22)},${n(-r * 0.3)} ${n(-r * 0.52)},${n(-r * 0.76)} ${n(-r * 0.2)},${n(-r)}`
+        + `C${n(r * 0.3)},${n(-r * 1.06)} ${n(r * 0.64)},${n(-r * 0.7)} ${n(r * 0.44)},${n(-r * 0.34)}`
+        + `C${n(r * 0.3)},${n(-r * 0.14)} ${n(r * 0.12)},${n(-r * 0.04)} 0,0Z`
+      const wax = ink.tone('wax', [[0, pal.centerDeep], [16, pal.center], [36, mix(pal.center, pal.petal, 0.6)], [58, pal.petal], [100, lighten(pal.petal, 0.3)]])
+      return h('g', { key },
+        ...[0, 1, 2, 3, 4].map(i => h('path', { key: i, d, fill: wax, stroke: ink.line, strokeWidth: 0.36, strokeLinejoin: 'round', transform: place({ x, y, rot: i * 72 + spin }) })),
+        h('circle', { cx: x, cy: y, r: r * 0.07, fill: pal.centerDeep }),
+      )
+    }
+
+    /** Plumeria: waxy pinwheels clustered at the tip of a thick, scarred branch. */
+    function plantPlumeria(ink, st) {
+      const { pal } = ink
+      const top = st.top
+      const bark = mix(pal.stem, '#aaa293', 0.7)
+      const fork = top + 22
+      const parts = [
+        stemPath('branch', `M50,${GROUND_Y}C50.6,78 49,70 50,${fork}`, bark, 3.6),
+        strokes('scar', [[48.6, 80, 51.2, 79.4], [48.8, 73, 51.2, 72.4], [48.8, 66, 51.2, 65.4]], 0.4, darken(bark, 0.25), 0.7),
+      ]
+      ;[-100, 98, -66, 64, -34, 32].forEach((rot, i) => {
+        parts.push(leaf(ink, `l${i}`, { x: 50, y: fork, rot, len: (20 + (i % 2) * 2) * st.k, w: 7.4 * st.k, tip: 'point', belly: 0.6, veins: 6, fill: i < 2 ? ink.leafBack : ink.leaf }))
+      })
+      parts.push(stemPath('stalk', `M50,${fork}L50,${n(top + 7)}`, pal.stem, 1.6))
+      const blush = ink.lin('blush', [[0, mix(pal.petal, '#e58aa6', 0.55)], [100, pal.petal]])
+      if (!st.bloom) {
+        ;[-26, 0, 24].forEach((rot, i) => parts.push(petal(`b${i}`, { y: top + 9, rot, len: 9 + (i === 1 ? 2 : 0), w: 3, tip: 'round', belly: 0.66, fill: blush, stroke: ink.line })))
+        return parts
+      }
+      parts.push(petal('b0', { x: 45, y: top + 4, rot: -16, len: 15, w: 3, tip: 'round', belly: 0.68, fill: blush, stroke: ink.line }))
+      parts.push(petal('b1', { x: 56, y: top + 4, rot: 13, len: 16, w: 3.2, tip: 'round', belly: 0.68, fill: blush, stroke: ink.line }))
+      parts.push(pinwheel(ink, 'f1', 40, top + 6.6, 9.8, 22))
+      parts.push(pinwheel(ink, 'f2', 60.4, top + 7.4, 9.4, -14))
+      parts.push(pinwheel(ink, 'f0', 50, top - 0.6, 13, 8))
+      return parts
+    }
+
+    // ── lakeside ──────────────────────────────────────────────────────────
+
+    /** Pickerelweed's leaf: a long heart with veins that follow the margin. */
+    function arrowLeaf(ink, key, x, y, rot, s, back) {
+      return h('g', { key, transform: `${place({ x, y, rot })} scale(${s})` },
+        h('path', { d: 'M0,0C-3,3.2 -7.8,2 -7.2,-5C-6.6,-13 -2.6,-21 0,-25C2.6,-21 6.6,-13 7.2,-5C7.8,2 3,3.2 0,0Z', fill: back ? ink.leafBack : ink.leaf, stroke: ink.leafLine, strokeWidth: 0.4, strokeLinejoin: 'round' }),
+        h('path', { d: 'M0,0L0,-23M0,-1C-4,-3 -5,-12 -1.4,-21M0,-1C4,-3 5,-12 1.4,-21M0,-1C-2,-5 -2.6,-12 -.6,-20M0,-1C2,-5 2.6,-12 .6,-20', fill: 'none', stroke: ink.rib, strokeWidth: 0.3, opacity: 0.7 }),
+        h('path', { d: 'M-4.6,-5Q-4.8,-11 -2.6,-16', fill: 'none', stroke: '#ffffff', strokeWidth: 1, strokeLinecap: 'round', opacity: 0.28 }),
+      )
+    }
+
+    /** Pickerelweed: a blunt spike of violet-blue flowers, each upper lip marked yellow. */
+    function plantPickerel(ink, st) {
+      const { pal } = ink
+      const top = st.top
+      const parts = [
+        stemPath('petL', `M47,${GROUND_Y}C44,77 39.4,70 36.4,${n(top + 27)}`, pal.stem, 1.8),
+        arrowLeaf(ink, 'leafL', 36.4, top + 27, -22, st.k, false),
+        stemPath('petR', `M53,${GROUND_Y}C56,80 60,76 63,${n(top + 36)}`, pal.stem, 1.5),
+        arrowLeaf(ink, 'leafR', 63, top + 36, 30, 0.66 * st.k, true),
+        stem(ink, top + 12, { w: 2, bend: 1.2 }),
+        blade(ink, 'sheath', { x: 50, y: top + 30, rot: 7, len: 13, w: 3.6, curve: 2.4, plain: true }),
+      ]
+      const rows = st.bloom ? 11 : 6
+      const foot = top + 12.4
+      const tip = st.bloom ? top - 13 : top + 1
+      parts.push(h('path', { key: 'axis', d: `M46.4,${n(foot)}Q46,${n((foot + tip) / 2)} 50,${n(tip - 1)}Q54,${n((foot + tip) / 2)} 53.6,${n(foot)}Z`, fill: st.bloom ? darken(pal.petalDeep, 0.22) : darken(pal.leaf, 0.12) }))
+      const spots = []
+      for (let r = 0; r < rows; r += 1) {
+        const t = r / (rows - 1)
+        const y = foot - (foot - tip) * t
+        const half = 4.2 * (1 - t * t * 0.78)
+        const closed = !st.bloom || t > 0.72
+        for (const [j, c] of [[0, -1], [1, 1], [2, 0]]) {
+          const x = 50 + c * half + jit(r * 3 + j, 1) * 0.8
+          const cy = y - (j === 2 ? 1.3 : 0) + jit(r * 3 + j, 2) * 0.6
+          const tone = closed
+            ? (st.bloom ? pal.petalDeep : mix(pal.leaf, pal.petal, 0.35))
+            : [pal.petal, lighten(pal.petal, 0.22), mix(pal.petal, pal.petalDeep, 0.6)][(r + j) % 3]
+          parts.push(h('ellipse', {
+            key: `f${r}-${j}`, cx: n(x), cy: n(cy), rx: closed ? 1.2 : 2, ry: closed ? 1.7 : 1.6,
+            fill: ink.hidden ? ink.petal : tone, stroke: darken(pal.petalDeep, 0.3), strokeWidth: 0.25,
+            transform: `rotate(${n(c * 24 + jit(r + j, 3) * 30)} ${n(x)} ${n(cy)})`,
+          }))
+          if (!closed && (r + j) % 2 === 0) spots.push([x, cy - 0.4])
+        }
+      }
+      if (spots.length > 0) parts.push(dots('spots', spots, 0.42, '#f4d64e'))
+      return parts
+    }
+
+    /** A loosestrife spire: whorled six-petalled stars, still in bud toward the tip. */
+    function starSpire(ink, key, x0, y0, x1, y1, rows, s, open) {
+      const { pal } = ink
+      const parts = [h('path', {
+        key: 'axis', d: `M${n(x0 - 2.2 * s)},${n(y0)}L${n(x1)},${n(y1 - 2)}L${n(x0 + 2.2 * s)},${n(y0)}Z`,
+        fill: mix(pal.leaf, pal.petalDeep, open ? 0.45 : 0.15),
+      })]
+      const light = []
+      const dark = []
+      const eyes = []
+      const buds = []
+      for (let r = 0; r < rows; r += 1) {
+        const t = r / (rows - 1)
+        const cx = x0 + (x1 - x0) * t
+        const cy = y0 + (y1 - y0) * t
+        const half = 3.6 * s * (1 - t * 0.72)
+        const size = 2.2 * s * (1 - t * 0.3)
+        for (const [j, c] of [[0, -1], [1, 1], [2, 0.1]]) {
+          const x = cx + c * half + jit(r * 3 + j, 4) * 0.7
+          const y = cy - (j === 2 ? 1.4 : 0) + jit(r * 3 + j, 5) * 0.8
+          if (!open || t > 0.74) {
+            buds.push([x, y])
+            continue
+          }
+          const target = (r + j) % 2 === 0 ? light : dark
+          for (let a = 0; a < 6; a += 1) target.push([x, y, ...polar(x, y, size, a * 60 + r * 17)])
+          eyes.push([x, y])
+        }
+      }
+      parts.push(strokes('dark', dark, 0.95 * s, ink.hidden ? HIDDEN_GOLD.tip : pal.petalDeep))
+      parts.push(strokes('light', light, 0.95 * s, ink.hidden ? '#ffffff' : pal.petal))
+      parts.push(dots('eyes', eyes, 0.5 * s, '#f3d86e'))
+      parts.push(dots('buds', buds, 0.9 * s, open ? darken(pal.petalDeep, 0.1) : mix(pal.leaf, pal.petal, 0.4)))
+      return h('g', { key }, ...parts)
+    }
+
+    function plantLoosestrife(ink, st) {
+      const { pal } = ink
+      const top = st.top
+      const foot = top + 17
+      const parts = []
+      for (let i = 0; i < 4; i += 1) {
+        const y = GROUND_Y - 5 - i * ((GROUND_Y - 9 - foot) / 3.4)
+        for (const side of [-1, 1]) {
+          parts.push(leaf(ink, `l${i}${side}`, { x: 50, y, rot: side * (64 - i * 5), len: 11.5 - i * 1.2, w: 3.2, veins: 0, fill: side < 0 ? ink.leafBack : ink.leaf }))
+        }
+      }
+      parts.push(stemPath('sideStem', `M50,${n(top + 34)}C54,${n(top + 28)} 59.6,${n(top + 22)} 61,${n(top + 13)}`, pal.stem, 1.1))
+      parts.push(stem(ink, foot, { w: 1.9, bend: 1 }))
+      parts.push(starSpire(ink, 'sideSpire', 61, top + 13, 62.6, st.bloom ? top - 5 : top + 5, st.bloom ? 7 : 4, 0.72, st.bloom))
+      parts.push(starSpire(ink, 'spire', 50, foot, 50, st.bloom ? top - 18 : top - 2, st.bloom ? 13 : 7, 1, st.bloom))
+      return parts
+    }
+
+    /** Yellow flag: three broad falls marked with brown veins, three small standards. */
+    function plantIris(ink, st) {
+      const { pal } = ink
+      const top = st.top
+      const parts = [
+        blade(ink, 's0', { x: 50, y: GROUND_Y, rot: 3, len: 37 * st.k, w: 4.8, curve: 2, fill: ink.leafBack }),
+        blade(ink, 's1', { x: 46, y: GROUND_Y, rot: -8, len: 44 * st.k, w: 4.8, curve: -3 }),
+        blade(ink, 's2', { x: 54, y: GROUND_Y, rot: 10, len: 40 * st.k, w: 4.6, curve: 4, fill: ink.leafBack }),
+        blade(ink, 's3', { x: 47, y: GROUND_Y, rot: -22, len: 27 * st.k, w: 4.4, curve: -6 }),
+        blade(ink, 's4', { x: 53, y: GROUND_Y, rot: 24, len: 25 * st.k, w: 4.4, curve: 7 }),
+        stem(ink, top + 7, { w: 2.2, bend: 1.2 }),
+      ]
+      if (!st.bloom) {
+        parts.push(petal('tip', { y: top + 6, len: 13, w: 4.6, tip: 'point', belly: 0.5, fill: ink.petal, stroke: ink.line }))
+        parts.push(petal('spathe', { y: top + 8, rot: -6, len: 10, w: 5.4, tip: 'point', belly: 0.42, fill: ink.leaf, stroke: ink.leafLine }))
+        return parts
+      }
+      parts.push(petal('spathe', { x: 50, y: top + 15, rot: 30, len: 10, w: 3.6, tip: 'point', belly: 0.45, fill: ink.leaf, stroke: ink.leafLine }))
+      const fall = ink.tone('fall', [[0, mix(pal.petal, '#d08a1a', 0.5)], [36, pal.petal], [100, lighten(pal.petal, 0.3)]])
+      const signal = ink.hidden ? '#c9a45a' : '#7a4a16'
+      const drawFall = (key, rot, len, w) => h('g', { key, transform: place({ y: top + 1, rot }) },
+        h('path', { d: petalD(len, w, 'round', 0.7), fill: fall, stroke: ink.line, strokeWidth: 0.4, strokeLinejoin: 'round' }),
+        h('ellipse', { cx: 0, cy: n(-len * 0.4), rx: n(w * 0.26), ry: n(len * 0.2), fill: mix(pal.petal, '#d98a1e', ink.hidden ? 0.15 : 0.55), opacity: 0.8 }),
+        strokes('sig', [-0.34, -0.17, 0, 0.17, 0.34].map(f => [0, -len * 0.14, f * w, -len * (0.58 - Math.abs(f) * 0.3)]), 0.3, signal, 0.75),
+      )
+      for (const rot of [-25, 0, 25]) {
+        parts.push(petal(`std${rot}`, { y: top, rot, len: 11.5, w: 4.8, tip: 'point', belly: 0.55, fill: ink.back, stroke: ink.line, vein: ink.line }))
+      }
+      parts.push(drawFall('fallL', -112, 18.5, 10.5))
+      parts.push(drawFall('fallR', 112, 18.5, 10.5))
+      for (const rot of [-64, 64]) {
+        parts.push(petal(`arm${rot}`, { y: top + 0.6, rot, len: 8, w: 4.6, tip: 'notch', belly: 0.7, fill: ink.hidden ? ink.petal : lighten(pal.petal, 0.2), stroke: ink.line }))
+      }
+      parts.push(drawFall('fallC', 180, 18, 14.5))
+      parts.push(petal('armC', { y: top - 0.6, rot: 180, len: 6.4, w: 5, tip: 'notch', belly: 0.7, fill: ink.hidden ? ink.petal : lighten(pal.petal, 0.2), stroke: ink.line }))
+      return parts
+    }
+
+    /** Water lily: a floating, notched pad and a bowl of pointed petals round golden stamens. */
+    function plantWaterlily(ink, st) {
+      const { pal } = ink
+      const padFill = ink.lin('pad', [[0, darken(pal.leaf, 0.2)], [100, lighten(pal.leaf, 0.16)]], { x1: '1', y1: '0.5', x2: '0', y2: '0.3' })
+      const parts = [
+        h('ellipse', { key: 'pad2', cx: 27, cy: 76, rx: 10, ry: 3.2, fill: ink.leafBack, stroke: ink.leafLine, strokeWidth: 0.35 }),
+        h('ellipse', { key: 'pad', cx: 50, cy: 81, rx: 25, ry: 7.4, fill: padFill, stroke: ink.leafLine, strokeWidth: 0.45 }),
+        h('path', { key: 'cut', d: 'M50,81L65,89.4 72.6,86.2Z', fill: LAKE }),
+        strokes('veins', [-150, -110, -70, -30, 10, 150].map(a => [50, 81, 50 + 22 * Math.sin((a * Math.PI) / 180), 81 - 6.4 * Math.cos((a * Math.PI) / 180)]), 0.3, ink.rib, 0.6),
+        h('path', { key: 'rim', d: 'M27,79.4C32,75.4 42,74 52,74.2', fill: 'none', stroke: '#ffffff', strokeWidth: 0.7, strokeLinecap: 'round', opacity: 0.3 }),
+      ]
+      if (!st.bloom) {
+        parts.push(bud(ink, 'bud', 50, 79, { len: 16, w: 8.4, rot: 3 }))
+        return parts
+      }
+      const row = (key, rots, len, w, y, fill, extra) => rots.forEach((rot, i) => parts.push(petal(`${key}${i}`, {
+        y, rot, len: len + jit(i, len) * 1.2, w, tip: 'point', belly: 0.5, fill, stroke: ink.line, vein: ink.line, veinOpacity: 0.28, ...extra,
+      })))
+      row('b', [-54, -36, -18, 0, 18, 36, 54], 23, 7.8, 75, ink.back)
+      row('m', [-68, -42, -15, 15, 42, 68], 20, 7.8, 76, ink.petal)
+      const hairs = []
+      const tips = []
+      for (let i = 0; i < 15; i += 1) {
+        const [x, y] = polar(50, 73, 7 + jit(i, 2) * 2.4, -46 + i * 6.6)
+        hairs.push([50, 73, x, y])
+        tips.push([x, y])
+      }
+      parts.push(strokes('stamen', hairs, 0.9, pal.center))
+      parts.push(dots('anther', tips, 0.55, pal.centerDeep))
+      const lit = ink.tone('lit', [[0, pal.petalDeep], [40, lighten(pal.petal, 0.2)], [100, lighten(pal.petal, 0.55)]])
+      row('s', [-90, 90], 21, 7.6, 77, ink.petal)
+      row('q', [-106, 106], 16, 6.6, 77.6, ink.back)
+      row('f', [-50, -25, 0, 25, 50], 10.5, 7.6, 78.4, lit, { sheen: true })
+      return parts
+    }
+
+    /** A lotus leaf seen from the side: a round, wavy-rimmed shield on its own stalk. */
+    function shieldLeaf(ink, key, x, y, rx, ry, tilt) {
+      const rim = []
+      const veins = []
+      for (let i = 0; i < 36; i += 1) {
+        const a = (i / 36) * Math.PI * 2
+        const wave = 1 + 0.045 * Math.sin(i * 1.75)
+        rim.push(`${n(rx * wave * Math.cos(a))},${n(ry * wave * Math.sin(a))}`)
+        if (i % 3 === 0) veins.push([0, -ry * 0.15, rx * 0.92 * Math.cos(a), ry * 0.92 * Math.sin(a)])
+      }
+      const fill = ink.rad('shield', [[0, darken(ink.pal.leaf, 0.3)], [22, ink.pal.leaf], [100, lighten(ink.pal.leaf, 0.12)]], { cx: '50%', cy: '42%', r: '60%' })
+      return h('g', { key, transform: `translate(${x} ${n(y)}) rotate(${tilt})` },
+        h('path', { d: `M${rim.join('L')}Z`, fill, stroke: ink.leafLine, strokeWidth: 0.45, strokeLinejoin: 'round' }),
+        strokes('v', veins, 0.3, ink.rib, 0.6),
+        h('path', { d: `M${n(-rx * 0.8)},${n(-ry * 0.3)}Q${n(-rx * 0.3)},${n(-ry * 0.95)} ${n(rx * 0.4)},${n(-ry * 0.78)}`, fill: 'none', stroke: '#ffffff', strokeWidth: 0.7, strokeLinecap: 'round', opacity: 0.3 }),
+      )
+    }
+
+    /** Lotus: held high above the water, petals pale at the base and rose at the tip. */
+    function plantLotus(ink, st) {
+      const { pal } = ink
+      const top = st.top
+      const base = top + 11
+      const parts = [
+        stemPath('leafStalk', `M41,${GROUND_Y}C40,79 35,72 33.4,${n(top + 25)}`, pal.stem, 1.7),
+        shieldLeaf(ink, 'leaf', 33, top + 24, 15.5 * st.k, 5.6 * st.k, -7),
+        stemPath('stalk', `M56,${GROUND_Y}C57,75 51,64 50,${n(base + 1)}`, pal.stem, 2),
+        dots('prickle', [[55.6, 80], [54.2, 73], [52.2, 66]], 0.35, darken(pal.stem, 0.3)),
+      ]
+      const blush = ink.tone('blush', [[0, lighten(pal.petal, 0.8)], [44, lighten(pal.petal, 0.36)], [82, pal.petal], [100, pal.petalDeep]])
+      const shade = ink.hidden ? ink.back : ink.lin('shade', [[0, lighten(pal.petal, 0.55)], [50, pal.petal], [100, darken(pal.petalDeep, 0.1)]])
+      if (!st.bloom) {
+        parts.push(bud(ink, 'bud', 50, base + 1, { len: 18, w: 10, fill: blush }))
+        return parts
+      }
+      parts.push(stemPath('budStalk', `M60,${GROUND_Y}C62,77 66,68 66.6,${n(top + 24)}`, pal.stem, 1.3))
+      parts.push(bud(ink, 'sideBud', 66.6, top + 24, { len: 11, w: 6, rot: 6, fill: blush }))
+      const row = (key, rots, len, w, y, fill, extra) => rots.forEach((rot, i) => parts.push(petal(`${key}${i}`, {
+        y, rot, len, w, tip: 'point', belly: 0.52, fill, stroke: ink.line, vein: ink.line, veinOpacity: 0.3, ...extra,
+      })))
+      row('d', [-114, 114], 16.5, 8.4, base, shade)
+      row('b', [-38, -19, 0, 19, 38], 24, 10, base, shade)
+      row('s', [-80, 80], 20.5, 9.4, base, blush)
+      row('m', [-59, 59], 23, 10, base, blush)
+      const hairs = []
+      for (let i = 0; i < 17; i += 1) hairs.push([50, top + 6, ...polar(50, top + 6, 7 + jit(i, 3) * 2, -80 + i * 10)])
+      parts.push(strokes('stamen', hairs, 0.6, '#f3d76a'))
+      parts.push(h('path', { key: 'cone', d: `M45,${n(top - 1)}L48,${n(top + 7)}L52,${n(top + 7)}L55,${n(top - 1)}Z`, fill: mix(pal.center, '#a9b85a', 0.55), stroke: '#8a9a44', strokeWidth: 0.3 }))
+      parts.push(h('ellipse', { key: 'pod', cx: 50, cy: top - 1, rx: 5, ry: 2.3, fill: pal.center, stroke: pal.centerDeep, strokeWidth: 0.4 }))
+      parts.push(dots('seeds', [[47.4, top - 1], [50, top - 1.8], [52.6, top - 1], [48.8, top - 0.2], [51.2, top - 0.2]], 0.42, pal.centerDeep))
+      row('f', [-31, 31], 12.5, 9.6, base + 1, blush, { sheen: true })
+      row('c', [0], 9.6, 10, base + 1.4, blush)
+      return parts
+    }
+
+    /** One drawing routine per `species.head`; each handles the bud and the open flower. */
+    const PLANTS = {
+      dandelion: plantDandelion,
+      daisy: plantDaisy,
+      cherry: plantCherry,
+      tulip: plantTulip,
+      lavender: plantLavender,
+      poppy: plantPoppy,
+      sunflower: plantSunflower,
+      lily: plantLily,
+      rose: plantRose,
+      mophead: plantHydrangea,
+      snowdrop: plantSnowdrop,
+      hellebore: plantHellebore,
+      plum: plantPlum,
+      edelweiss: plantEdelweiss,
+      camellia: plantCamellia,
+      cactus: plantCactus,
+      pompom: plantLehua,
+      agave: plantAgave,
+      silversword: plantSilversword,
+      plumeria: plantPlumeria,
+      pickerel: plantPickerel,
+      loosestrife: plantLoosestrife,
+      iris: plantIris,
+      waterlily: plantWaterlily,
+      lotus: plantLotus,
+    }
+
+    /** Where the open flower sits, so the spirit aura centres on it. */
+    function headYOf(species) {
+      return species.head === 'waterlily' ? 62 : HEAD_Y
+    }
+
+    /** Small six-armed crystals for a frost bloom, or a heat glow for an ember one. */
+    function traitExtras(traitId, headY) {
+      if (traitId === 'frost') {
+        const arms = [[27, headY - 14, 2.6], [73, headY - 8, 2.2], [68, headY + 16, 1.8], [30, headY + 12, 2]]
+        return { under: [], over: arms.map(([x, y, r], index) => h('path', {
+          key: `ice${index}`, className: 'fg-sparkle',
+          d: [0, 60, 120].map(a => `M${polar(x, y, r, a).join(',')}L${polar(x, y, r, a + 180).join(',')}`).join(''),
+          fill: 'none', stroke: '#8fc4ea', strokeWidth: 0.6, strokeLinecap: 'round',
+          style: { animationDelay: `${index * 0.5}s` },
+        })) }
+      }
+      if (traitId === 'ember') {
+        return { under: [h('circle', { key: 'heat', cx: HEAD_X, cy: headY, r: 24, fill: '#ff8a2b', opacity: 0.16 }),
+          h('circle', { key: 'heat2', cx: HEAD_X, cy: headY, r: 15, fill: '#ffc24a', opacity: 0.18 })], over: [] }
+      }
+      return { under: [], over: [] }
+    }
+
+    /**
+     * One plant. `dna` makes it an individual (lean, height, girth, facing,
+     * shade, petal lengths); `trait` a curiosity; `tint` a hybrid. Without
+     * `dna` it is the textbook specimen the flower book shows.
+     */
+    function FlowerArt({ speciesId, stage, variant, dna, trait, tint }) {
+      const species = SPECIES_BY_ID.get(speciesId) ?? SPECIES[0]
+      const look = variant ?? 'base'
+      const hidden = look === 'hidden'
+      const genes = typeof dna === 'number' && dna > 0 ? Math.floor(dna) : 0
+      const traitId = hidden || stage !== 'bloom' ? undefined : trait
+      const ink = makeInk(species, look, { dna: genes, trait: traitId, tint })
+      const sceneId = SCENE_ID_OF.get(species.id) ?? 'meadow'
+      const headY = headYOf(species)
+      const floating = species.leaf === 'float'
+      const draw = () => (stage === 'seed'
+        ? seedArt(ink, sceneId)
+        : stage === 'sprout'
+          ? sproutArt(ink, species)
+          : PLANTS[species.head](ink, { bloom: stage === 'bloom', top: stage === 'bloom' ? HEAD_Y : 54, k: stage === 'bloom' ? 1 : 0.74 }))
+      artSalt = genes === 0 ? 0 : (genes % 9973) / 97
+      // Floating and pad plants do not sway on a stem.
+      const sway = stage === 'seed' || floating ? undefined : 'fg-plant'
+      const about = (lean, sx, sy) => `translate(50 ${GROUND_Y}) rotate(${n(lean)}) scale(${n(sx)} ${n(sy)}) translate(-50 ${-GROUND_Y})`
+      let bodies
+      try {
+        const grown = stage !== 'seed' && genes !== 0
+        const lean = grown && !floating ? (hashUnit(genes, 4, 9) - 0.5) * 12 : 0
+        const big = traitId === 'giant' ? 1.2 : 1
+        const sy = (grown ? 0.84 + hashUnit(genes, 5, 9) * 0.25 : 1) * big
+        const sx = (grown ? 0.9 + hashUnit(genes, 6, 9) * 0.2 : 1) * big
+        const flip = grown && hashUnit(genes, 7, 9) < 0.5 ? -1 : 1
+        if (traitId === 'twin') {
+          // Two flowers on one root: the second is the first one's mirror, a little smaller.
+          const spread = floating ? 0 : 11
+          bodies = [
+            h('g', { key: 'twinB', transform: `${floating ? 'translate(13 -5) ' : ''}${about(lean + spread, -flip * sx * 0.8, sy * 0.8)}` }, ...draw()),
+            h('g', { key: 'twinA', transform: `${floating ? 'translate(-9 0) ' : ''}${about(lean - spread, flip * sx * 0.92, sy * 0.92)}` }, ...draw()),
+          ]
+        } else if (lean !== 0 || sx !== 1 || sy !== 1 || flip !== 1) {
+          bodies = [h('g', { key: 'self', transform: about(lean, flip * sx, sy) }, ...draw())]
+        } else {
+          bodies = draw()
+        }
+      } finally {
+        artSalt = 0
+      }
+      const extras = traitExtras(traitId, headY)
+      return h('svg', SVG_PROPS,
+        h('defs', null, ...ink.defs, hidden ? hiddenAuraDef(species.id) : null),
+        ...(hidden ? hiddenAura(species.id, headY) : []),
+        ...extras.under,
+        ground(sceneId),
+        h('g', { className: sway }, ...bodies),
+        ...extras.over,
+        ...(hidden && stage === 'bloom' ? hiddenLights(headY) : []),
+      )
+    }
+
+    function hiddenAuraDef(speciesId) {
+      return h('radialGradient', { key: 'aura', id: `fg-hid-${speciesId}-aura` },
+        h('stop', { offset: '0%', stopColor: HIDDEN_GOLD.aura, stopOpacity: '0.9' }),
+        h('stop', { offset: '52%', stopColor: HIDDEN_GOLD.auraEdge, stopOpacity: '0.34' }),
+        h('stop', { offset: '100%', stopColor: HIDDEN_GOLD.auraEdge, stopOpacity: '0' }),
+      )
+    }
+
+    function hiddenAura(speciesId, headY) {
       return [
-        h('circle', { key: 'aura', cx: HEAD_X, cy: HEAD_Y, r: 30, fill: `url(#${key}-aura)` }),
+        h('circle', { key: 'aura', cx: HEAD_X, cy: headY, r: 32, fill: `url(#fg-hid-${speciesId}-aura)` }),
         h('circle', {
-          key: 'ring', cx: HEAD_X, cy: HEAD_Y, r: 18.5,
+          key: 'ring', cx: HEAD_X, cy: headY, r: 21,
           fill: 'none', stroke: HIDDEN_GOLD.spark, strokeWidth: 0.8,
           strokeDasharray: '3 5', opacity: 0.75, className: 'fg-haloRing',
+          style: { transformOrigin: `${HEAD_X}px ${headY}px` },
         }),
       ]
     }
 
     /** Four-point stars around the bloom, plus a few motes drifting upward. */
-    function hiddenLights() {
-      const stars = [[25, 17, 3.4], [75, 21, 2.8], [71, 53, 3.2], [29, 52, 2.3], [50, 8, 2.6]]
-      const parts = stars.map(([x, y, r], index) => h('path', {
-        key: `star${index}`,
-        className: 'fg-sparkle',
-        d: `M${x},${y - r} L${x + r * 0.26},${y - r * 0.26} L${x + r},${y} L${x + r * 0.26},${y + r * 0.26}`
-          + ` L${x},${y + r} L${x - r * 0.26},${y + r * 0.26} L${x - r},${y} L${x - r * 0.26},${y - r * 0.26} Z`,
-        fill: HIDDEN_GOLD.spark,
-        style: { animationDelay: `${index * 0.42}s` },
-      }))
+    function hiddenLights(headY) {
+      const dy = headY - HEAD_Y
+      const stars = [[22, 15, 3.4], [78, 20, 2.8], [74, 55, 3.2], [26, 54, 2.3], [50, 6, 2.6]]
+      const parts = stars.map(([x, rawY, r], index) => {
+        const y = Math.max(5, rawY + dy)
+        return h('path', {
+          key: `star${index}`,
+          className: 'fg-sparkle',
+          d: `M${x},${y - r} L${x + r * 0.26},${y - r * 0.26} L${x + r},${y} L${x + r * 0.26},${y + r * 0.26}`
+            + ` L${x},${y + r} L${x - r * 0.26},${y + r * 0.26} L${x - r},${y} L${x - r * 0.26},${y - r * 0.26} Z`,
+          fill: HIDDEN_GOLD.spark,
+          stroke: '#e9c96a',
+          strokeWidth: 0.3,
+          style: { animationDelay: `${index * 0.42}s` },
+        })
+      })
       const motes = [[38, 62, 1.5], [61, 66, 1.2], [47, 72, 1.0]]
       for (const [index, [x, y, r]] of motes.entries()) {
         parts.push(h('circle', {
@@ -1987,6 +4010,113 @@ window.__ModuleLoader__.load({
         }),
         h('circle', { cx: 50, cy: 60, r: 3.2, style: { fill: 'var(--dsw-alias-label-secondary)' } }),
       )
+    }
+
+    /** The small creatures that visit open flowers, drawn on a 24 × 24 field. */
+    function VisitorArt({ id }) {
+      const props = { viewBox: '0 0 24 24', 'aria-hidden': 'true', focusable: 'false' }
+      const wing = { fill: '#eaf4fb', stroke: '#8fa9bd', strokeWidth: 0.5, opacity: 0.88 }
+      const ink = '#32261c'
+      switch (id) {
+        case 'bee':
+          return h('svg', props,
+            h('ellipse', { cx: 10, cy: 7.8, rx: 4.6, ry: 2.6, transform: 'rotate(-30 10 7.8)', ...wing }),
+            h('ellipse', { cx: 15, cy: 7.6, rx: 4.2, ry: 2.4, transform: 'rotate(22 15 7.6)', ...wing }),
+            h('ellipse', { cx: 12.6, cy: 14, rx: 6.2, ry: 4.5, fill: '#f6c443', stroke: ink, strokeWidth: 0.7 }),
+            h('path', { d: 'M11.2,10.2v7.6M14.6,10v8', stroke: ink, strokeWidth: 1.7 }),
+            h('circle', { cx: 6.6, cy: 13.6, r: 2.7, fill: ink }),
+            h('circle', { cx: 5.7, cy: 13, r: 0.65, fill: '#ffffff' }),
+            h('path', { d: 'M5.6,11.3q-1.2,-2.4 -2.8,-2.2M7.2,11q.2,-2.4 1.4,-3M18.6,14.4l2,.5', fill: 'none', stroke: ink, strokeWidth: 0.6, strokeLinecap: 'round' }),
+          )
+        case 'butterfly':
+          return h('svg', props,
+            h('path', { d: 'M12,12.4C8.4,4.4 2,3.6 2.4,8.8C2.8,12.6 8,13.2 12,12.4ZM12,12.4C15.6,4.4 22,3.6 21.6,8.8C21.2,12.6 16,13.2 12,12.4Z', fill: '#fffbe4', stroke: '#8a7d55', strokeWidth: 0.5 }),
+            h('path', { d: 'M12,12.8C8,13 4.8,15.2 6.2,18.6C8.2,20.8 11.2,17.4 12,13.8ZM12,12.8C16,13 19.2,15.2 17.8,18.6C15.8,20.8 12.8,17.4 12,13.8Z', fill: '#f6efc4', stroke: '#8a7d55', strokeWidth: 0.5 }),
+            h('path', { d: 'M2.4,8.8C2.2,5.6 4.4,4.8 6.6,5.6C4.8,6.2 3.4,7.4 2.4,8.8ZM21.6,8.8C21.8,5.6 19.6,4.8 17.4,5.6C19.2,6.2 20.6,7.4 21.6,8.8Z', fill: '#4a4034' }),
+            h('path', { d: 'M6.4,9.2h.01M17.6,9.2h.01', stroke: '#4a4034', strokeWidth: 1.7, strokeLinecap: 'round' }),
+            h('path', { d: 'M12,8.8v8.4', stroke: ink, strokeWidth: 1.4, strokeLinecap: 'round' }),
+            h('path', { d: 'M12,8.8q-1.4,-3 -3,-3.4M12,8.8q1.4,-3 3,-3.4', fill: 'none', stroke: ink, strokeWidth: 0.5, strokeLinecap: 'round' }),
+          )
+        case 'ladybug':
+          return h('svg', props,
+            h('path', { d: 'M8.6,8.4q-1.6,-2.6 -3.4,-2.4M15.4,8.4q1.6,-2.6 3.4,-2.4', fill: 'none', stroke: ink, strokeWidth: 0.6, strokeLinecap: 'round' }),
+            h('circle', { cx: 12, cy: 8.6, r: 3.6, fill: '#241a1a' }),
+            h('path', { d: 'M9.8,7.4h.01M14.2,7.4h.01', stroke: '#ffffff', strokeWidth: 1.5, strokeLinecap: 'round' }),
+            h('ellipse', { cx: 12, cy: 14.2, rx: 7, ry: 6.6, fill: '#d93a30', stroke: '#241a1a', strokeWidth: 0.7 }),
+            h('path', { d: 'M12,7.8v13', stroke: '#241a1a', strokeWidth: 0.8 }),
+            h('path', { d: 'M8.4,11.6h.01M15.6,11.6h.01M7.6,15.6h.01M16.4,15.6h.01M10,18.4h.01M14,18.4h.01M12,10.4h.01', stroke: '#241a1a', strokeWidth: 2.2, strokeLinecap: 'round' }),
+            h('path', { d: 'M7.6,11.4q1.2,-2.2 3,-2.6', fill: 'none', stroke: '#ffffff', strokeWidth: 0.8, strokeLinecap: 'round', opacity: 0.5 }),
+          )
+        case 'dragonfly':
+          return h('svg', props,
+            h('ellipse', { cx: 11.4, cy: 7, rx: 6.4, ry: 1.9, transform: 'rotate(24 11.4 7)', ...wing }),
+            h('ellipse', { cx: 17.4, cy: 6.6, rx: 5.6, ry: 1.8, transform: 'rotate(-42 17.4 6.6)', ...wing }),
+            h('ellipse', { cx: 11.4, cy: 17, rx: 6.4, ry: 1.9, transform: 'rotate(-24 11.4 17)', ...wing }),
+            h('ellipse', { cx: 17.4, cy: 17.4, rx: 5.6, ry: 1.8, transform: 'rotate(42 17.4 17.4)', ...wing }),
+            h('path', { d: 'M2.4,12H15', stroke: '#2f8fb0', strokeWidth: 1.6, strokeLinecap: 'round' }),
+            h('path', { d: 'M5,12h.01M7.6,12h.01M10.2,12h.01', stroke: '#1d5f78', strokeWidth: 1.7, strokeLinecap: 'round' }),
+            h('ellipse', { cx: 16.4, cy: 12, rx: 2.6, ry: 1.9, fill: '#2a7c98' }),
+            h('circle', { cx: 20, cy: 12, r: 2, fill: '#3fa58a', stroke: '#1d5f78', strokeWidth: 0.4 }),
+            h('path', { d: 'M20.6,11.2h.01M20.6,12.8h.01', stroke: '#16323a', strokeWidth: 1, strokeLinecap: 'round' }),
+          )
+        case 'firefly':
+          return h('svg', props,
+            h('circle', { className: 'fg-glow', cx: 12, cy: 16.4, r: 7, fill: '#eef26a', opacity: 0.4 }),
+            h('ellipse', { cx: 8.6, cy: 11, rx: 2.4, ry: 5, transform: 'rotate(26 8.6 11)', ...wing }),
+            h('ellipse', { cx: 15.4, cy: 11, rx: 2.4, ry: 5, transform: 'rotate(-26 15.4 11)', ...wing }),
+            h('ellipse', { cx: 12, cy: 11.4, rx: 2.9, ry: 4.6, fill: '#3b3029' }),
+            h('ellipse', { cx: 12, cy: 16.6, rx: 2.7, ry: 2.9, fill: '#f3f45e', stroke: '#c9c63a', strokeWidth: 0.4 }),
+            h('circle', { cx: 12, cy: 6.6, r: 2, fill: '#b9472f' }),
+            h('path', { d: 'M11.2,5q-.8,-2 -2.4,-2.2M12.8,5q.8,-2 2.4,-2.2', fill: 'none', stroke: ink, strokeWidth: 0.5, strokeLinecap: 'round' }),
+          )
+        case 'moth':
+          return h('svg', props,
+            h('path', { d: 'M12.6,11C9,5.6 3.6,4.4 1.8,6.2C3.8,9.6 8,11.6 12.6,12.2Z', fill: '#8c7b6a', stroke: '#54483c', strokeWidth: 0.5 }),
+            h('path', { d: 'M12.6,13C9.4,13 6.6,14.6 5.6,17.4C8.6,17.8 11.4,16 12.8,14Z', fill: '#e58a3a', stroke: '#a05a20', strokeWidth: 0.4 }),
+            h('path', { d: 'M4.4,6.6l4.6,3M6.6,5.8l3.8,3.6', fill: 'none', stroke: '#54483c', strokeWidth: 0.4, opacity: 0.7 }),
+            h('ellipse', { cx: 14.6, cy: 13, rx: 5.2, ry: 2.5, transform: 'rotate(8 14.6 13)', fill: '#a39483', stroke: '#54483c', strokeWidth: 0.5 }),
+            h('path', { d: 'M16.4,11.2v4M18,11.8v3.2', stroke: '#f3ede3', strokeWidth: 0.8 }),
+            h('path', { d: 'M19.4,13.6l2.6,1.4 -2.4,.8Z', fill: '#32261c' }),
+            h('circle', { cx: 10.6, cy: 12.2, r: 0.8, fill: ink }),
+            h('path', { d: 'M9.8,12.8Q4,15 2.6,20.6', fill: 'none', stroke: ink, strokeWidth: 0.5, strokeLinecap: 'round' }),
+            h('path', { d: 'M10.4,11.2q-1.4,-2.6 -3.2,-3', fill: 'none', stroke: ink, strokeWidth: 0.5, strokeLinecap: 'round' }),
+          )
+        case 'robin':
+          return h('svg', props,
+            h('path', { d: 'M17,13.6l5,-3.4 -.6,4.4Z', fill: '#6f5946' }),
+            h('ellipse', { cx: 12.4, cy: 13.6, rx: 6.6, ry: 5.6, fill: '#8d735a', stroke: '#5a4634', strokeWidth: 0.5 }),
+            h('circle', { cx: 8.4, cy: 9.2, r: 4, fill: '#8d735a', stroke: '#5a4634', strokeWidth: 0.5 }),
+            h('path', { d: 'M5.2,9.4C5.4,12.6 6.6,16.6 10.4,17.8C13.4,17 13.6,13 11.6,10.4C10,8.6 6.4,8 5.2,9.4Z', fill: '#e8743b' }),
+            h('path', { d: 'M9,17.6C11.4,19.2 15,19 17,17.2C14.6,17.6 11.4,17.4 9,17.6Z', fill: '#f3ede3' }),
+            h('path', { d: 'M12.6,11.4C15.4,11 17.6,12.4 18,14.8C15.6,15.4 13.6,14.2 12.6,11.4Z', fill: '#6f5946' }),
+            h('path', { d: 'M4.8,9.2L1.8,9.9 4.7,10.6Z', fill: ink }),
+            h('circle', { cx: 7.4, cy: 8.4, r: 0.8, fill: '#1a1410' }),
+            h('path', { d: 'M11,19v2.6M13.6,19.2v2.4', stroke: ink, strokeWidth: 0.6, strokeLinecap: 'round' }),
+          )
+        case 'honeycreeper':
+          return h('svg', props,
+            h('path', { d: 'M17.6,14.6l4.8,3 -5.6,-.2Z', fill: '#2a2226' }),
+            h('ellipse', { cx: 12.8, cy: 13.6, rx: 6.2, ry: 4.5, transform: 'rotate(14 12.8 13.6)', fill: '#dd3a2c', stroke: '#8c1f1a', strokeWidth: 0.5 }),
+            h('circle', { cx: 8.4, cy: 9.6, r: 3.5, fill: '#dd3a2c', stroke: '#8c1f1a', strokeWidth: 0.5 }),
+            h('path', { d: 'M11.6,11.4C14.6,10.6 18,12.4 19,15.8C15.6,16.4 12.6,14.6 11.6,11.4Z', fill: '#2a2226' }),
+            h('path', { d: 'M13.6,13.2l2.6,.8', stroke: '#f3ede3', strokeWidth: 0.7, strokeLinecap: 'round' }),
+            h('path', { d: 'M5.4,9.4Q1.8,10 2,14.6', fill: 'none', stroke: '#f0a172', strokeWidth: 1.2, strokeLinecap: 'round' }),
+            h('circle', { cx: 7.6, cy: 8.9, r: 0.75, fill: '#1a1410' }),
+            h('path', { d: 'M11.6,18v3M14,18.2v2.8', stroke: '#f0a172', strokeWidth: 0.6, strokeLinecap: 'round' }),
+          )
+        default:
+          return h('svg', props,
+            h('path', { d: 'M17.4,14.4l4.2,1.8 -4.6,1Z', fill: '#176f8a' }),
+            h('ellipse', { cx: 13, cy: 13.6, rx: 5.6, ry: 4.8, fill: '#e9853a', stroke: '#a8561c', strokeWidth: 0.5 }),
+            h('path', { d: 'M9.4,9.6C13,8 17.6,10 18.6,15.4C15.2,16 11.6,14.4 9.4,9.6Z', fill: '#1f93ad', stroke: '#14627a', strokeWidth: 0.5 }),
+            h('circle', { cx: 9.6, cy: 9, r: 3.6, fill: '#1f93ad', stroke: '#14627a', strokeWidth: 0.5 }),
+            h('path', { d: 'M7.6,10.2C8.6,11.4 10.4,11.6 11.6,10.8C10.4,10.2 9,10 7.6,10.2Z', fill: '#f6f1e6' }),
+            h('path', { d: 'M8,10.8C7.4,11.8 7.8,12.8 8.8,13.2', fill: 'none', stroke: '#e9853a', strokeWidth: 1.1, strokeLinecap: 'round' }),
+            h('path', { d: 'M6.4,8.4L0.8,9.6 6.3,10.2Z', fill: '#2a2a30' }),
+            h('circle', { cx: 8.6, cy: 8.2, r: 0.8, fill: '#101014' }),
+            h('path', { d: 'M12,18.2v2.4M14.2,18.2v2.4', stroke: '#d0552a', strokeWidth: 0.7, strokeLinecap: 'round' }),
+          )
+      }
     }
 
     function CoinGlyph() {
@@ -2030,6 +4160,13 @@ window.__ModuleLoader__.load({
           h('path', { d: 'M10 12.6h4M10 15.8h4', stroke: '#6b520e', strokeWidth: 1.3, strokeLinecap: 'round' }),
         )
       }
+      if (id === 'compost') {
+        return h('svg', common,
+          h('path', { d: 'M6 9.4c0-1 1-1.8 2.4-1.8h7.2c1.4 0 2.4.8 2.4 1.8l-.8 9a2 2 0 0 1-2 1.8H8.8a2 2 0 0 1-2-1.8Z', fill: '#8a6242' }),
+          h('path', { d: 'M9.4 7.6c.4-1.6 1.4-2.6 2.6-2.6s2.2 1 2.6 2.6', fill: 'none', stroke: '#6a4a30', strokeWidth: 1.4 }),
+          h('path', { d: 'M12 16.6c0-2.4 1.2-3.8 3.2-4.2-.2 2.2-1.2 3.6-3.2 4.2ZM12 16.6c0-1.8-.8-2.8-2.4-3.2.2 1.6 1 2.8 2.4 3.2Z', fill: '#9fd07a' }),
+        )
+      }
       if (id === 'sprinkler') {
         return h('svg', common,
           h('path', { d: 'M12 4.4c2.7 3.1 4.1 5.2 4.1 7.2a4.1 4.1 0 0 1-8.2 0c0-2 1.4-4.1 4.1-7.2Z', fill: '#7fb2e8' }),
@@ -2061,24 +4198,64 @@ window.__ModuleLoader__.load({
     }
 
     /** One flower detail card: drawing, name, variant, Latin, meaning, figures, actions. */
-    function BloomPreview({ id, speciesId, variant, t, meta, worth, armed, onSell, onClose }) {
+    function bloomName(item, t) {
+      let name = item.tint ? t('hybrid.name', { form: t(`species.${item.species}`), tint: t(`species.${item.tint}`) }) : t(`species.${item.species}`)
+      if (item.trait) name = t('trait.named', { trait: t(`trait.${item.trait}`), flower: name })
+      return name
+    }
+
+    function BloomPreview({ id, speciesId, variant, dna, trait, tint, t, meta = [], worth, armed, onSell, onClose, modal = false, onPrev, onNext, individuals = [], onSellOne, quoteOne }) {
       const species = SPECIES_BY_ID.get(speciesId) ?? SPECIES[0]
-      return h('div', { className: 'fg-preview', id, tabIndex: -1, role: 'group', 'aria-label': t(`species.${species.id}`) },
+      const dialogRef = React.useRef(null)
+      const [individual, setIndividual] = React.useState(0)
+      const chosen = individuals[Math.min(individual, Math.max(0, individuals.length - 1))]
+      const [oneArmed, setOneArmed] = React.useState(false)
+      React.useEffect(() => setOneArmed(false), [chosen])
+      React.useEffect(() => {
+        if (!oneArmed) return undefined
+        const timer = window.setTimeout(() => setOneArmed(false), 4000)
+        return () => window.clearTimeout(timer)
+      }, [oneArmed])
+      const [sample, setSample] = React.useState(null)
+      React.useEffect(() => setSample(null), [speciesId, variant, trait, tint, dna])
+      React.useEffect(() => {
+        if (!modal) return undefined
+        const dialog = dialogRef.current
+        if (dialog && !dialog.open) dialog.showModal()
+        return () => { if (dialog?.open) dialog.close() }
+      }, [modal])
+      const card = h('div', { className: 'fg-preview', id, tabIndex: -1, role: 'group', 'aria-label': t(`species.${species.id}`) },
         h('div', { className: 'fg-previewArt' },
-          h(FlowerArt, { speciesId: species.id, stage: 'bloom', variant }),
+          h(FlowerArt, { speciesId: species.id, stage: 'bloom', variant, dna: sample ?? chosen?.dna ?? dna, trait, tint }),
         ),
         h('div', { className: 'fg-previewBody' },
           h('div', { className: 'fg-previewHead' },
-            h('span', { className: 'fg-previewName' }, t(`species.${species.id}`)),
+            h('span', { className: 'fg-previewName' }, bloomName({ species: species.id, tint, trait }, t)),
             h('span', { className: 'fg-previewVariant', 'data-variant': variant }, t(`variant.${variant}`)),
           ),
           h('div', { className: 'fg-previewLatin' }, t(`latin.${species.id}`)),
           h('div', { className: 'fg-previewMeaning' }, t(`codex.${species.id}`)),
+          modal ? h('span', { className: 'fg-note' }, t(sample !== null ? 'card.example' : dna ? 'card.specimen' : 'card.textbook')) : null,
+          modal ? h('p', { className: 'fg-cardFact' }, t(`fact.${species.id}`)) : null,
+          trait ? h('p', { className: 'fg-note' }, t(`trait.${trait}.cause`)) : null,
+          tint ? h('p', { className: 'fg-note' }, t('hybrid.how')) : null,
+          modal ? h('div', { className: 'fg-previewStats' },
+            h('span', null, `${t('card.ground')} · ${t(`scene.${SCENES.find(ground => ground.species.includes(species.id)).id}`)}`),
+            h('span', null, `${t('card.grow')} · ${formatDuration(growMsOf(species), t)}`),
+            h('span', null, `${t('card.seed')} · ${species.cost}`)) : null,
           h('div', { className: 'fg-previewStats' },
-            meta.map((line, index) => h('span', { key: index }, line)),
+            meta.filter(Boolean).map((line, index) => h('span', { key: index }, line)),
           ),
         ),
         h('div', { className: 'fg-previewActions' },
+          individuals.length > 1 ? h('label', { className: 'fg-note' }, t('basket.individual'),
+            h('select', { className: 'fg-btn', value: Math.min(individual, individuals.length - 1), onChange: event => setIndividual(Number(event.target.value)) },
+              individuals.map((item, index) => h('option', { key: index, value: index }, t('basket.individualNo', { n: index + 1, max: individuals.length }))))) : null,
+          chosen && onSellOne ? h('button', { type: 'button', className: oneArmed ? 'fg-btn fg-btnDanger' : 'fg-btn fg-btnPrimary', onClick: () => {
+            if (!oneArmed) { setOneArmed(true); return }
+            setOneArmed(false)
+            onSellOne(chosen)
+          } }, t(oneArmed ? 'basket.confirmOne' : 'basket.sellOne', { n: quoteOne(chosen) })) : null,
           onSell === undefined
             ? null
             : h('button', {
@@ -2086,8 +4263,156 @@ window.__ModuleLoader__.load({
               className: armed ? 'fg-btn fg-btnDanger' : 'fg-btn fg-btnPrimary',
               onClick: onSell,
             }, armed ? t('basket.confirm', { n: worth }) : t('basket.sellAll', { n: worth })),
+          modal ? h('button', { type: 'button', className: 'fg-btn', onClick: () => setSample(value => (value ?? dna ?? 0) + 7919), title: t('card.individual') }, t('card.another')) : null,
+          modal && sample !== null ? h('button', { type: 'button', className: 'fg-btn fg-btnGhost', onClick: () => setSample(0) }, t('card.textbook')) : null,
+          modal && dna ? h('button', { type: 'button', className: 'fg-btn fg-btnGhost', onClick: () => setSample(null) }, t('card.specimen')) : null,
+          onPrev ? h('button', { type: 'button', className: 'fg-btn fg-btnGhost', onClick: onPrev }, t('card.prev')) : null,
+          onNext ? h('button', { type: 'button', className: 'fg-btn fg-btnGhost', onClick: onNext }, t('card.next')) : null,
           h('button', { type: 'button', className: 'fg-btn fg-btnGhost', onClick: onClose }, t('preview.close')),
         ),
+      )
+      return modal ? h('dialog', {
+        ref: dialogRef, className: 'fg-dialog', 'aria-label': bloomName({ species: species.id, tint, trait }, t),
+        onCancel: event => { event.preventDefault(); onClose() },
+        onClick: event => { if (event.target === event.currentTarget) onClose() },
+      }, card) : card
+    }
+
+    /** Optional activity panels; the owning view commits every returned transition. */
+    function GardenActivities({ state, t, clock, onChange }) {
+      const [armed, setArmed] = React.useState(null)
+      const [notice, setNotice] = React.useState(null)
+      const [selected, setSelected] = React.useState({})
+      const show = showAt(state, clock)
+      const entry = showEntry(state, clock)
+      const nextTier = SHOW_TIERS.find(tier => tier.points > entry.points)
+      const groups = new Map()
+      for (const item of state.basket) {
+        if (!showAccepts(show, item)) continue
+        const key = itemKey(item)
+        const previous = groups.get(key)
+        groups.set(key, { key, items: [...(previous?.items ?? []), item], count: (previous?.count ?? 0) + 1 })
+      }
+      function nameOf(item) {
+        const name = item.tint === undefined
+          ? t(`species.${item.species}`)
+          : t('hybrid.name', { tint: t(`species.${item.tint}`), form: t(`species.${item.species}`) })
+        return [name, t(`variant.${item.variant}`), item.trait === undefined ? null : t(`trait.${item.trait}`)]
+          .filter(Boolean).join(' · ')
+      }
+      function enter(key, item) {
+        const current = getState()
+        const now = Date.now()
+        const currentShow = showAt(current, now)
+        const currentEntry = showEntry(current, now)
+        const individualIndex = current.basket.indexOf(item)
+        if (currentShow.id !== show.id || individualIndex < 0 || !showAccepts(currentShow, item)
+          || currentEntry.entered >= SHOW_SLOTS) {
+          setArmed(null)
+          return
+        }
+        const points = showPoints(item, currentEntry)
+        if (armed === null || armed.key !== key || armed.showId !== currentShow.id
+          || armed.item !== item || armed.entered !== currentEntry.entered || armed.points !== points || armed.until < now) {
+          setArmed({ key, item, showId: currentShow.id, entered: currentEntry.entered, points, until: now + 5000 })
+          setNotice(null)
+          return
+        }
+        setArmed(null)
+        const next = exhibit(current, key, now, individualIndex)
+        if (next === null) return
+        onChange(next)
+        setNotice({ kind: 'show', item, points: next.show.points - currentEntry.points,
+          ribbons: (next.ribbons ?? 0) - (current.ribbons ?? 0) })
+      }
+      function upgrade(id) {
+        const next = upgradeFacility(getState(), id)
+        if (next === null) return
+        setArmed(null)
+        onChange(next)
+        setNotice({ kind: 'facility', id, level: facilityLevel(next, id) })
+      }
+      const status = notice === null ? null : notice.kind === 'show'
+        ? t('show.sent', { name: nameOf(notice.item), n: notice.points })
+          + (notice.ribbons > 0 ? t('show.won', { n: notice.ribbons }) : '')
+        : t('facility.done', { name: t(`facility.${notice.id}`), n: notice.level })
+      return h(React.Fragment, null,
+        h('section', { className: 'fg-section', id: 'fg-show', tabIndex: -1, 'aria-label': t('show.title') },
+          h('div', { className: 'fg-sectionHead' },
+            h('h2', { className: 'fg-sectionTitle' }, t('show.title')),
+            h('span', { className: 'fg-sectionMeta' }, t('show.left', { n: formatDuration(Math.max(0, show.endsAt - clock), t) })),
+            h('span', { className: 'fg-chip' },
+              h('span', { className: 'fg-chipKey' }, t('ribbon.label')),
+              h('span', { className: 'fg-chipValue' }, state.ribbons ?? 0))),
+          h('div', { className: 'fg-order' },
+            h('div', { className: 'fg-orderHead' },
+              h('span', { className: 'fg-orderId' }, t('show.name', {
+                season: t(`show.season.${show.season}`),
+                theme: t(`show.theme.${show.theme}`, { scene: t(`scene.${show.sceneId}`) }),
+              })),
+              h('span', { className: 'fg-orderReward' }, t('show.points', { n: entry.points }))),
+            h('p', { className: 'fg-hint' }, t(`show.desc.${show.theme}`, { scene: t(`scene.${show.sceneId}`) }), ' ', t('show.exception')),
+            h('p', { className: 'fg-hint' }, t('show.rules', {
+              slots: SHOW_SLOTS, a: SHOW_TIERS[0].points, b: SHOW_TIERS[1].points, c: SHOW_TIERS[2].points,
+            })),
+            h('div', { className: 'fg-sectionHead' },
+              h('span', { className: 'fg-sectionMeta' }, t('show.entered', { n: entry.entered, max: SHOW_SLOTS })),
+              h('span', { className: 'fg-sectionMeta' }, nextTier === undefined
+                ? t('show.done') : t('show.next', { n: nextTier.points - entry.points })))),
+          h('details', { className: 'fg-showChoices' },
+            h('summary', { className: 'fg-btn' }, t('show.choose')),
+          entry.entered >= SHOW_SLOTS
+            ? h('p', { className: 'fg-empty' }, t('show.full'))
+            : groups.size === 0
+              ? h('p', { className: 'fg-empty' }, t('show.none'))
+              : h('div', { className: 'fg-orders' }, Array.from(groups.values(), ({ key, items, count }) => {
+                const selectedIndex = Math.min(selected[key] ?? 0, items.length - 1)
+                const item = items[selectedIndex]
+                const points = showPoints(item, entry)
+                const confirming = armed !== null && armed.key === key && armed.showId === show.id && armed.item === item
+                  && armed.entered === entry.entered && armed.points === points && armed.until >= clock
+                return h('div', { className: 'fg-order', key },
+                  h('div', { className: 'fg-art' }, h(FlowerArt, {
+                    speciesId: item.species, stage: 'bloom', variant: item.variant,
+                    dna: item.dna, trait: item.trait, tint: item.tint,
+                  })),
+                  h('div', { className: 'fg-orderHead' },
+                    h('span', { className: 'fg-orderId' }, nameOf(item)),
+                    h('span', { className: 'fg-orderReward' }, `×${count}`)),
+                  count > 1 ? h('label', { className: 'fg-note' }, t('basket.individual'),
+                    h('select', { className: 'fg-btn', value: selectedIndex, onChange: event => { setSelected(value => ({ ...value, [key]: Number(event.target.value) })); setArmed(null) } },
+                      items.map((bloom, index) => h('option', { key: index, value: index }, t('basket.individualNo', { n: index + 1, max: count }))))) : null,
+                  h('button', {
+                    type: 'button', className: confirming ? 'fg-btn fg-btnDanger' : 'fg-btn fg-btnPrimary',
+                    onClick: () => enter(key, item),
+                  }, t(confirming ? 'show.confirm' : 'show.enter', { n: points })))
+              })),
+        ),
+        ),
+        h('section', { className: 'fg-section', 'aria-label': t('facility.title') },
+          h('h2', { className: 'fg-sectionTitle' }, t('facility.title')),
+          h('p', { className: 'fg-hint' }, t('facility.note')),
+          h('div', { className: 'fg-orders' }, FACILITIES.map(facility => {
+            const level = facilityLevel(state, facility.id)
+            const cost = facilityCost(facility.id, level)
+            const shortCoins = cost === null ? 0 : Math.max(0, cost.coins - state.coins)
+            const shortRibbons = cost === null ? 0 : Math.max(0, cost.ribbons - (state.ribbons ?? 0))
+            return h('div', { className: 'fg-order', key: facility.id },
+              h('div', { className: 'fg-orderHead' },
+                h('span', { className: 'fg-orderId' }, t(`facility.${facility.id}`)),
+                h('span', { className: 'fg-orderReward' }, t('facility.level', { n: level, max: FACILITY_MAX }))),
+              h('p', { className: 'fg-hint' }, t(`facility.${facility.id}.note`, { n: Math.round(level * facility.step * 100) })),
+              cost === null ? h('span', { className: 'fg-sectionMeta' }, t('facility.max'))
+                : h(React.Fragment, null,
+                  h('span', { className: 'fg-sectionMeta' }, t(cost.ribbons > 0 ? 'facility.costRibbon' : 'facility.cost', cost)),
+                  shortCoins > 0 ? h('span', { className: 'fg-sectionWarn' }, t('facility.short', { n: shortCoins })) : null,
+                  shortRibbons > 0 ? h('span', { className: 'fg-sectionWarn' }, t('facility.shortRibbon', { n: shortRibbons })) : null,
+                  h('button', {
+                    type: 'button', className: 'fg-btn fg-btnPrimary', disabled: shortCoins > 0 || shortRibbons > 0,
+                    onClick: () => upgrade(facility.id),
+                  }, t('facility.upgrade'))))
+          }))),
+        h('div', { className: 'fg-sectionMeta', role: 'status', 'aria-live': 'polite', 'aria-atomic': 'true' }, status),
       )
     }
 
@@ -2100,6 +4425,7 @@ window.__ModuleLoader__.load({
       const [picker, setPicker] = React.useState(null)
       const [confirmReset, setConfirmReset] = React.useState(false)
       const [codexOpen, setCodexOpen] = React.useState(false)
+      const [achOpen, setAchOpen] = React.useState(false)
       const [armed, setArmed] = React.useState(null)
       // Which basket bloom the player opened to look at.
       const [preview, setPreview] = React.useState(null)
@@ -2161,7 +4487,7 @@ window.__ModuleLoader__.load({
         window.setTimeout(() => {
           const root = rootRef.current
           if (root === null) return
-          const target = root.querySelector(selector)
+          const target = root.querySelector(selector) ?? (selector.startsWith('[data-codex=') ? root.querySelector('#fg-codex-toggle') : null)
           if (target !== null && typeof target.focus === 'function') target.focus()
         }, 0)
       }
@@ -2189,8 +4515,7 @@ window.__ModuleLoader__.load({
       }
 
       /** Open the bloom detail under the basket; clicking the same chip closes it. */
-      function showBloom(speciesId, variant) {
-        const key = `${speciesId}:${variant}`
+      function showBloom(key) {
         setArmed(null)
         if (preview === key) {
           setPreview(null)
@@ -2210,7 +4535,11 @@ window.__ModuleLoader__.load({
       const weatherLeft = formatDuration(weatherEndsAt(clock) - clock, t)
       const level = levelOf(state.xp)
       const xpInLevel = state.xp % XP_PER_LEVEL
-      const basketValueNow = basketValue(state)
+      const featured = featuredSpecies(state, clock)
+      const basketValueNow = basketValue(state, clock)
+      const marketPercent = Math.round((MARKET_BONUS - 1) * 100)
+      const readyAchievements = ACHIEVEMENTS.filter(entry => achievementReady(state, entry))
+      const metKinds = Object.keys(state.visitors ?? {}).length
       const capacity = basketCapacity(state)
       const basketFull = state.basket.length >= capacity
       const sprinklerLeftMs = Math.max(0, (slot.sprinklerUntil ?? 0) - clock)
@@ -2225,14 +4554,14 @@ window.__ModuleLoader__.load({
         rainy ? (scene.rainWets ? t('weather.soilWet') : t('weather.soilDry')) : null,
       ].filter(Boolean).join(' · ')
 
-      function plant(index, speciesId) {
+      function plant(index, speciesId, tintId) {
         const species = SPECIES_BY_ID.get(speciesId)
         if (species === undefined) return
-        if (getState().coins < species.cost) {
+        if (tintId === undefined && getState().coins < species.cost) {
           announce(t('error.coins'), 'warn')
           return
         }
-        const next = plantAt(getState(), state.scene, index, speciesId)
+        const next = plantAt(getState(), state.scene, index, speciesId, tintId)
         if (next === null) return
         commit(next, true)
         setPicker(null)
@@ -2241,6 +4570,37 @@ window.__ModuleLoader__.load({
 
       function water(index) {
         commit(waterAt(getState(), state.scene, index), true)
+      }
+
+      function waterEvery() {
+        commit(waterAll(getState(), state.scene), true)
+      }
+
+      function greet(index) {
+        const now = Date.now()
+        const before = getState()
+        const currentSlot = before.scenes[before.scene]
+        const plot = currentSlot === undefined ? null : currentSlot.plots[index]
+        const visitor = visitorAt(before.scene, index, plot, now, weatherAt(now), facilityLevel(before, 'hive'))
+        const next = greetVisitor(before, before.scene, index, now, weatherAt(now))
+        if (visitor === null || next === null) return
+        commit(next, true)
+        const words = {
+          name: t(`visitor.${visitor.id}`),
+          coins: visitor.tip,
+          flower: t(`species.${plot.species}`),
+        }
+        const fresh = (before.visitors[visitor.id] ?? 0) === 0 ? ` ${t('visitor.new')}` : ''
+        announce(t(plot.pollinated === true ? 'visitor.again' : 'visitor.met', words) + fresh, 'ok')
+        focusPlot(index, 'harvest')
+      }
+
+      function claim(achievementId) {
+        const entry = ACHIEVEMENT_BY_ID.get(achievementId)
+        const next = claimAchievement(getState(), achievementId)
+        if (entry === undefined || next === null) return
+        commit(next, true)
+        announce(t('ach.done', { name: t(`ach.${entry.id}.name`), n: entry.coins }), 'ok')
       }
 
       function feed(index, speciesId) {
@@ -2293,12 +4653,16 @@ window.__ModuleLoader__.load({
         const next = harvestAt(before, before.scene, index, Date.now(), weatherAt(Date.now()))
         if (next === null) return
         commit(next, true)
-        const bloom = next.basket[next.basket.length - 1]
-        if (bloom !== undefined && bloom.variant === 'hidden') {
-          announce(t('reward.gold', { flower: t(`species.${species.id}`), n: 3 }), 'gold', species.id)
-        } else {
-          announce(t('reward.gain', { flower: t(`species.${species.id}`), xp: species.xp }), 'ok')
+        const first = next.basket[before.basket.length]
+        const spirit = first?.variant === 'hidden'
+        let text = spirit ? t('reward.gold', { flower: bloomName(first, t), n: 3 })
+          : first?.trait ? t('reward.trait', { name: bloomName(first, t), n: TRAIT_PRICE })
+            : t(next.basket.length - before.basket.length > 1 ? 'reward.double' : 'reward.gain', { flower: bloomName(first, t), xp: species.xp })
+        if (next.lastBred) {
+          const [form, tint] = next.lastBred.split('~')
+          text += ` · ${t('hybrid.seed', { name: t('hybrid.name', { form: t(`species.${form}`), tint: t(`species.${tint}`) }) })}`
         }
+        announce(text, spirit ? 'gold' : 'ok', spirit ? species.id : null)
         focusPlot(index, 'plant')
       }
 
@@ -2332,25 +4696,35 @@ window.__ModuleLoader__.load({
         announce(t('scene.unlocked'), 'ok')
       }
 
-      function sell(speciesId, variant) {
-        const key = `${speciesId ?? 'all'}:${variant ?? 'all'}`
+      function sell(kind) {
+        const key = kind ?? 'all:all'
         if (armed !== key) {
           setArmed(key)
           return
         }
         const before = getState()
-        const next = sellBasket(before, speciesId, variant)
+        const next = kind === undefined ? sellBasket(before, undefined, undefined, Date.now()) : sellKind(before, kind, Date.now())
         setArmed(null)
         setPreview(null)
         if (next === null) return
         const gain = next.coins - before.coins
         commit(next, true)
-        if (speciesId !== undefined) {
-          announce(t('reward.sell', { flower: t(`species.${speciesId}`), coins: gain }), 'ok')
-        } else {
-          announce(t('reward.sellMany', { n: before.basket.length, coins: gain }), 'ok')
-        }
+        announce(t('reward.sellMany', { n: before.basket.length - next.basket.length, coins: gain }), 'ok')
         focusSection('basket')
+      }
+
+      function sellOne(item) {
+        const before = getState()
+        const index = before.basket.indexOf(item)
+        const next = sellIndividual(before, index, Date.now())
+        if (next === null) return
+        commit(next, true)
+        setArmed(null)
+        if (!next.basket.some(bloom => itemKey(bloom) === itemKey(item))) {
+          setPreview(null)
+          focusSection('basket')
+        }
+        announce(t('reward.sell', { flower: bloomName(item, t), coins: next.coins - before.coins }))
       }
 
       function deliver(orderId) {
@@ -2381,23 +4755,63 @@ window.__ModuleLoader__.load({
         focusPlot(index, 'plant')
       }
 
-      // Basket grouped by species + variant for a stable, honest layout.
-      const basketGroups = []
-      for (const species of SPECIES) {
-        for (const variant of ['base', 'alt', 'hidden']) {
-          const count = state.basket.filter(item => item.species === species.id && item.variant === variant).length
-          if (count > 0) basketGroups.push({ species, variant, count, worth: bloomPrice(species, variant) * count })
-        }
+      // Keep curiosities and hybrids separate, using the same quote as the sale.
+      const groups = new Map()
+      for (const item of state.basket) {
+        const key = itemKey(item)
+        if (!groups.has(key)) groups.set(key, { ...item, key, speciesId: item.species, items: [] })
+        groups.get(key).items.push(item)
+      }
+      const basketGroups = [...groups.values()].map(group => ({ ...group, species: SPECIES_BY_ID.get(group.speciesId), count: group.items.length, worth: quoteSale(state, group.items, clock).coins }))
+
+      const previewGroup = basketGroups.find(group => group.key === preview)
+      const archive = Object.entries(state.specimens ?? {}).map(([key, item]) => ({ ...item, key, species: SPECIES_BY_ID.get(item.species) }))
+      for (const [key, count] of Object.entries(state.seen)) {
+        const [speciesId, variant] = key.split(':')
+        if (count > 0 && !archive.some(entry => entry.key === key)) archive.push({ key, species: SPECIES_BY_ID.get(speciesId), variant, count })
+      }
+      for (const [key, count] of Object.entries(state.exotics ?? {})) {
+        const [speciesId, trait] = key.split(':')
+        if (count > 0 && !archive.some(entry => entry.species.id === speciesId && entry.trait === trait)) archive.push({ key: `trait:${key}`, species: SPECIES_BY_ID.get(speciesId), variant: 'base', trait, count })
+      }
+      for (const [key, count] of Object.entries(state.hybrids ?? {})) {
+        const [speciesId, tint] = key.split('~')
+        if (count > 0 && !archive.some(entry => entry.species.id === speciesId && entry.tint === tint)) archive.push({ key: `hybrid:${key}`, species: SPECIES_BY_ID.get(speciesId), variant: 'base', tint, count })
+      }
+      const codexPreviewEntry = archive.find(entry => entry.key === codexPreview)
+      function stepCodex(delta) {
+        const at = archive.findIndex(entry => entry.key === codexPreview)
+        setCodexPreview(archive[(at + delta + archive.length) % archive.length].key)
+      }
+      function renderArchive() {
+        return h('div', { className: 'fg-archive' },
+          h('h3', { className: 'fg-sectionTitle' }, t('trait.title')),
+          h('p', { className: 'fg-hint' }, t('trait.note')),
+          h('div', { className: 'fg-basket' }, TRAITS.map(trait => h('span', { key: trait.id, className: 'fg-badge', title: t(`trait.${trait.id}.cause`) }, t(`trait.${trait.id}`), ' · ', t(`trait.${trait.id}.clue`)))),
+          h('p', { className: 'fg-hint' }, t('hybrid.how')),
+          h('div', { className: 'fg-archiveGrid' }, archive.filter(entry => (entry.trait || entry.tint) && scene.species.includes(entry.species.id)).map(entry =>
+            h('button', { key: entry.key, type: 'button', className: 'fg-archiveEntry', 'data-codex': entry.key, onClick: () => setCodexPreview(entry.key) },
+              h(FlowerArt, { speciesId: entry.species.id, stage: 'bloom', variant: entry.variant, trait: entry.trait, tint: entry.tint, dna: entry.dna }),
+              h('span', null, bloomName({ species: entry.species.id, trait: entry.trait, tint: entry.tint }, t)),
+              h('span', { className: 'fg-note' }, t('codex.harvests', { n: entry.count }))))))
       }
 
-      const previewGroup = basketGroups.find(group => `${group.species.id}:${group.variant}` === preview)
-      const codexPreviewEntry = (() => {
-        if (codexPreview === null) return undefined
-        const [speciesId, variant] = codexPreview.split(':')
-        const species = SPECIES_BY_ID.get(speciesId)
-        const count = state.seen[`${speciesId}:${variant}`] ?? 0
-        return species === undefined || count === 0 ? undefined : { species, variant, count }
-      })()
+      function renderSoil(index) {
+        const soil = Math.round(soilOf(slot, index))
+        return h('div', { className: 'fg-row', title: t('soil.tip') },
+          h('span', { className: soil < 40 ? 'fg-note fg-noteWarn' : 'fg-note' }, t('soil.label', { n: soil })),
+          (state.bag.compost ?? 0) > 0 && soil < 100 ? h('button', {
+            type: 'button', className: 'fg-btn fg-btnSmall', 'data-action': 'compost',
+            onClick: () => {
+              tick()
+              const next = compostAt(getState(), state.scene, index)
+              if (next === null) return
+              commit(next, true)
+              announce(t('item.composted', { n: index + 1, soil: Math.round(soilOf(next.scenes[state.scene], index)) }))
+            },
+          }, t('item.compost')) : null,
+        )
+      }
 
       function renderSeedPicker(index) {
         const cheapest = sceneSpecies.reduce((min, species) => Math.min(min, species.cost), Infinity)
@@ -2406,6 +4820,12 @@ window.__ModuleLoader__.load({
           h('div', { className: 'fg-seedsHead' }, t('seed.pick')),
           short ? h('div', { className: 'fg-seedHint' }, t('error.coins')) : null,
           h('div', { className: 'fg-seedGrid' },
+            Object.entries(state.seeds ?? {}).filter(([key, count]) => count > 0 && scene.species.includes(key.split('~')[0])).map(([key, count]) => {
+              const [form, tint] = key.split('~')
+              return h('button', { key, type: 'button', className: 'fg-seed', 'data-action': 'seed', onClick: () => plant(index, form, tint) },
+                h('span', { className: 'fg-seedName' }, t('hybrid.name', { form: t(`species.${form}`), tint: t(`species.${tint}`) })),
+                h('span', { className: 'fg-seedMeta' }, t('hybrid.free', { n: count })))
+            }),
             sceneSpecies.map(species => h('button', {
               key: species.id,
               type: 'button',
@@ -2483,6 +4903,7 @@ window.__ModuleLoader__.load({
             h('span', { className: 'fg-species' }, t('plot.empty')),
             h('span', { className: 'fg-stage' }, `#${position}`),
           ),
+          renderSoil(index),
           picker === index
             ? renderSeedPicker(index)
             : h('button', {
@@ -2507,7 +4928,7 @@ window.__ModuleLoader__.load({
         const percent = Math.round(ratio * 100)
         const moisture = sprinkled || rainWets ? 100 : Math.max(0, Math.round(plot.moisture))
         const dryInMs = (plot.moisture / 100) * growMs * DRY_SHARE
-        const growLeftMs = (growMs - plot.growthMs) / growth
+        const growLeftMs = (growMs - plot.growthMs) / (growth * soilFactor(soilOf(slot, index)))
         const driesFirst = !sprinkled && !rainWets && wet && !bloomed && dryInMs < growLeftMs
         const note = bloomed
           ? (basketFull ? t('basket.fullNote') : t('plot.ready'))
@@ -2519,6 +4940,7 @@ window.__ModuleLoader__.load({
         const worried = !bloomed && (!wet || driesFirst)
         const wetSoil = sprinkled || rainWets || plot.moisture >= 99.5
         const canFeed = !bloomed && (state.bag.fertilizer ?? 0) > 0
+        const visitor = visitorAt(state.scene, index, plot, clock, weather, facilityLevel(state, 'hive'))
 
         return h('div', {
           key: index,
@@ -2530,17 +4952,32 @@ window.__ModuleLoader__.load({
           tabIndex: -1,
           'aria-label': `${t(`species.${species.id}`)} ${t(`stage.${stage}`)}`,
         },
-        h('div', { className: 'fg-art' }, h(FlowerArt, {
-          speciesId: plot.species,
-          stage,
-          variant: plotVariant(species, index),
-        })),
+        h('div', { className: 'fg-art' },
+          h(FlowerArt, { speciesId: plot.species, stage, variant: plot.tint ? 'base' : plotVariant(species, index), dna: plot.dna, tint: plot.tint }),
+          visitor === null ? null : h('button', {
+            type: 'button',
+            className: 'fg-visitor',
+            'data-action': 'greet',
+            'data-visitor': visitor.id,
+            title: t('visitor.greet', { name: t(`visitor.${visitor.id}`) }),
+            'aria-label': t('visitor.greet', { name: t(`visitor.${visitor.id}`) }),
+            onClick: () => {
+              greet(index)
+            },
+          }, h(VisitorArt, { id: visitor.id })),
+        ),
         h('div', { className: 'fg-plotHead' },
           h('span', { className: 'fg-species' }, t(`species.${species.id}`)),
           h('span', { className: 'fg-stage' }, t(`stage.${stage}`)),
         ),
+        renderSoil(index),
+        plot.tint ? h('span', { className: 'fg-badge' }, t('hybrid.name', { form: t(`species.${plot.species}`), tint: t(`species.${plot.tint}`) })) : null,
+        plot.pollinated && hybridPartner(slot, index) ? h('span', { className: 'fg-note' }, t('hybrid.hint')) : null,
         plot.dried === true && !bloomed
           ? h('span', { className: 'fg-badgeWarn fg-badge' }, t('plot.driedBadge'))
+          : null,
+        plot.pollinated === true
+          ? h('span', { className: 'fg-badgeOk fg-badge' }, t('plot.pollinated'))
           : null,
         h('div', {
           className: 'fg-meter',
@@ -2704,6 +5141,71 @@ window.__ModuleLoader__.load({
       }
 
       const sceneOrder = ['meadow', 'snow', 'volcano', 'lake']
+      // Plots the water-all button would actually change.
+      const thirsty = sprinklerLeftMs > 0 || rainWets ? 0 : slot.plots.filter(plot => {
+        if (plot === null || plot === undefined || plot.moisture >= 99.5) return false
+        const species = SPECIES_BY_ID.get(plot.species)
+        return species !== undefined && plot.growthMs < growMsOf(species)
+      }).length
+
+      function renderGuest(visitor) {
+        const count = state.visitors[visitor.id] ?? 0
+        const met = count > 0
+        const where = [
+          visitor.scenes.map(id => t(`scene.${id}`)).join(' / '),
+          t(`visitor.when.${visitor.when}`),
+          visitor.dry === true ? t('visitor.dry') : null,
+        ].filter(Boolean).join(' · ')
+        return h('div', { key: visitor.id, className: 'fg-guest', 'data-met': met ? 'true' : 'false' },
+          h('span', { className: 'fg-guestArt' }, h(VisitorArt, { id: visitor.id })),
+          h('div', { className: 'fg-guestBody' },
+            h('div', { className: 'fg-guestName' },
+              met ? t(`visitor.${visitor.id}`) : t('visitor.unknown'),
+              met ? h('span', { className: 'fg-itemOwn' }, `×${count}`) : null,
+            ),
+            h('div', { className: 'fg-guestWhere', title: where }, where),
+          ),
+        )
+      }
+
+      function renderAchievement(entry) {
+        const value = Math.min(entry.target, achievementValue(state, entry.metric))
+        const claimed = state.claimed[entry.id] === true
+        const ready = !claimed && value >= entry.target
+        return h('div', {
+          key: entry.id,
+          className: 'fg-ach',
+          'data-state': claimed ? 'claimed' : ready ? 'ready' : 'open',
+        },
+        h('div', { className: 'fg-achBody' },
+          h('div', { className: 'fg-achName' }, t(`ach.${entry.id}.name`)),
+          h('div', { className: 'fg-achDesc' }, t(`ach.${entry.id}.desc`)),
+          h('div', { className: 'fg-row' },
+            h('div', {
+              className: 'fg-meter fg-achMeter',
+              role: 'progressbar',
+              'aria-valuemin': 0,
+              'aria-valuemax': entry.target,
+              'aria-valuenow': value,
+              'aria-label': t(`ach.${entry.id}.name`),
+            }, h('div', { className: 'fg-meterFill', style: { width: `${(value / entry.target) * 100}%` } })),
+            h('span', { className: 'fg-note fg-noteWet' }, t('ach.count', { n: value, total: entry.target })),
+          ),
+        ),
+        claimed
+          ? h('span', { className: 'fg-itemMax' }, t('ach.claimed'))
+          : ready
+            ? h('button', {
+              type: 'button',
+              className: 'fg-btn fg-btnSmall fg-btnPrimary',
+              'data-action': 'claim',
+              onClick: () => {
+                claim(entry.id)
+              },
+            }, t('ach.claim', { n: entry.coins }))
+            : h('span', { className: 'fg-itemMax' }, t('ach.reward', { n: entry.coins })),
+        )
+      }
       const sceneFound = new Map(sceneOrder.map(id => {
         const found = sceneOf(id).species.filter(speciesId => ['base', 'alt', 'hidden']
           .some(variant => (state.seen[`${speciesId}:${variant}`] ?? 0) > 0)).length
@@ -2740,6 +5242,15 @@ window.__ModuleLoader__.load({
               h('span', { className: 'fg-chip', title: t('stat.harvested') },
                 h('span', { className: 'fg-chipValue' }, String(state.harvested)),
                 h('span', { className: 'fg-chipKey' }, t('stat.harvested')),
+              ),
+              featured === null ? null : h('span', {
+                className: 'fg-chip fg-chipMarket',
+                title: t('market.note', { flower: t(`species.${featured}`), n: marketPercent }),
+              },
+              h(BloomDot, { speciesId: featured }),
+              h('span', { className: 'fg-chipKey' }, t('market.title')),
+              h('span', { className: 'fg-chipValue' }, t(`species.${featured}`)),
+              h('span', { className: 'fg-chipKey' }, t('market.bonus', { n: marketPercent })),
               ),
               h('span', { className: 'fg-chip', 'data-weather': weather },
                 h(WeatherGlyph, { kind: weather }),
@@ -2782,6 +5293,10 @@ window.__ModuleLoader__.load({
             }),
           ),
 
+          h('nav', { className: 'fg-sectionHead', 'aria-label': t('view.label') },
+            h('button', { type: 'button', className: 'fg-btn fg-btnSmall', onClick: () => { setCodexOpen(true); focusTarget('#fg-codex-toggle') } }, t('codex.title')),
+            h('button', { type: 'button', className: 'fg-btn fg-btnSmall', onClick: () => focusTarget('#fg-show') }, t('show.title')),
+            h('button', { type: 'button', className: 'fg-btn fg-btnSmall', onClick: () => focusSection('basket') }, t('basket.title'))),
           h('p', { className: 'fg-hint' },
             h('span', { className: 'fg-tipsTitle' }, t('hint.title')),
             ' ',
@@ -2812,7 +5327,17 @@ window.__ModuleLoader__.load({
             sprinklerLeftMs > 0
               ? h('span', { className: 'fg-sectionOk' }, t('item.sprinklerLeft', { n: formatDuration(sprinklerLeftMs, t) }))
               : null,
+            thirsty > 1
+              ? h('button', {
+                type: 'button',
+                className: 'fg-btn fg-btnSmall fg-headAction',
+                'data-action': 'waterAll',
+                onClick: waterEvery,
+              }, t('plot.waterAll', { n: thirsty }))
+              : null,
           ),
+          h('p', { className: 'fg-hint' }, t('soil.tip')),
+          h('p', { className: 'fg-hint' }, `${t('hybrid.seeds')} · ${Object.values(state.seeds ?? {}).reduce((sum, n) => sum + n, 0)} · ${t('hybrid.how')}`),
           h('div', { className: 'fg-grid' }, slot.plots.map(renderPlot)),
           ),
 
@@ -2836,17 +5361,18 @@ window.__ModuleLoader__.load({
                   className: armed === 'all:all' ? 'fg-btn fg-btnDanger fg-btnSmall' : 'fg-btn fg-btnGhost fg-btnSmall',
                   'aria-label': t('basket.sellAll', { n: basketValueNow }),
                   onClick: () => {
-                    sell(undefined, undefined)
+                    sell()
                   },
                 }, armed === 'all:all' ? t('basket.confirm', { n: basketValueNow }) : t('basket.sellAll', { n: basketValueNow }))
                 : null,
             ),
+            basketGroups.length > 0 ? h('p', { className: 'fg-hint' }, t('basket.pricing')) : null,
             basketGroups.length === 0
               ? h('p', { className: 'fg-empty' }, t('basket.empty'))
               : [
                 h('div', { className: 'fg-basket', key: 'chips' },
                   basketGroups.map(group => {
-                    const key = `${group.species.id}:${group.variant}`
+                    const key = group.key
                     const open = preview === key
                     return h('button', {
                       key,
@@ -2857,19 +5383,20 @@ window.__ModuleLoader__.load({
                       'aria-expanded': open ? 'true' : 'false',
                       'aria-controls': open ? 'fg-basket-preview' : undefined,
                       'aria-label': t('basket.view', {
-                        flower: `${t(`species.${group.species.id}`)} · ${t(`variant.${group.variant}`)}`,
+                        flower: `${bloomName(group.items[0], t)} · ${t(`variant.${group.variant}`)}`,
                       }),
                       onClick: () => {
-                        showBloom(group.species.id, group.variant)
+                        showBloom(group.key)
                       },
                     },
-                    group.variant === 'hidden'
+                    (group.variant === 'hidden' || group.trait || group.tint)
                       ? h('span', { className: 'fg-bloomArt' },
-                        h(FlowerArt, { speciesId: group.species.id, stage: 'bloom', variant: 'hidden' }),
+                        h(FlowerArt, { speciesId: group.species.id, stage: 'bloom', variant: group.variant, dna: group.dna, trait: group.trait, tint: group.tint }),
                         )
                       : h(BloomDot, { speciesId: group.species.id, variant: group.variant }),
-                    h('span', { className: 'fg-bloomName' }, t(`species.${group.species.id}`)),
+                    h('span', { className: 'fg-bloomName' }, bloomName(group.items[0], t)),
                     group.variant === 'hidden' ? h('span', { className: 'fg-goldTag' }, t('variant.goldTag')) : null,
+                    group.species.id === featured ? h('span', { className: 'fg-marketTag' }, t('market.tag')) : null,
                     h('span', { className: 'fg-bloomCount' }, `×${group.count}`),
                     h('span', { className: 'fg-bloomPrice' }, `+${group.worth}`),
                     )
@@ -2880,19 +5407,22 @@ window.__ModuleLoader__.load({
                   id: 'fg-basket-preview',
                   speciesId: previewGroup.species.id,
                   variant: previewGroup.variant,
+                  dna: previewGroup.dna, trait: previewGroup.trait, tint: previewGroup.tint,
+                  individuals: previewGroup.items, onSellOne: sellOne, quoteOne: item => quoteSale(state, [item], clock).coins,
                   t,
                   meta: [
                     `×${previewGroup.count}`,
-                    t('basket.each', { n: bloomPrice(previewGroup.species, previewGroup.variant) }),
+                    t('basket.first', { n: quoteSale(state, [previewGroup.items[0]], clock).coins }),
+                    previewGroup.species.id === featured ? `${t('market.title')} · ${t('market.bonus', { n: marketPercent })}` : null,
                     t('basket.total', { n: previewGroup.worth }),
                   ],
                   worth: previewGroup.worth,
-                  armed: armed === `${previewGroup.species.id}:${previewGroup.variant}`,
+                  armed: armed === previewGroup.key,
                   onSell: () => {
-                    sell(previewGroup.species.id, previewGroup.variant)
+                    sell(previewGroup.key)
                   },
                   onClose: () => {
-                    const key = `${previewGroup.species.id}:${previewGroup.variant}`
+                    const key = previewGroup.key
                     setPreview(null)
                     setArmed(null)
                     focusTarget(`[data-basket="${key}"]`)
@@ -2900,6 +5430,8 @@ window.__ModuleLoader__.load({
                 }),
               ],
           ),
+
+          h(GardenActivities, { state, t, clock, onChange: next => commit(next, true) }),
 
           h('section', { className: 'fg-section' },
             h('div', { className: 'fg-sectionHead' },
@@ -2953,6 +5485,43 @@ window.__ModuleLoader__.load({
           ),
 
           h('section', { className: 'fg-section' },
+            h('div', { className: 'fg-sectionHead' },
+              h('h3', { className: 'fg-sectionTitle' }, t('visitor.section')),
+              h('span', { className: 'fg-sectionMeta' }, t('ach.count', { n: metKinds, total: VISITORS.length })),
+            ),
+            h('p', { className: 'fg-empty' }, t('visitor.hint')),
+            h('div', { className: 'fg-guests' }, VISITORS.map(renderGuest)),
+          ),
+
+          h('section', { className: 'fg-section' },
+            h('button', {
+              type: 'button',
+              className: 'fg-codexToggle',
+              id: 'fg-ach-toggle',
+              'aria-expanded': achOpen ? 'true' : 'false',
+              'aria-controls': 'fg-ach',
+              onClick: () => {
+                setAchOpen(value => !value)
+              },
+            },
+            h('span', { className: 'fg-sectionTitle' }, t('ach.title')),
+            h('span', { className: 'fg-sectionMeta' }, t('ach.count', {
+              n: ACHIEVEMENTS.filter(entry => state.claimed[entry.id] === true).length,
+              total: ACHIEVEMENTS.length,
+            })),
+            readyAchievements.length > 0
+              ? h('span', { className: 'fg-sectionOk' }, t('ach.ready', { n: readyAchievements.length }))
+              : null,
+            h('span', { className: 'fg-caret', 'data-open': achOpen ? 'true' : 'false' }, '▾'),
+            ),
+            // Collapsed, the list still surfaces whatever is waiting to be collected.
+            achOpen || readyAchievements.length > 0
+              ? h('div', { className: 'fg-achs', id: 'fg-ach', role: 'region', 'aria-labelledby': 'fg-ach-toggle' },
+                (achOpen ? ACHIEVEMENTS : readyAchievements).map(renderAchievement))
+              : null,
+          ),
+
+          h('section', { className: 'fg-section' },
             h('button', {
               type: 'button',
               className: 'fg-codexToggle',
@@ -2978,18 +5547,21 @@ window.__ModuleLoader__.load({
                   }), ' · ', t('codex.otherGround')),
                 ),
                 sceneSpecies.map(renderCodexCard),
+                renderArchive(),
                 codexPreviewEntry === undefined ? null : h(BloomPreview, {
                   key: 'codex-preview',
                   id: 'fg-codex-preview',
                   speciesId: codexPreviewEntry.species.id,
                   variant: codexPreviewEntry.variant,
+                  trait: codexPreviewEntry.trait, tint: codexPreviewEntry.tint, dna: codexPreviewEntry.dna,
+                  modal: true, onPrev: () => stepCodex(-1), onNext: () => stepCodex(1),
                   t,
                   meta: [
                     t(`variant.${codexPreviewEntry.variant}`),
                     t('codex.harvests', { n: codexPreviewEntry.count }),
                   ],
                   onClose: () => {
-                    const key = `${codexPreviewEntry.species.id}:${codexPreviewEntry.variant}`
+                    const key = codexPreviewEntry.key
                     setCodexPreview(null)
                     focusTarget(`[data-codex="${key}"]`)
                   },
@@ -3014,6 +5586,29 @@ window.__ModuleLoader__.load({
     //    removes it; only `--dsw-alias-*` tokens carry furniture colors.
     // ---------------------------------------------------------------------
     const CSS = `
+.fg-showChoices>summary{cursor:pointer;margin-bottom:12px}
+.fg-showChoices>summary::after{content:'⌄';margin-left:8px}
+.fg-showChoices[open]>summary::after{transform:rotate(180deg)}
+.fg-dialog{box-sizing:border-box;width:min(760px,calc(100vw - 32px));max-height:calc(100dvh - 40px);padding:0;border:1px solid var(--dsw-alias-border-l2);border-radius:24px;background:var(--dsw-alias-bg-layer-1);color:var(--dsw-alias-label-primary);box-shadow:0 24px 100px #0006;overflow:auto}
+.fg-dialog::backdrop{background:rgba(12,24,19,.65);backdrop-filter:blur(6px)}
+.fg-dialog .fg-preview{border:0;border-radius:0;padding:28px;gap:24px;align-items:center;background:transparent}
+.fg-dialog .fg-previewArt{width:260px;height:300px;border-radius:160px 160px 18px 18px;background:radial-gradient(ellipse at 50% 40%,#f9f7e8,#dfe9dc);box-shadow:inset 0 0 0 1px #68826d30}
+.fg-dialog .fg-previewArt svg{width:244px;height:244px}
+.fg-dialog .fg-note{white-space:normal;overflow:visible}
+.fg-dialog .fg-previewBody{gap:12px;flex-basis:260px}
+.fg-dialog .fg-previewName{font-size:24px;line-height:1.4;font-weight:600}
+.fg-dialog .fg-previewLatin{font-family:Georgia,serif;font-size:15px;line-height:1.5}
+.fg-dialog .fg-previewMeaning{font-size:15px;line-height:1.8}
+.fg-cardFact{margin:0;padding-top:12px;border-top:1px solid var(--dsw-alias-border-l1);font-size:12px;line-height:1.8;color:var(--dsw-alias-label-secondary)}
+.fg-dialog .fg-previewActions{width:100%;flex-direction:row;flex-wrap:wrap;justify-content:flex-end;padding-top:16px;border-top:1px solid var(--dsw-alias-border-l1)}
+.fg-archive{grid-column:1/-1;display:flex;flex-direction:column;gap:12px;padding-top:16px;border-top:1px solid var(--dsw-alias-border-l1)}
+.fg-archiveGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.fg-archiveEntry{display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px;border:1px solid var(--dsw-alias-border-l1);border-radius:16px;background:var(--dsw-alias-bg-layer-1);color:inherit;font:inherit;cursor:pointer}
+.fg-archiveEntry svg{width:120px;height:120px}
+.fg-archiveEntry:hover{background:var(--dsw-alias-bg-layer-2)}
+.fg-archiveEntry:focus-visible{outline:2px solid var(--dsw-alias-brand-primary);outline-offset:2px}
+@media(max-width:600px){.fg-dialog .fg-preview{padding:20px;justify-content:center}.fg-dialog .fg-previewArt{width:200px;height:220px}.fg-dialog .fg-previewArt svg{width:190px;height:190px}.fg-dialog .fg-previewBody{flex-basis:100%}.fg-dialog .fg-previewName{font-size:21px}}
+
 .fg-view{box-sizing:border-box;width:100%;height:100%;flex:1 1 auto;min-height:0;display:flex;flex-direction:column;background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);font-size:13px;line-height:20px}
 .fg-scroll{box-sizing:border-box;flex:1 1 auto;min-height:0;overflow:auto;display:flex;flex-direction:column;gap:16px;padding:18px 24px 176px}
 .fg-header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;padding-bottom:14px;border-bottom:1px solid var(--dsw-alias-border-l1)}
@@ -3080,12 +5675,18 @@ window.__ModuleLoader__.load({
 .fg-plot[data-paused="true"] .fg-meter:not(.fg-meterWet) .fg-meterFill{background:var(--dsw-alias-state-idle-primary)}
 .fg-plot:focus{outline:none}
 .fg-plot:focus-visible{outline:2px solid var(--dsw-alias-brand-primary);outline-offset:2px}
-.fg-art{display:flex;align-items:flex-end;justify-content:center;height:96px}
-.fg-art svg{display:block;width:96px;height:96px;overflow:visible}
+.fg-art{position:relative;display:flex;align-items:flex-end;justify-content:center;height:116px}
+.fg-art svg{display:block;width:116px;height:116px;overflow:visible}
+.fg-visitor{appearance:none;position:absolute;top:0;right:4px;box-sizing:border-box;width:38px;height:38px;padding:4px;border:1px solid var(--dsw-alias-state-success-primary);border-radius:50%;background:var(--dsw-alias-bg-layer-1);cursor:pointer;animation:fg-bob 1.7s ease-in-out infinite alternate}
+.fg-visitor:hover{background:var(--dsw-alias-bg-layer-2)}
+.fg-visitor:focus-visible{outline:2px solid var(--dsw-alias-brand-primary);outline-offset:2px}
+.fg-art .fg-visitor svg{width:100%;height:100%}
+.fg-glow{transform-box:fill-box;transform-origin:center;animation:fg-twinkle 2.2s ease-in-out infinite}
+@keyframes fg-bob{from{transform:translateY(-2px)}to{transform:translateY(3px)}}
 .fg-plant{transform-box:view-box;transform-origin:50px 90px;animation:fg-sway 5.5s ease-in-out infinite alternate}
 .fg-sparkle{transform-box:view-box;transform-origin:center;animation:fg-twinkle 2.9s ease-in-out infinite}
 .fg-mote{transform-box:view-box;animation:fg-drift 4.8s ease-in-out infinite}
-.fg-haloRing{transform-box:view-box;transform-origin:50px 36px;animation:fg-turn 26s linear infinite}
+.fg-haloRing{transform-box:view-box;animation:fg-turn 26s linear infinite}
 @keyframes fg-twinkle{0%,100%{opacity:.3;transform:scale(.75)}50%{opacity:1;transform:scale(1.2)}}
 @keyframes fg-drift{0%{opacity:0;transform:translateY(3px)}28%{opacity:.9}100%{opacity:0;transform:translateY(-11px)}}
 @keyframes fg-turn{to{transform:rotate(360deg)}}
@@ -3135,8 +5736,8 @@ window.__ModuleLoader__.load({
 .fg-preview{display:flex;align-items:flex-start;gap:14px;padding:12px;border:1px solid var(--dsw-alias-border-l1);border-radius:14px;background:var(--dsw-alias-bg-layer-1);flex-wrap:wrap}
 .fg-preview:focus{outline:none}
 .fg-preview:focus-visible{outline:2px solid var(--dsw-alias-brand-primary);outline-offset:2px}
-.fg-previewArt{flex:none;width:104px;height:104px;display:flex;align-items:center;justify-content:center}
-.fg-previewArt svg{width:104px;height:104px;overflow:visible}
+.fg-previewArt{flex:none;width:168px;height:168px;display:flex;align-items:center;justify-content:center}
+.fg-previewArt svg{width:168px;height:168px;overflow:visible}
 .fg-previewBody{flex:1 1 200px;min-width:0;display:flex;flex-direction:column;gap:3px}
 .fg-previewHead{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
 .fg-previewName{font-size:14px;font-weight:600}
@@ -3164,14 +5765,14 @@ window.__ModuleLoader__.load({
 .fg-codexCard{display:flex;align-items:flex-start;gap:10px;padding:8px 10px;border:1px solid var(--dsw-alias-border-l1);border-radius:12px;background:var(--dsw-alias-bg-layer-1);min-width:0}
 .fg-codexCard[data-seen="false"]{background:transparent;border-style:dashed}
 .fg-codexCard[data-spirit="true"]{border-color:var(--dsw-alias-state-warn-primary)}
-.fg-codexArt{flex:none;width:44px;height:44px;display:flex;align-items:center;justify-content:center}
+.fg-codexArt{flex:none;width:60px;height:60px;display:flex;align-items:center;justify-content:center}
 .fg-codexArtBtn{appearance:none;padding:0;border:0;background:transparent;cursor:pointer;border-radius:10px}
 .fg-codexArtBtn:hover{background:var(--dsw-alias-bg-layer-2)}
 .fg-codexArtBtn:focus-visible{outline:2px solid var(--dsw-alias-brand-primary);outline-offset:2px}
 .fg-variantBtn{appearance:none;background:transparent;font-family:inherit;cursor:pointer}
 .fg-variantBtn:hover{background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-primary)}
 .fg-variantBtn:focus-visible{outline:2px solid var(--dsw-alias-brand-primary);outline-offset:2px}
-.fg-codexArt svg{width:44px;height:44px;overflow:visible}
+.fg-codexArt svg{width:60px;height:60px;overflow:visible}
 .fg-codexBody{min-width:0;display:flex;flex-direction:column;gap:2px}
 .fg-codexName{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .fg-codexLatin{font-size:10px;font-style:italic;color:var(--dsw-alias-label-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -3183,8 +5784,30 @@ window.__ModuleLoader__.load({
 .fg-variantCount{font-variant-numeric:tabular-nums}
 .fg-variantArt{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;flex:none}
 .fg-variantArt svg{width:16px;height:16px;overflow:visible}
+.fg-chipMarket{border-color:#c99a1f}
+.fg-marketTag{display:inline-block;padding:0 4px;border-radius:4px;border:1px solid #c99a1f;color:var(--dsw-alias-state-warn-primary);font-size:9px;line-height:13px}
+.fg-headAction{margin-left:auto}
+.fg-badgeOk{color:var(--dsw-alias-state-success-primary)}
+.fg-badgeWarn{color:var(--dsw-alias-state-warn-primary)}
+.fg-guests{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px}
+.fg-guest{display:flex;align-items:center;gap:10px;padding:6px 10px;border:1px solid var(--dsw-alias-border-l1);border-radius:12px;background:var(--dsw-alias-bg-layer-1);min-width:0}
+.fg-guest[data-met="false"]{background:transparent;border-style:dashed}
+.fg-guest[data-met="false"] .fg-guestArt{filter:grayscale(1) brightness(.75);opacity:.35}
+.fg-guestArt{flex:none;display:inline-flex;width:32px;height:32px}
+.fg-guestArt svg{width:32px;height:32px}
+.fg-guestBody{min-width:0;display:flex;flex-direction:column;gap:1px}
+.fg-guestName{display:flex;align-items:baseline;gap:6px;font-size:12px;font-weight:600}
+.fg-guestWhere{font-size:10px;line-height:15px;color:var(--dsw-alias-label-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fg-achs{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px}
+.fg-ach{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--dsw-alias-border-l1);border-radius:12px;background:var(--dsw-alias-bg-layer-1);min-width:0}
+.fg-ach[data-state="ready"]{border-color:var(--dsw-alias-state-success-primary)}
+.fg-ach[data-state="claimed"]{opacity:.6}
+.fg-achBody{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:2px}
+.fg-achName{font-size:12px;font-weight:600}
+.fg-achDesc{font-size:11px;line-height:16px;color:var(--dsw-alias-label-secondary)}
+.fg-achMeter{flex:1 1 auto}
 .fg-footer{display:flex;align-items:flex-start;justify-content:flex-end;gap:16px;flex-wrap:wrap;padding-top:12px;border-top:1px solid var(--dsw-alias-border-l1)}
-@media (prefers-reduced-motion:reduce){.fg-plant,.fg-sparkle,.fg-mote,.fg-haloRing{animation:none}.fg-sparkle{opacity:.85}.fg-meterFill{transition:none}.fg-caret{transition:none}}
+@media (prefers-reduced-motion:reduce){.fg-plant,.fg-sparkle,.fg-mote,.fg-haloRing,.fg-visitor,.fg-glow{animation:none}.fg-sparkle{opacity:.85}.fg-meterFill{transition:none}.fg-caret{transition:none}}
 `
 
     // ---------------------------------------------------------------------
@@ -3223,7 +5846,8 @@ window.__ModuleLoader__.load({
         }, GardenView))
       },
       /** Static pieces exported for layout tests only; the runtime never reads them. */
-      __components: { GardenView, FlowerArt, BloomPreview },
+      __components: { GardenView, FlowerArt, BloomPreview, VisitorArt, GardenActivities },
+      __traits: TRAITS,
       /** Dictionaries exported so tests render with the shipped copy. */
       __dicts: { zh, en },
       /** Pure game transitions and tuning, exported for unit tests only. */
@@ -3236,6 +5860,15 @@ window.__ModuleLoader__.load({
         makeOrder, stageOf, levelOf, growMsOf, weatherAt, weatherEndsAt, paletteOf, plotVariant,
         variantMultiplier, bloomPrice, hiddenChance, sceneOf, emptyScene, basketCapacity,
         buyItem, useSprinkler, useCharm, fertilizeAt,
+        VISITORS, VISIT_MS, VISIT_CHANCE, ACHIEVEMENTS, MARKET_BONUS,
+        TRAITS, SCENE_TRAIT, FACILITIES, FACILITY_MAX, SHOW_MS, SHOW_SLOTS, SHOW_TIERS,
+        SOIL_HARVEST, SOIL_REPEAT, SOIL_ROTATE, SOIL_REST_MS, SOIL_FLOOR, COMPOST_GAIN,
+        GLUT_STEP, GLUT_FLOOR, GLUT_RECOVER_MS, TRAIT_PRICE, HYBRID_PRICE, HYBRID_CHANCE,
+        soilOf, soilFactor, compostAt, facilityLevel, facilityCost, upgradeFacility,
+        traitCauses, hybridPartner, itemKey, itemValue, glutSteps, glutFactor, quoteSale, sellKind, sellIndividual,
+        isPlainBloom, isWarm, showAt, showEntry, showAccepts, showPoints, exhibit,
+        visitorAt, greetVisitor, visitBucket, isNight, waterAll, featuredSpecies, salePrice,
+        achievementValue, achievementReady, claimAchievement,
       },
       __css: CSS,
     }
