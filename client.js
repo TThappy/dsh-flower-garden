@@ -5805,12 +5805,15 @@ Object.assign(en,{
 // scene-panorama.fragment.js
 // Insert inside the client factory. Depends only on React's h helper.
 // Static, self-contained panorama art: no images, network, timers or DOM access.
-function ScenePanorama({ sceneId, period = 'noon', weather = 'clear' }) {
+const PANORAMA_GROUND = {meadow:'#3f624b',snow:'#b8d2da',volcano:'#754b46',lake:'#6da6ae',woodland:'#365d48',desert:'#ac8058'}
+function ScenePanorama({ sceneId, period = 'noon', weather = 'clear', garden = false }) {
   const night = period === 'night'
   const dawn = period === 'dawn'
   const dusk = period === 'dusk'
   weather = weather === 'rain' && sceneId === 'snow' ? 'snow' : weather === 'rain' && ['volcano','desert'].includes(sceneId) ? 'ash' : weather
-  const prefix = `fg-pan-${sceneId}-${period}-${weather}`
+  const prefix = `fg-pan-${sceneId}-${period}-${weather}${garden?'-garden':''}`
+   const height = garden ? 900 : 300
+   const foreground = PANORAMA_GROUND[sceneId] ?? PANORAMA_GROUND.meadow
   const sky = night ? '#101c35' : dawn ? '#e9b99e' : dusk ? '#d68b79' : period === 'morning' ? '#9bc7dc' : period === 'afternoon' ? '#75abc6' : '#7ab8d7'
   const haze = night ? '#293653' : dawn || dusk ? '#f0b58c' : '#cfe4e6'
   const sun = night ? null : dusk ? { cx: 930, cy: 76, r: 25, fill: '#ffc384' } : dawn ? { cx: 205, cy: 84, r: 23, fill: '#ffe0a5' } : { cx: period === 'morning' ? 350 : period === 'afternoon' ? 950 : 650, cy: period === 'noon' ? 35 : 64, r: 27, fill: '#fff1b6' }
@@ -5848,7 +5851,7 @@ function ScenePanorama({ sceneId, period = 'noon', weather = 'clear' }) {
   const woodland=()=>h('g',null,h('path',{d:'M0 175Q300 130 650 180T1200 155V300H0Z',fill:'#365d48'}),...Array.from({length:16},(_,i)=>{const x=i*83;return h('g',{key:i},h('path',{d:`M${x} 290l${i%2?8:-8} -145`,stroke:'#514b3e',strokeWidth:10+i%3*3}),h('ellipse',{cx:x,cy:140+i%3*17,rx:63,ry:67,fill:i%2?'#476f4d':'#294c3c'}))}),h('path',{d:'M440 300Q530 220 690 195Q610 240 600 300Z',fill:'#9a9272',opacity:.65}))
   const desert=()=>h('g',null,h('path',{d:'M0 190Q190 100 420 180T820 165T1200 180V300H0Z',fill:'#c6a278'}),h('path',{d:'M0 250Q220 170 480 230T960 210T1200 240V300H0Z',fill:'#d5b281'}),h('path',{d:'M0 275Q390 215 800 275T1200 260V300H0Z',fill:'#ac8058'}),...Array.from({length:12},(_,i)=>h('path',{key:i,d:`M${70+i*97} 285l-8 -20m8 20l9 -27m-9 27l0 -32`,stroke:'#737253',strokeWidth:3,fill:'none'})))
   const body = sceneId === 'woodland' ? woodland() : sceneId === 'desert' ? desert() : sceneId === 'snow' ? snowfield() : sceneId === 'volcano' ? volcano() : sceneId === 'lake' ? lake() : meadow()
-  return h('svg', { viewBox: '0 0 1200 300', preserveAspectRatio: 'xMidYMid slice', className: 'fg-panorama', 'aria-hidden': 'true' },
+  return h('svg', { viewBox: `0 0 1200 ${height}`, preserveAspectRatio: garden ? 'xMidYMin slice' : 'xMidYMid slice', className: 'fg-panorama', 'aria-hidden': 'true' },
     h('defs', null, h('linearGradient', { id: `${prefix}-sky`, x1: 0, y1: 0, x2: 0, y2: 1 }, h('stop', { offset: '0%', stopColor: sky }), h('stop', { offset: '100%', stopColor: haze })), h('linearGradient', { id: `${prefix}-veil`, x1: 0, y1: 0, x2: 0, y2: 1 }, h('stop', { offset: '0%', stopColor: '#fff', stopOpacity: .08 }), h('stop', { offset: '100%', stopColor: '#20363e', stopOpacity: .18 }))),
     h('defs',null,
       h('filter',{id:`${prefix}-grain`,x:0,y:0,width:'100%',height:'100%'},h('feTurbulence',{type:'fractalNoise',baseFrequency:'.018 .16',numOctaves:3,seed:8,stitchTiles:'stitch'}),h('feColorMatrix',{type:'saturate',values:0})),
@@ -5859,11 +5862,12 @@ function ScenePanorama({ sceneId, period = 'noon', weather = 'clear' }) {
     ...star, sun ? h('circle', { ...sun, opacity: .9 }) : null,
     weather === 'overcast' || weather === 'rain' || weather === 'snow' ? [cloud(195, 58, 1.15, 'cloud-a', weather === 'rain' || weather === 'snow'), cloud(760, 92, .82, 'cloud-b', weather === 'rain' || weather === 'snow')] : null,
     h('path',{d:'M0 158L90 123 180 150 280 108 390 144 510 96 630 149 780 101 900 149 1060 115 1200 146V240H0Z',fill:night?'#344158':'#8da5a6',opacity:.45}),
+    garden ? h('rect',{y:230,width:1200,height:height-230,fill:foreground}) : null,
     body,
     sceneId==='lake'?h('g',{opacity:.35},...Array.from({length:20},(_,i)=>h('path',{key:i,d:`M${200+i*20},${195+i*4}h${230-i*7}`,stroke:night?'#bacbd5':'#e6e5c4',strokeWidth:1.2}))):null,
-    h('rect',{y:145,width:1200,height:155,filter:`url(#${prefix}-grain)`,opacity:night?.05:.13,style:{mixBlendMode:'soft-light'}}),
-    h('rect',{width:1200,height:300,fill:`url(#${prefix}-land)`}),
-    rain, snow, h('rect', { width: 1200, height: 300, fill: `url(#${prefix}-veil)` }))
+    h('rect',{y:145,width:1200,height:height-145,filter:`url(#${prefix}-grain)`,opacity:night?.05:.13,style:{mixBlendMode:'soft-light'}}),
+    h('rect',{width:1200,height,fill:`url(#${prefix}-land)`}),
+    rain, snow, h('rect', { width: 1200, height, fill: `url(#${prefix}-veil)` }))
 }
 
 function discoveryItems(before,after,kind,sceneId,index) {
@@ -7056,15 +7060,14 @@ function RewardDialog({reward,state,t,onClose,onBag}) {
           ),
 
           panel('garden',
- h('div',{className:'fg-landscape','data-period':clockInfo.period},
-   h(ScenePanorama,{sceneId:scene.id,period:clockInfo.period,weather}),
-   h('div',{className:'fg-landscapeCaption'},h('span',null,t(`scene.${scene.id}`)),h('strong',null,t(`clock.${clockInfo.period}`)),h('span',null,t(`weather.${scene.id}.${weather}`))),
-   h('div',{className:'fg-landscapeTime'},h('strong',null,clockInfo.time),h('span',null,clockInfo.date,' · ',clockInfo.zone))),
-h('section', {
-            className: 'fg-section fg-ground',
-            style: { background: scene.tint, borderColor: scene.edge },
-          },
-          h('div', { className: 'fg-sectionHead' },
+ h('section', {className:'fg-section fg-ground fg-landscape','data-period':clockInfo.period,'data-scene':scene.id,style:{borderColor:scene.edge}},
+           h('div',{className:'fg-gardenBackdrop',style:{backgroundColor:PANORAMA_GROUND[scene.id],backgroundImage:clockInfo.period==='night'?'linear-gradient(#08101dcc,#08101dcc)':'linear-gradient(#20363e45,#20363e45)'}},h(ScenePanorama,{sceneId:scene.id,period:clockInfo.period,weather,garden:true})),
+           h('div',{className:'fg-gardenContent'},
+           h('header',{className:'fg-gardenHeading'},
+             h('div',{className:'fg-landscapeCaption'},h('span',null,t(`scene.${scene.id}`)),h('strong',null,t(`clock.${clockInfo.period}`)),h('span',null,t(`weather.${scene.id}.${weather}`))),
+             h('div',{className:'fg-landscapeTime'},h('strong',null,clockInfo.time),h('span',null,clockInfo.date,' · ',clockInfo.zone))),
+           h('div',{className:'fg-gardenControls'},
+           h('div', { className: 'fg-sectionHead' },
             h('h3', { className: 'fg-sectionTitle' }, `${t('plot.section')} · ${t(`scene.${scene.id}`)}`),
             sprinklerLeftMs > 0
               ? h('span', { className: 'fg-sectionOk' }, t('item.sprinklerLeft', { n: formatDuration(sprinklerLeftMs, t) }))
@@ -7080,8 +7083,9 @@ h('section', {
           ),
           h('p', { className: 'fg-hint' }, t('soil.tip')),
           h('p', { className: 'fg-hint' }, `${t('hybrid.seeds')} · ${Object.values(state.seeds ?? {}).reduce((sum, n) => sum + n, 0)} · ${t('hybrid.how')}`),
-          h('div', { className: 'fg-grid' }, slot.plots.map(renderPlot)),
-          )
+          ),
+           h('div', { className: 'fg-grid' }, slot.plots.map(renderPlot)),
+           ))
           ),
           panel('basket',
 h('section', { className: 'fg-section' },
@@ -7452,9 +7456,19 @@ h('footer', { className: 'fg-footer' },
 .fg-settings{max-width:640px;padding:20px;border:1px solid var(--dsw-alias-border-l1);border-radius:16px}
 .fg-settingRow{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:10px 0}
 .fg-fontPreview{font-size:1.25em;line-height:1.8;padding:22px;border-radius:12px;background:var(--dsw-alias-bg-layer-2)}
-.fg-landscape{position:relative;isolation:isolate;overflow:hidden;border-radius:18px;height:clamp(180px,24vw,280px);background:#233d43}
+.fg-ground.fg-landscape{position:relative;isolation:isolate;overflow:hidden;border-radius:18px;min-height:580px;padding:0;background:#233d43;gap:0}
+.fg-gardenBackdrop{position:absolute;inset:0;z-index:0;pointer-events:none}
+.fg-gardenBackdrop .fg-panorama{height:clamp(420px,75vw,900px);mask-image:linear-gradient(#000 85%,transparent 100%)}
+.fg-gardenContent{position:relative;z-index:1;display:flex;flex-direction:column;gap:18px;padding:24px}
+.fg-gardenHeading{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:18px;min-height:100px}
+.fg-gardenHeading .fg-landscapeCaption,.fg-gardenHeading .fg-landscapeTime{position:static}
+.fg-gardenHeading .fg-landscapeTime{margin-left:auto}
+.fg-gardenControls{display:flex;flex-direction:column;gap:10px;padding:16px;border:1px solid var(--dsw-alias-border-l2);border-radius:14px;background:color-mix(in srgb,var(--dsw-alias-bg-layer-1) 92%,transparent)}
+.fg-gardenContent .fg-plot{background:color-mix(in srgb,var(--dsw-alias-bg-layer-1) 82%,transparent);backdrop-filter:blur(3px)}
+.fg-gardenContent .fg-plot[data-state=locked]{background:color-mix(in srgb,var(--dsw-alias-bg-layer-1) 70%,transparent)}
+@media(max-width:650px){.fg-gardenContent{padding:14px;gap:14px}.fg-gardenHeading{min-height:100px}.fg-gardenControls{padding:12px}.fg-gardenHeading .fg-landscapeTime{align-items:flex-start;margin-left:0}}
 .fg-panorama{display:block;width:100%;height:100%}
-.fg-landscape::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,#091c2490,transparent 60%),linear-gradient(0deg,#071a2860,transparent 50%);pointer-events:none}
+.fg-landscape::after{content:'';position:absolute;inset:0;z-index:0;background:linear-gradient(90deg,#091c2490,transparent 60%),linear-gradient(0deg,#071a2860,transparent 50%);pointer-events:none}
 .fg-landscapeCaption{position:absolute;z-index:1;left:26px;top:24px;display:flex;flex-direction:column;gap:8px;color:#fff9e9;text-shadow:0 2px 8px #10222b}
 .fg-landscapeCaption strong{font-size:2em;line-height:1.3;font-weight:500}
 .fg-landscapeCaption span{font-size:.9em}
@@ -7575,7 +7589,7 @@ h('footer', { className: 'fg-footer' },
 .fg-orderHave{margin-left:auto;font-size:calc(var(--fg-font-size,15px) * 0.8462);font-variant-numeric:tabular-nums}
 .fg-orderNote{margin:0;font-size:calc(var(--fg-font-size,15px) * 0.8462);line-height:calc(var(--fg-font-size,15px) * 1.2308);color:var(--dsw-alias-state-warn-primary)}
 .fg-dot{flex:none;display:inline-block;width:11px;height:11px;border-radius:50%;border:1px solid transparent;box-sizing:border-box}
-.fg-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(186px,1fr));gap:12px}
+.fg-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,186px),1fr));gap:12px}
 .fg-plot{box-sizing:border-box;display:flex;flex-direction:column;gap:8px;min-height:198px;padding:12px;border:1px solid var(--dsw-alias-border-l1);border-radius:14px;background:var(--dsw-alias-bg-layer-1)}
 .fg-plot[data-state="bloom"]{border-color:var(--dsw-alias-state-success-primary)}
 .fg-plot[data-state="locked"]{background:transparent;border-style:dashed}
