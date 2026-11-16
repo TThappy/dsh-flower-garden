@@ -523,7 +523,7 @@ const hybridState = {
 const hybridHarvest = game.harvestAt(hybridState, 'meadow', 0, noon, 'overcast')
 check('pollinated neighbours can produce a hybrid seed', hybridHarvest.seeds['daisy~tulip'] === 1)
 check('harvest preserves an individual dna value', hybridHarvest.basket[0].dna === 12345)
-check('harvest archives the first real specimen', hybridHarvest.specimens[game.itemKey(hybridHarvest.basket[0])].dna === 12345 && hybridHarvest.specimens[game.itemKey(hybridHarvest.basket[0])].count === 1)
+check('harvest archives the first real specimen', hybridHarvest.specimens[game.itemKey(hybridHarvest.basket[0])].dna === 12345 && hybridHarvest.specimens[game.itemKey(hybridHarvest.basket[0])].count === 2)
 const hybridPlanted = game.plantAt(hybridHarvest, 'meadow', 0, 'daisy', 'tulip')
 check('hybrid seed is free and records its pollen tint', hybridPlanted.coins === hybridHarvest.coins && hybridPlanted.scenes.meadow.plots[0].tint === 'tulip')
 check('hybrid seed is consumed on planting', hybridPlanted.seeds['daisy~tulip'] === undefined)
@@ -547,6 +547,7 @@ const savedV4 = game.sanitize({
 }, 200)
 check('v4 saves preserve soil, dna and facilities', savedV4.scenes.meadow.soil[0] === 42 && savedV4.scenes.meadow.plots[0].dna === 98765 && savedV4.facilities.hive === 2)
 check('v4 saves preserve hybrid basket metadata', savedV4.basket[0].dna === 24680 && savedV4.basket[0].tint === 'tulip')
+check('v4 saves round-trip a composite specimen', savedV4.specimens['daisy:base:twin~tulip'].dna === 13579 && savedV4.specimens['daisy:base:twin~tulip'].trait === 'twin' && savedV4.specimens['daisy:base:twin~tulip'].tint === 'tulip' && savedV4.specimens['daisy:base:twin~tulip'].count === 3)
 check('invalid hybrid and curiosity keys are dropped', savedV4.seeds['daisy~nope'] === undefined && savedV4.hybrids['daisy~daisy'] === undefined && savedV4.exotics['daisy:nope'] === undefined)
 check('legacy saves gain v4 defaults', game.sanitize({ v: 3, coins: 9, lastTick: 1 }, 2).v === 4 && game.sanitize({ v: 3, coins: 9, lastTick: 1 }, 2).ribbons === 0)
 

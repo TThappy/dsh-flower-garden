@@ -396,6 +396,9 @@ window.__ModuleLoader__.load({
       'facility.note': '设施一级比一级贵（每级 ×1.8），第二级起还要花展的绶带。',
       'card.example': '外观示例（非收藏标本）',
       'card.specimen': '收藏标本',
+      'card.recorded': '该组合已记录 {n} 次',
+      'card.traitHistory': '该奇珍历史累计 {n} 次',
+      'card.hybridHistory': '该杂交历史累计 {n} 次',
       'show.choose': '选择送展花朵',
       'show.exception': '仙品可参加所有主题。',
       'card.close': '关闭',
@@ -817,6 +820,9 @@ window.__ModuleLoader__.load({
       'facility.note': 'Each level costs 1.8× the last, and from the second on, ribbons from the flower show.',
       'card.example': 'Appearance example (not a collected specimen)',
       'card.specimen': 'Collected specimen',
+      'card.recorded': 'Recorded combination: {n}',
+      'card.traitHistory': 'Lifetime harvests of this curiosity: {n}',
+      'card.hybridHistory': 'Lifetime harvests of this hybrid: {n}',
       'show.choose': 'Choose a flower to exhibit',
       'show.exception': 'Spirit blooms may enter any theme.',
       'card.close': 'Close',
@@ -4235,7 +4241,7 @@ window.__ModuleLoader__.load({
           ),
           h('div', { className: 'fg-previewLatin' }, t(`latin.${species.id}`)),
           h('div', { className: 'fg-previewMeaning' }, t(`codex.${species.id}`)),
-          modal ? h('span', { className: 'fg-note' }, t(sample !== null ? 'card.example' : dna ? 'card.specimen' : 'card.textbook')) : null,
+          modal ? h('span', { className: 'fg-note' }, t(sample === 0 ? 'card.textbook' : sample !== null ? 'card.example' : dna ? 'card.specimen' : 'card.textbook')) : null,
           modal ? h('p', { className: 'fg-cardFact' }, t(`fact.${species.id}`)) : null,
           trait ? h('p', { className: 'fg-note' }, t(`trait.${trait}.cause`)) : null,
           tint ? h('p', { className: 'fg-note' }, t('hybrid.how')) : null,
@@ -4765,7 +4771,10 @@ window.__ModuleLoader__.load({
       const basketGroups = [...groups.values()].map(group => ({ ...group, species: SPECIES_BY_ID.get(group.speciesId), count: group.items.length, worth: quoteSale(state, group.items, clock).coins }))
 
       const previewGroup = basketGroups.find(group => group.key === preview)
-      const archive = Object.entries(state.specimens ?? {}).map(([key, item]) => ({ ...item, key, species: SPECIES_BY_ID.get(item.species) }))
+      const archive = Object.entries(state.specimens ?? {}).map(([key, item]) => ({
+        ...item, key, recorded: true, species: SPECIES_BY_ID.get(item.species),
+        count: !item.trait && !item.tint ? Math.max(item.count, state.seen[key] ?? 0) : item.count,
+      }))
       for (const [key, count] of Object.entries(state.seen)) {
         const [speciesId, variant] = key.split(':')
         if (count > 0 && !archive.some(entry => entry.key === key)) archive.push({ key, species: SPECIES_BY_ID.get(speciesId), variant, count })
@@ -4793,7 +4802,7 @@ window.__ModuleLoader__.load({
             h('button', { key: entry.key, type: 'button', className: 'fg-archiveEntry', 'data-codex': entry.key, onClick: () => setCodexPreview(entry.key) },
               h(FlowerArt, { speciesId: entry.species.id, stage: 'bloom', variant: entry.variant, trait: entry.trait, tint: entry.tint, dna: entry.dna }),
               h('span', null, bloomName({ species: entry.species.id, trait: entry.trait, tint: entry.tint }, t)),
-              h('span', { className: 'fg-note' }, t('codex.harvests', { n: entry.count }))))))
+              h('span', { className: 'fg-note' }, t(entry.recorded ? 'card.recorded' : 'codex.harvests', { n: entry.count }))))))
       }
 
       function renderSoil(index) {
@@ -5397,6 +5406,10 @@ window.__ModuleLoader__.load({
                     h('span', { className: 'fg-bloomName' }, bloomName(group.items[0], t)),
                     group.variant === 'hidden' ? h('span', { className: 'fg-goldTag' }, t('variant.goldTag')) : null,
                     group.species.id === featured ? h('span', { className: 'fg-marketTag' }, t('market.tag')) : null,
+                    glutSteps(state, group.species.id, clock) > 0 ? h('span', {
+                      className: 'fg-noteWarn',
+                      title: t('glut.note', { n: Math.round((1 - glutFactor(glutSteps(state, group.species.id, clock))) * 100) }),
+                    }, t('glut.tag', { n: Math.round((1 - glutFactor(glutSteps(state, group.species.id, clock))) * 100) })) : null,
                     h('span', { className: 'fg-bloomCount' }, `×${group.count}`),
                     h('span', { className: 'fg-bloomPrice' }, `+${group.worth}`),
                     )
@@ -5558,7 +5571,9 @@ window.__ModuleLoader__.load({
                   t,
                   meta: [
                     t(`variant.${codexPreviewEntry.variant}`),
-                    t('codex.harvests', { n: codexPreviewEntry.count }),
+                    t(codexPreviewEntry.recorded && (codexPreviewEntry.trait || codexPreviewEntry.tint) ? 'card.recorded' : 'codex.harvests', { n: codexPreviewEntry.count }),
+                    codexPreviewEntry.trait ? t('card.traitHistory', { n: state.exotics[`${codexPreviewEntry.species.id}:${codexPreviewEntry.trait}`] ?? 0 }) : null,
+                    codexPreviewEntry.tint ? t('card.hybridHistory', { n: state.hybrids[`${codexPreviewEntry.species.id}~${codexPreviewEntry.tint}`] ?? 0 }) : null,
                   ],
                   onClose: () => {
                     const key = codexPreviewEntry.key
