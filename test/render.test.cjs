@@ -50,7 +50,7 @@ const plugin = definition.factory(name => {
   return React
 })
 const game = plugin.__game
-const { GardenView, FlowerArt, BloomPreview, VisitorArt, GardenActivities, VisitorPreview, GardenEcology, SpeciesPurpose, SpecialCommissionBoard } = plugin.__components
+const { GardenView, FlowerArt, BloomPreview, VisitorArt, GardenActivities, VisitorPreview, GardenEcology, SpeciesPurpose, SpecialCommissionBoard, ScenePanorama, DiscoveryCard } = plugin.__components
 const DICT = plugin.__dicts.en
 const ZH_DICT = plugin.__dicts.zh
 
@@ -90,9 +90,9 @@ let html = renderToStaticMarkup(React.createElement(GardenView, { t }))
 let body = stripStyle(html)
 check('renders the view shell', html.includes('class="fg-view"'))
 check('renders the title', body.includes('My garden'))
-check('shows four scenes', (body.match(/class="fg-sceneChip"/g) ?? []).length === 4)
+check('shows every scene', (body.match(/class="fg-sceneChip"/g) ?? []).length === game.SCENES.length)
 check('opens on the meadow', body.includes('data-active="true"'))
-check('three scenes are still locked', (body.match(/data-locked="true"/g) ?? []).length === 3)
+check('all but the starting scene are locked', (body.match(/data-locked="true"/g) ?? []).length === game.SCENES.length - 1)
 check('a locked scene shows its price', body.includes('Unlock · 150 coins'))
 check('renders six plot cards', (body.match(/class="fg-plot"/g) ?? []).length === 6)
 check('three plots accept a seed', (body.match(/\+ Plant/g) ?? []).length === 3)
@@ -106,12 +106,19 @@ check('the flower book is collapsed', body.includes('aria-expanded="false"'))
 check('the flower book counts every entry', body.includes(`0/${game.CODEX_ENTRIES.length}`))
 check('ships its stylesheet', html.includes('.fg-view{'))
 check('explains the reset', body.includes('Reset garden'))
+check('offers save export and import', body.includes('id="fg-export"') && body.includes('id="fg-import"') && body.includes('id="fg-reset"'))
+check('the save file input is hidden and json-only', body.includes('class="fg-fileInput"') && body.includes('accept="application/json,.json"') && !body.includes('id="fg-import-confirm"'))
 check('lists the shop while empty', (body.match(/class="fg-item"/g) ?? []).length === 5)
 check('names the market favourite', body.includes('Market today') && body.includes('sells +50%'))
 check('lists every visitor as unseen', (body.match(/class="fg-guest"[^>]*data-met="false"/g) ?? []).length === game.VISITORS.length)
 check('explains the visitors', body.includes('Visitor field guide') && (body.match(/class="fg-guest"/g) ?? []).length === game.VISITORS.length)
 check('the achievements start collapsed', body.includes('id="fg-ach-toggle"') && !body.includes('class="fg-ach"'))
 check('counts the achievements', body.includes(`0/${game.ACHIEVEMENTS.length}`))
+check('renders a nine-tab tablist', (body.match(/role="tab"/g) ?? []).length === 9 && (body.match(/role="tablist"/g) ?? []).length === 1)
+check('each tab controls a matching panel', game.GARDEN_TABS.every(id => body.includes(`id="fg-tab-${id}"`) && body.includes(`aria-controls="fg-panel-${id}"`) && body.includes(`id="fg-panel-${id}"`)))
+check('garden is the only selected and visible default tab', (body.match(/aria-selected="true"/g) ?? []).length === 1 && body.includes('id="fg-tab-garden"') && body.includes('data-tab="garden"'))
+check('all inactive panels are hidden by default', (body.match(/id="fg-panel-[^"]+"[^>]*hidden/g) ?? []).length === 8)
+check('default font variable is persisted in the view style', body.includes('--fg-font-size:15px') && body.includes('--fg-font-family:system-ui'))
 check('every translation key resolves', !UNRESOLVED.test(body), (UNRESOLVED.exec(body) ?? [])[1])
 for (const key of ['basket.pricing', 'basket.first', 'show.confirm']) {
   check(`English dictionary contains ${key}`, typeof DICT[key] === 'string' && DICT[key].length > 0)
@@ -153,6 +160,10 @@ const stocked = {
     lake: { unlocked: 0, plots: [null, null, null, null, null, null] },
   },
 }
+const basketSavedBody = stripStyle(renderWith({ ...stocked, ui: { tab: 'basket', fontSize: 17, font: 'serif' } }))
+check('saved basket tab selects only the basket panel', basketSavedBody.includes('data-tab="basket"') && basketSavedBody.includes('id="fg-tab-basket"') && basketSavedBody.includes('aria-selected="true"') && basketSavedBody.includes('id="fg-panel-basket"'))
+check('saved basket tab hides the garden panel', /id="fg-panel-garden"[^>]*hidden/u.test(basketSavedBody))
+check('saved font settings reach the view variables', basketSavedBody.includes('--fg-font-size:17px') && basketSavedBody.includes('Songti SC') && basketSavedBody.includes('Georgia'))
 html = renderWith(stocked)
 body = stripStyle(html)
 check('renders the rose art', body.includes('>Rose<'))
@@ -163,7 +174,7 @@ check('renders the young daisy', body.includes('>Daisy<'))
 // Rain keeps the meadow wet, so the drying warning only appears in dry weather.
 const currentWeather = (body.match(/data-weather="([a-z]+)"/u) ?? [])[1]
 check('dries before it blooms', currentWeather === 'rain' || body.includes('Dries in about'))
-check('two scenes are open now', (body.match(/data-locked="true"/g) ?? []).length === 2)
+check('two scenes are open now', (body.match(/data-locked="true"/g) ?? []).length === game.SCENES.length - 2)
 check('groups the basket by bloom', (body.match(/class="fg-bloom"/g) ?? []).length === 3)
 check('marks the gold bloom', body.includes('data-variant="hidden"'))
 const favourite = game.featuredSpecies(game.sanitize(stocked, Date.now()), Date.now())
@@ -197,6 +208,24 @@ const ecologyPanel = renderToStaticMarkup(React.createElement(GardenEcology, {
   state: game.sanitize(stocked, Date.now()), t, clock: Date.now(), onChange() {}, onSpecies() {},
 }))
 check('renders the ecology panel and projects', ecologyPanel.includes('id="fg-ecology"') && ecologyPanel.includes('ecoProjects'))
+check('ecology makes permanent research and seal exchange discoverable', ecologyPanel.includes('Permanent research tree') && ecologyPanel.includes('Seal exchange'))
+check('research displays branch tiers, costs and insufficient balances', ecologyPanel.includes('Unlock I · 3 seals') && ecologyPanel.includes('Need 3 more seals') && ecologyPanel.includes('Plant care · 0/2'))
+check('research shop displays supplies and bag counts', ecologyPanel.includes('Fertiliser ×2') && ecologyPanel.includes('Exchange · 1 seals') && ecologyPanel.includes('In bag:'))
+const researchedPanel = renderToStaticMarkup(React.createElement(GardenEcology, {
+  state: {...game.sanitize(stocked, Date.now()), researchSeals: 5, researchSpent: 9, research: {care: 2, ecology: 0, breeding: 0}}, t, clock: Date.now(), onChange() {}, onSpecies() {},
+}))
+check('researched panel shows permanent tier and lifetime total', researchedPanel.includes('Fully researched') && researchedPanel.includes('5 available · 14 earned in total') && researchedPanel.includes('40%'))
+check('research keys resolve in both languages', Object.keys(DICT).filter(key=>key.startsWith('research.')).every(key=>typeof ZH_DICT[key] === 'string') && !/>research\.[^<]+</u.test(ecologyPanel))
+const modalBagState = {...game.freshState(Date.now()), researchSeals:2, bag:{fertilizer:6,compost:0,sprinkler:1,charm:0}, seeds:{'daisy~tulip':2}}
+const bagDialog = renderToStaticMarkup(React.createElement(plugin.__components.InventoryDialog,{state:modalBagState,t,onClose(){},onGarden(){},onShop(){}}))
+check('supply bag is a native dialog with four supply types', bagDialog.startsWith('<dialog') && (bagDialog.match(/data-supply=/g)??[]).length === 4)
+check('supply bag displays actual quantities, seeds and usage guidance', bagDialog.includes('Owned ×6') && bagDialog.includes('Owned ×2') && bagDialog.includes('Hybrid seeds') && bagDialog.includes('Choose a growing plant'))
+check('the global toolbar exposes the supply bag', body.includes('Supply bag ·'))
+const globalReward = renderToStaticMarkup(React.createElement(plugin.__components.RewardDialog,{state:modalBagState,t,reward:{spent:1,research:false,entries:[{id:'fertilizer',label:'Fertiliser',amount:'+2',owned:6}]},onClose(){},onBag(){}}))
+check('reward uses a global native golden dialog', globalReward.startsWith('<dialog') && globalReward.includes('fg-rewardDialog') && globalReward.includes('Rewards received'))
+check('reward shows actual gain, resulting stock and remaining seals', globalReward.includes('+2') && globalReward.includes('Now in bag ×6') && globalReward.includes('Research seals remaining: 2'))
+check('reward stays actionable with close and bag controls', globalReward.includes('View supply bag') && globalReward.includes('Keep rewards'))
+check('inventory and reward copy resolve in both locales', Object.keys(DICT).filter(key=>key.startsWith('inventory.')||key.startsWith('reward.')).every(key=>typeof ZH_DICT[key] === 'string'))
 const visitorPreview = renderToStaticMarkup(React.createElement(VisitorPreview, { visitorId: 'bee', state: stocked, t, onClose() {} }))
 check('visitor preview uses a native dialog and source link', visitorPreview.startsWith('<dialog') && visitorPreview.includes('fg-source') && visitorPreview.includes('Apis spp.'))
 const purpose = renderToStaticMarkup(React.createElement(SpeciesPurpose, { speciesId: 'daisy', observations: 3, t }))
@@ -297,6 +326,27 @@ const plainDaisyArt = renderToStaticMarkup(React.createElement(FlowerArt, { spec
 check('DNA changes the rendered individual', dnaArtA !== plainDaisyArt)
 const tintOnlyArt = renderToStaticMarkup(React.createElement(FlowerArt, { speciesId: 'daisy', stage: 'bloom', variant: 'base', dna: 12345, tint: 'tulip' }))
 check('tint changes the flower rendering', tintOnlyArt !== plainDaisyArt)
+
+const discoveryCard = renderToStaticMarkup(React.createElement(DiscoveryCard, {
+  entry: { id: 1, at: Date.now(), items: [{ type: 'flower', species: 'daisy', variant: 'base', dna: 2468, kept: true }, { type: 'seed', species: 'daisy', tint: 'tulip', variant: 'base' }] },
+  t, onClose() {}, onOpen() {},
+}))
+check('discovery card is a readable native dialog', discoveryCard.startsWith('<dialog') && discoveryCard.includes('fg-discoveryDialog') && discoveryCard.includes('Daisy') && discoveryCard.includes('Keep this discovery'))
+check('discovery card exposes a timestamp and open action', discoveryCard.includes('<time') && discoveryCard.includes('Open field guide'))
+
+console.log('scene panorama')
+const panoramaPeriods = ['dawn', 'morning', 'noon', 'afternoon', 'dusk', 'night']
+const panoramaWeather = ['clear', 'overcast', 'rain']
+let panoramaCount = 0
+let panoramaValid = true
+for (const scene of game.SCENES) for (const period of panoramaPeriods) for (const weather of panoramaWeather) {
+  const panorama = renderToStaticMarkup(React.createElement(ScenePanorama, { sceneId: scene.id, period, weather }))
+  panoramaCount += 1
+  const defined = new Set([...panorama.matchAll(/ id="([^"]+)"/gu)].map(match => match[1]))
+  panoramaValid = panoramaValid && !panorama.includes('NaN') && [...panorama.matchAll(/url\(#([^)]+)\)/gu)].every(match => defined.has(match[1]))
+}
+check('renders every scene six-period three-weather panorama', panoramaCount === game.SCENES.length * panoramaPeriods.length * panoramaWeather.length && panoramaValid)
+check('panorama distinguishes daytime and night lighting', renderToStaticMarkup(React.createElement(ScenePanorama, { sceneId: 'meadow', period: 'noon', weather: 'clear' })) !== renderToStaticMarkup(React.createElement(ScenePanorama, { sceneId: 'meadow', period: 'night', weather: 'clear' })))
 
 console.log('species artwork')
 const sizes = new Set()

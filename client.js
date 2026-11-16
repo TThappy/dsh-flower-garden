@@ -5,7 +5,7 @@
  * as a tab beside Chat and Trajectory, and paints the flower-growing game inside
  * the session body.
  *
- * Four scenes (meadow, snowfield, volcanic crater, lakeside) hold forty-five
+ * Four scenes (meadow, snowfield, volcanic crater, lakeside) hold fifty-three
  * species, each drawn from its real morphology (see the `head` field and the
  * per-species art section). Every species has a codex entry per colour variant:
  * a plain bloom, a natural second colour on odd-numbered plots, and a rare gold
@@ -34,7 +34,7 @@ window.__ModuleLoader__.load({
     const zh = {
       'view.label': '花园',
       'view.title': '我的花园',
-      'header.subtitle': '草原、雪原、火山口、湖畔四块地，四十五种花；每块地的花不一样，天气不一样，来访的客人也不一样。',
+      'header.subtitle': '草原、雪原、火山口、湖畔四块地，五十三种花；每块地的花不一样，天气不一样，来访的客人也不一样。',
       'stat.coins': '金币',
       'stat.level': '等级',
       'stat.levelValue': '等级 {n}',
@@ -453,12 +453,21 @@ window.__ModuleLoader__.load({
       'action.reset': '重置花园',
       'action.resetConfirm': '再点一次确认重置',
       'action.resetDone': '花园已重置',
+      'action.export': '导出存档',
+      'action.import': '导入存档',
+      'action.exported': '存档已下载',
+      'action.exportFailed': '无法导出存档',
+      'action.importBad': '这不是可用的花园存档（可能来自更新版本）',
+      'action.importReview': '导入会覆盖当前花园，确定？',
+      'action.importYes': '确定导入',
+      'action.importNo': '取消',
+      'action.imported': '存档已导入',
     }
 
     const en = {
       'view.label': 'Garden',
       'view.title': 'My garden',
-      'header.subtitle': 'Four grounds — meadow, snowfield, crater, lakeside — and forty-five flowers, each ground with its own species, sky and visitors.',
+      'header.subtitle': 'Four grounds — meadow, snowfield, crater, lakeside — and fifty-three flowers, each ground with its own species, sky and visitors.',
       'stat.coins': 'Coins',
       'stat.level': 'Level',
       'stat.levelValue': 'Lv.{n}',
@@ -877,6 +886,15 @@ window.__ModuleLoader__.load({
       'action.reset': 'Reset garden',
       'action.resetConfirm': 'Click again to confirm',
       'action.resetDone': 'Garden reset',
+      'action.export': 'Export save',
+      'action.import': 'Import save',
+      'action.exported': 'Save downloaded',
+      'action.exportFailed': 'Could not export the save',
+      'action.importBad': 'That file is not a usable garden save (it may come from a newer version)',
+      'action.importReview': 'Importing replaces this garden. Continue?',
+      'action.importYes': 'Import',
+      'action.importNo': 'Cancel',
+      'action.imported': 'Save imported',
     }
 
     // ---------------------------------------------------------------------
@@ -1208,7 +1226,7 @@ Object.assign(zh, {
   'eco.intro':'开花后可「留园」：花不会被消耗，保留自己的外观与经历。浇水、付费观察、修剪复花，逐步写出每个品种的研究笔记。留园株约 45 分钟才会干透，缺水只暂停观察，不会死亡。',
   'eco.role.nectar':'蜜源花境','eco.role.pollen':'花粉花境','eco.role.seed':'种实观察','eco.role.shelter':'庇护花境','eco.role.water':'水岸花境','eco.role.night':'夜访花境',
   'eco.roles':'生态角色 {n}/6','eco.diversity':'留园 {n} 株 · {species} 个品种','eco.bonus':'访客出现率 +{n}%','eco.season':'本期花季：{season}',
-  'eco.rules':'生态角色、访客偏好、6 小时花季和复花速度是游戏设计，并非真实植物的生长日历或地域共生关系。角色越多样、当季活株越丰富，访客出现率越高（最多 +12%）；湿度低于 30% 暂不计入。',
+  'eco.rules':'生态角色、访客偏好、6 小时花季和复花速度是游戏设计，并非真实植物的生长日历或地域共生关系。花境搭配最多增加 12 个百分点访客出现率；湿度低于 30% 的留园株暂不计入。永久生态研究可额外增加最多 4 个百分点，合计显示在上方。',
   'eco.purpose':'花园里的位置','eco.affinity':'游戏访客偏好：{name}','eco.flowerSeason':'主题花季：{name}',
   'eco.retain':'留园养成','eco.resident':'留园活株','eco.retained':'{name}留在花园了。它的外观与第一次鉴定结果将一直保留。',
   'eco.observe':'观察养护 · {n} 金币','eco.observed':'记录{name}：研究累计 {n} 次','eco.cooldown':'下次观察：{n}','eco.needWater':'湿度至少 30% 才能观察',
@@ -1231,7 +1249,7 @@ Object.assign(en, {
   'eco.intro':'Choose “Keep growing” after bloom. The plant stays alive with its individual appearance. Water it, fund observations and prune for another flowering cycle to build a notebook for each species. Resident soil takes about 45 minutes to dry; dryness pauses study without killing the plant.',
   'eco.role.nectar':'Nectar border','eco.role.pollen':'Pollen border','eco.role.seed':'Seed study','eco.role.shelter':'Shelter border','eco.role.water':'Waterside border','eco.role.night':'Night visitor border',
   'eco.roles':'Ecological roles {n}/6','eco.diversity':'{n} residents · {species} species','eco.bonus':'Visitor chance +{n}%','eco.season':'Theme season: {season}',
-  'eco.rules':'Roles, visitor preferences, six-hour seasons and repeat blooms are game rules, not real growing calendars or geographic communities. Diverse roles and in-season residents raise visitor chance by up to 12%. Plants below 30% moisture do not count.',
+  'eco.rules':'Roles, visitor preferences, six-hour seasons and repeat blooms are game rules, not real growing calendars or geographic communities. Borders raise visitor chance by up to 12 percentage points; residents below 30% moisture do not count. Permanent ecology research adds up to 4 more points; the combined bonus is shown above.',
   'eco.purpose':'A place in the garden','eco.affinity':'Game visitor preference: {name}','eco.flowerSeason':'Theme season: {name}',
   'eco.retain':'Keep growing','eco.resident':'Resident plant','eco.retained':'{name} stays in the garden. Its appearance and first identification are preserved.',
   'eco.observe':'Observe & tend · {n} coins','eco.observed':'{name}: {n} research records','eco.cooldown':'Next observation: {n}','eco.needWater':'At least 30% moisture is needed',
@@ -1284,6 +1302,113 @@ function VisitorPreview({ visitorId, state, t, onClose }) {
       h('div',{className:'fg-previewActions'},h('button',{type:'button',className:'fg-btn',onClick:onClose},t('card.close')))))
 }
 
+// Research currency, permanent branches and deterministic supply exchanges.
+const RESEARCH_BRANCHES = ['care', 'ecology', 'breeding']
+const RESEARCH_OFFERS = [
+  { id: 'fertilizer', cost: 1, quantity: 2 },
+  { id: 'compost', cost: 1, quantity: 3 },
+  { id: 'sprinkler', cost: 2, quantity: 1 },
+  { id: 'charm', cost: 3, quantity: 1 },
+]
+function sanitizeResearch(raw) {
+  return Object.fromEntries(RESEARCH_BRANCHES.map(id => [id, Math.max(0, Math.min(2, Math.floor(finiteOr(raw?.[id], 0))))]))
+}
+function researchLevel(state, branch) { return sanitizeResearch(state.research)[branch] ?? 0 }
+function researchFee(state, species, rebloom = false) {
+  const base = rebloom ? 10 + Math.ceil(species.cost * 0.4) : 8 + Math.ceil(species.cost * 0.25)
+  return Math.max(1, Math.ceil(base * (1 - researchLevel(state, 'care') * 0.2)))
+}
+function researchCost(state, branch) { return researchLevel(state, branch) === 0 ? 3 : 6 }
+function spendResearch(state, cost) {
+  return { ...state, researchSeals: state.researchSeals - cost, researchSpent: (state.researchSpent ?? 0) + cost }
+}
+function upgradeResearch(state, branch) {
+  if (!RESEARCH_BRANCHES.includes(branch) || researchLevel(state, branch) >= 2) return null
+  const cost = researchCost(state, branch)
+  if ((state.researchSeals ?? 0) < cost) return null
+  return { ...spendResearch(state, cost), research: { ...sanitizeResearch(state.research), [branch]: researchLevel(state, branch) + 1 } }
+}
+function exchangeResearch(state, id) {
+  const offer = RESEARCH_OFFERS.find(entry => entry.id === id)
+  if (!offer || (state.researchSeals ?? 0) < offer.cost) return null
+  return { ...spendResearch(state, offer.cost), bag: { ...state.bag, [id]: (state.bag?.[id] ?? 0) + offer.quantity } }
+}
+function hybridChance(state) {
+  return Math.min(0.9, HYBRID_CHANCE + FACILITY_BY_ID.get('bench').step * facilityLevel(state, 'bench') + researchLevel(state, 'breeding') * 0.05)
+}
+Object.assign(zh, {
+  'research.title':'永久研究技能树', 'research.intro':'每条分支独立升级，先解锁 I 再解锁 II；每级分别消耗 3、6 枚印记。效果永久生效，II 的数值为该分支总加成。',
+  'research.balance':'可用 {n} 枚 · 累计获得 {total} 枚',
+  'research.care':'养护研究', 'research.ecology':'生态研究', 'research.breeding':'育种研究',
+  'research.care.effect':'观察与修剪复花的金币费用减少 {n}%（向上取整）。',
+  'research.ecology.effect':'所有花地的访客出现率额外 +{n} 个百分点，与花境和蜂箱叠加；总出现率最高 85%。',
+  'research.breeding.effect':'已授粉花收获时的杂交结种概率额外 +{n} 个百分点，与育种台叠加，最高 90%；仍需邻株盛开。',
+  'research.current':'当前效果：{n}', 'research.level':'{name} · {level}/2', 'research.buy':'解锁 {level} · {n} 枚印记',
+  'research.max':'已全部解锁', 'research.insufficient':'印记不足，还需 {n} 枚', 'research.confirm':'确认花费 {n} 枚印记？',
+  'research.upgraded':'{name}已升级至 {level}/2，永久效果已生效。', 'research.failed':'未完成：印记不足或研究已满级，请重试。',
+  'research.shop':'印记兑换商店', 'research.shopNote':'兑换会消耗可用印记，道具放入背包；可重复兑换。永久研究也使用同一余额，请按需要选择。',
+  'research.offer':'{name} ×{n}', 'research.stock':'背包已有 {n}', 'research.exchange':'兑换 · {n} 枚印记', 'research.exchanged':'已兑换{name} ×{n}，已放入背包。',
+  'eco.reward':'考察奖励：{n} 枚可用研究印记',
+  'eco.projectNote':'每 6 小时更换目标。观察指定留园品种并遇见本期访客；提交收取费用，不消耗花。印记可用于永久研究与道具兑换，档案保留。',
+})
+Object.assign(en, {
+  'research.title':'Permanent research tree', 'research.intro':'Upgrade each branch independently: I before II, costing 3 then 6 seals. Effects are permanent; tier II shows the total branch bonus.',
+  'research.balance':'{n} available · {total} earned in total',
+  'research.care':'Plant care', 'research.ecology':'Visitor ecology', 'research.breeding':'Hybrid breeding',
+  'research.care.effect':'Observation and rebloom coin fees reduced by {n}% (rounded up).',
+  'research.ecology.effect':'Visitor chance +{n} percentage points in every ground, stacking with borders and hives; total chance capped at 85%.',
+  'research.breeding.effect':'Hybrid seed chance +{n} percentage points on pollinated harvests, stacking with the breeding bench up to 90%; still requires a blooming neighbour.',
+  'research.current':'Current effect: {n}', 'research.level':'{name} · {level}/2', 'research.buy':'Unlock {level} · {n} seals',
+  'research.max':'Fully researched', 'research.insufficient':'Need {n} more seals', 'research.confirm':'Confirm spending {n} seals?',
+  'research.upgraded':'{name} upgraded to {level}/2. Permanent effect is active.', 'research.failed':'Could not complete: insufficient seals or maximum research level. Try again.',
+  'research.shop':'Seal exchange', 'research.shopNote':'Spend available seals to put supplies in your bag. Exchanges are repeatable and share the same balance as permanent research.',
+  'research.offer':'{name} ×{n}', 'research.stock':'In bag: {n}', 'research.exchange':'Exchange · {n} seals', 'research.exchanged':'Received {name} ×{n} in your bag.',
+  'eco.reward':'Study reward: {n} spendable research seals',
+  'eco.projectNote':'Targets change every six hours. Observe resident species and meet this period’s visitors. Submission pays a fee without consuming flowers. Spend seals on permanent research or supplies; journal entries persist.',
+})
+function ResearchWorkshop({ state, t, clock, onChange }) {
+  const [armed, setArmed] = React.useState(null), [notice, setNotice] = React.useState('')
+  function purchase(kind, id, cost) {
+    const key = `${kind}:${id}`, now = Date.now(), current = getState()
+    const level = researchLevel(current, id)
+    if (!armed || armed.key !== key || now > armed.until || armed.cost !== cost || (kind === 'upgrade' && armed.level !== level)) {
+      setArmed({key, cost, level, until: now + 5000}); return
+    }
+    setArmed(null)
+    const next = kind === 'upgrade' ? upgradeResearch(current, id) : exchangeResearch(current, id)
+    if (!next) { setNotice(t('research.failed')); return }
+    onChange(next)
+    const offer = RESEARCH_OFFERS.find(entry => entry.id === id)
+    setNotice(kind === 'upgrade' ? t('research.upgraded', {name:t(`research.${id}`),level:researchLevel(next,id)}) : t('research.exchanged', {name:t(`item.${id}`),n:offer.quantity}))
+  }
+  function button(kind, id, cost, disabled, label) {
+    const confirming = armed?.key === `${kind}:${id}` && armed.until >= clock
+    return h('button', {type:'button',className:confirming?'fg-btn fg-btnDanger':'fg-btn',disabled,onClick:()=>purchase(kind,id,cost)}, confirming?t('research.confirm',{n:cost}):label)
+  }
+  const balance = state.researchSeals ?? 0
+  return h('div', {className:'fg-researchWorkshop'},
+    h('h3',null,t('research.title')),
+    h('p',{className:'fg-hint'},t('research.balance',{n:balance,total:balance+(state.researchSpent??0)})),
+    h('p',{className:'fg-hint'},t('research.intro')),
+    h('div',{className:'fg-ecoProjects'},RESEARCH_BRANCHES.map(id=>{
+      const level=researchLevel(state,id), cost=researchCost(state,id), step=id==='care'?20:id==='ecology'?2:5
+      return h('article',{className:'fg-ecoProject',key:id},
+        h('h4',null,t('research.level',{name:t(`research.${id}`),level})),
+        h('p',{className:'fg-hint'},t('research.current',{n:t(`research.${id}.effect`,{n:level*step})})),
+        [1,2].map(tier=>h('p',{className:'fg-hint',key:tier},`${tier<=level?'✓':'○'} ${tier===1?'I':'II'} · ${t(`research.${id}.effect`,{n:tier*step})}`)),
+        button('upgrade',id,cost,level>=2||balance<cost,level>=2?t('research.max'):t('research.buy',{level:level===0?'I':'II',n:cost})),
+        level<2&&balance<cost?h('span',{className:'fg-note'},t('research.insufficient',{n:cost-balance})):null)
+    })),
+    h('h3',null,t('research.shop')), h('p',{className:'fg-hint'},t('research.shopNote')),
+    h('div',{className:'fg-ecoProjects'},RESEARCH_OFFERS.map(offer=>h('article',{className:'fg-ecoProject',key:offer.id},
+      h('h4',null,t('research.offer',{name:t(`item.${offer.id}`),n:offer.quantity})),
+      h('p',{className:'fg-hint'},t(`item.${offer.id}.note`)),
+      h('p',{className:'fg-note'},t('research.stock',{n:state.bag?.[offer.id]??0})),
+      button('exchange',offer.id,offer.cost,balance<offer.cost,t('research.exchange',{n:offer.cost})),
+      balance<offer.cost?h('span',{className:'fg-note'},t('research.insufficient',{n:offer.cost-balance})):null))),
+    h('p',{role:'status','aria-live':'polite',className:'fg-sectionOk'},notice))
+}
+
 function GardenEcology({state,t,clock,onChange,onSpecies}) {
   const ecology=ecologyState(state,clock), stats=gardenEcology(state,clock), projects=ecoProjects(state,clock)
   const [armed,setArmed]=React.useState(null), [notice,setNotice]=React.useState('')
@@ -1305,6 +1430,7 @@ function GardenEcology({state,t,clock,onChange,onSpecies}) {
       h('span',{className:'fg-badge'},t('eco.bonus',{n:Math.round(stats.visitorBonus*100)})),
       h('span',{className:'fg-badge'},t('eco.season',{season:t(`show.season.${SEASONS[ecology.period%4]}`)}))),
     h('p',{className:'fg-hint'},t('eco.rules')),
+    h(ResearchWorkshop,{state,t,clock,onChange}),
     h('details',{className:'fg-ecoDetails',open:true},h('summary',null,t('eco.projects'),' · ',t('eco.left',{n:formatDuration((ecology.period+1)*ECO_PERIOD_MS-clock,t)})),
       h('p',{className:'fg-hint'},t('eco.projectNote')),
       h('div',{className:'fg-ecoProjects'},projects.map((project,index)=>{
@@ -1333,6 +1459,26 @@ function GardenEcology({state,t,clock,onChange,onSpecies}) {
     h('p',{role:'status','aria-live':'polite',className:'fg-sectionOk'},notice))
 }
 
+Object.assign(zh, {
+ 'species.foxglove':'毛地黄','latin.foxglove':'Digitalis purpurea','codex.foxglove':'林间的铃声与谨慎','fact.foxglove':'第一年形成毛茸茸的叶莲座；第二年抽出高花葶，悬挂紫色斑点管花。',
+ 'species.bluebell':'蓝铃花','latin.bluebell':'Hyacinthoides non-scripta','codex.bluebell':'林下的蓝色地毯','fact.bluebell':'细长基生叶上方是一侧下垂的蓝紫色花序，花被片向外反卷。',
+ 'species.cyclamen':'常春叶仙客来','latin.cyclamen':'Cyclamen hederifolium','codex.cyclamen':'秋日的倒影','fact.cyclamen':'银纹心形叶与反卷花瓣从扁圆块茎上生长，花后花梗会盘旋。',
+ 'species.woodanemone':'林银莲花','latin.woodanemone':'Anemone nemorosa','codex.woodanemone':'春林的微风','fact.woodanemone':'低矮根茎多年生，三裂叶托起一朵白色或淡紫色的多雄蕊小花。',
+ 'species.californiapoppy':'花菱草','latin.californiapoppy':'Eschscholzia californica','codex.californiapoppy':'金色的旷野','fact.californiapoppy':'灰绿裂叶上伸出四瓣丝绸般花瓣；夜晚或寒冷时花瓣闭合。',
+ 'species.desertmarigold':'沙漠金盏菊','latin.desertmarigold':'Baileya multiradiata','codex.desertmarigold':'沙地的太阳','fact.desertmarigold':'银绿色丛生叶片上抽出多条裸花葶，每条顶着明亮黄色的菊状花头。',
+ 'species.penstemon':'钓钟柳','latin.penstemon':'Penstemon barbatus','codex.penstemon':'峡谷里的红色长笛','fact.penstemon':'直立花茎上成串排列狭长猩红管花，下唇内有金色绒毛。',
+ 'species.eveningprimrose':'月见草','latin.eveningprimrose':'Oenothera biennis','codex.eveningprimrose':'夜色中的金色开启','fact.eveningprimrose':'两年生植株先长莲座，第二年高茎开四瓣黄花，花朵在傍晚迅速开放。',
+})
+Object.assign(en, {
+ 'species.foxglove':'Foxglove','latin.foxglove':'Digitalis purpurea','codex.foxglove':'A woodland bell with a warning','fact.foxglove':'A woolly leaf rosette forms first; the second-year spike carries hanging purple, spotted tubular flowers.',
+ 'species.bluebell':'Common bluebell','latin.bluebell':'Hyacinthoides non-scripta','codex.bluebell':'A blue carpet beneath trees','fact.bluebell':'Linear basal leaves frame a one-sided, nodding raceme of violet-blue flowers with recurved tepals.',
+ 'species.cyclamen':'Ivy-leaved cyclamen','latin.cyclamen':'Cyclamen hederifolium','codex.cyclamen':'An autumn reflection','fact.cyclamen':'Silver-patterned ivy-like leaves and reflexed petals rise from a flattened tuber; spent stalks coil.',
+ 'species.woodanemone':'Wood anemone','latin.woodanemone':'Anemone nemorosa','codex.woodanemone':'A breeze in the spring wood','fact.woodanemone':'A low rhizomatous perennial with divided leaves and a solitary pale flower surrounded by stamens.',
+ 'species.californiapoppy':'California poppy','latin.californiapoppy':'Eschscholzia californica','codex.californiapoppy':'Gold across open country','fact.californiapoppy':'Grey-green divided foliage supports four silky petals that close at night or in cold weather.',
+ 'species.desertmarigold':'Desert marigold','latin.desertmarigold':'Baileya multiradiata','codex.desertmarigold':'A desert sun','fact.desertmarigold':'Silvery clumps send up many naked stems, each ending in a bright yellow daisy-like head.',
+ 'species.penstemon':'Beardlip penstemon','latin.penstemon':'Penstemon barbatus','codex.penstemon':'A red flute in the canyon','fact.penstemon':'Tall spikes carry clustered scarlet tubes with golden hairs along the lower lip.',
+ 'species.eveningprimrose':'Common evening-primrose','latin.eveningprimrose':'Oenothera biennis','codex.eveningprimrose':'Gold opening after dusk','fact.eveningprimrose':'A biennial rosette becomes a tall flowering stem; four yellow petals open quickly each evening.',
+})
     // §2 Scenes, species and colour variants.
     //    `head` picks the drawing, `leaf` the foliage, `alt` the second colour
     //    that odd-numbered plots grow.
@@ -1366,6 +1512,9 @@ function GardenEcology({state,t,clock,onChange,onSpecies}) {
         species: ['pickerel', 'loosestrife', 'iris', 'waterlily', 'lotus'],
       },
     ]
+    SCENES.push(
+      {id:'woodland',cost:1800,tint:'rgba(69,119,83,.12)',edge:'rgba(69,119,83,.4)',weather:{clear:1.05,overcast:1.15,rain:1.1},rainWets:true,species:[]},
+      {id:'desert',cost:2600,tint:'rgba(194,151,87,.12)',edge:'rgba(194,151,87,.4)',weather:{clear:1.2,overcast:1.05,rain:.85},rainWets:false,species:[]})
     const SCENE_BY_ID = new Map(SCENES.map(scene => [scene.id, scene]))
     const SCENE_ID_OF = new Map()
     for (const scene of SCENES) for (const id of scene.species) SCENE_ID_OF.set(id, scene.id)
@@ -1521,11 +1670,27 @@ const NEW_SPECIES = [
         ? `https://en.wikipedia.org/wiki/${({crocus:'Crocus_vernus',astilbe:'Astilbe_chinensis',arrowhead:'Sagittaria_sagittifolia'})[species.id]}`
         : `https://plants.ces.ncsu.edu/plants/${({cosmos:'cosmos-bipinnatus',zinnia:'zinnia-elegans',cornflower:'centaurea-cyanus',calendula:'calendula-officinalis',snapdragon:'antirrhinum-majus',daffodil:'narcissus-pseudonarcissus',primrose:'primula-vulgaris',pansy:'viola-tricolor',bleedingheart:'lamprocapnos-spectabilis',hibiscus:'hibiscus-rosa-sinensis',birdofparadise:'strelitzia-reginae',gazania:'gazania-rigens',redhotpoker:'kniphofia-uvaria',desertrose:'adenium-obesum',marshmarigold:'caltha-palustris',forgetmenot:'myosotis-scorpioides',cardinalflower:'lobelia-cardinalis'})[species.id]}/`
     }
+const REGION_SPECIES = [
+  { id:'foxglove', scene:'woodland', cost:28, growSec:260, sell:68, xp:12, head:'foxglove', leaf:'serrate', pal:{petal:'#9d72bd',petalDeep:'#68417f',center:'#f2d9a2',centerDeep:'#ab7a4d',stem:'#66885a',leaf:'#7fa56b'}, source:'https://en.wikipedia.org/wiki/Digitalis_purpurea' },
+  { id:'bluebell', scene:'woodland', cost:18, growSec:150, sell:38, xp:7, head:'bluebell', leaf:'strap', pal:{petal:'#6f83cf',petalDeep:'#46569c',center:'#f5ead0',centerDeep:'#c9b37d',stem:'#6f955e',leaf:'#8ca66b'}, source:'https://en.wikipedia.org/wiki/Hyacinthoides_non-scripta' },
+  { id:'cyclamen', scene:'woodland', cost:46, growSec:380, sell:112, xp:21, head:'cyclamen', leaf:'ivy', pal:{petal:'#d97ca5',petalDeep:'#914568',center:'#f5e3df',centerDeep:'#b77e8a',stem:'#6f855e',leaf:'#8ea679'}, alt:{petal:'#f8f0e8',petalDeep:'#d8c7ba'}, source:'https://en.wikipedia.org/wiki/Cyclamen_hederifolium' },
+  { id:'woodanemone', scene:'woodland', cost:12, growSec:115, sell:25, xp:4, head:'woodanemone', leaf:'palmate', pal:{petal:'#f8f5eb',petalDeep:'#d8d4c8',center:'#edc95b',centerDeep:'#a47b23',stem:'#789964',leaf:'#8eae72'}, alt:{petal:'#d9c5e8',petalDeep:'#aa8bc2'}, source:'https://en.wikipedia.org/wiki/Anemone_nemorosa' },
+  { id:'californiapoppy', scene:'desert', cost:22, growSec:175, sell:44, xp:8, head:'californiapoppy', leaf:'fern', pal:{petal:'#f3a33e',petalDeep:'#c86b27',center:'#d8892c',centerDeep:'#8d4b20',stem:'#718f55',leaf:'#8da46d'}, alt:{petal:'#f3d55b',petalDeep:'#d2a62b'}, source:'https://en.wikipedia.org/wiki/Eschscholzia_californica' },
+  { id:'desertmarigold', scene:'desert', cost:34, growSec:290, sell:78, xp:14, head:'desertmarigold', leaf:'silver', pal:{petal:'#f5d653',petalDeep:'#d09f28',center:'#b47729',centerDeep:'#744314',stem:'#84915e',leaf:'#b2b79b'}, source:'https://en.wikipedia.org/wiki/Baileya_multiradiata' },
+  { id:'penstemon', scene:'desert', cost:52, growSec:420, sell:126, xp:23, head:'penstemon', leaf:'strap', pal:{petal:'#e74e4e',petalDeep:'#a62d35',center:'#efcf72',centerDeep:'#a98235',stem:'#6d8d5a',leaf:'#829e69'}, source:'https://en.wikipedia.org/wiki/Penstemon_barbatus' },
+  { id:'eveningprimrose', scene:'desert', cost:64, growSec:610, sell:170, xp:31, head:'eveningprimrose', leaf:'lance', pal:{petal:'#f7dd67',petalDeep:'#d4ae35',center:'#f1b34b',centerDeep:'#a86b23',stem:'#72885d',leaf:'#8ca06c'}, source:'https://en.wikipedia.org/wiki/Oenothera_biennis' },
+]
+    SPECIES.push(...REGION_SPECIES)
+    for(const species of REGION_SPECIES){SCENE_BY_ID.get(species.scene).species.push(species.id);SCENE_ID_OF.set(species.id,species.scene)}
     const SPECIES_BY_ID = new Map(SPECIES.map(species => [species.id, species]))
     for (const scene of SCENES) scene.species.sort((a,b) => SPECIES_BY_ID.get(a).cost - SPECIES_BY_ID.get(b).cost)
 
 
     /** Every codex entry: species × variant, including the gold hidden bloom. */
+    Object.assign(ECO_PROFILES,{
+      foxglove:{role:'nectar',season:1,visitor:'bumblebee'},bluebell:{role:'nectar',season:0,visitor:'bee'},cyclamen:{role:'shelter',season:2,visitor:'robin'},woodanemone:{role:'pollen',season:0,visitor:'bee'},
+      californiapoppy:{role:'pollen',season:0,visitor:'bee'},desertmarigold:{role:'pollen',season:1,visitor:'butterfly'},penstemon:{role:'nectar',season:1,visitor:'hawkmoth'},eveningprimrose:{role:'night',season:2,visitor:'moth'}
+    })
     const CODEX_ENTRIES = []
     for (const species of SPECIES) {
       CODEX_ENTRIES.push({ species: species.id, variant: 'base' })
@@ -1620,6 +1785,10 @@ const NEW_SPECIES = [
       { id: 'hawkmoth', scenes: ['meadow','volcano','lake'], when: 'day', weight: 0.6, tip: 12, special: true },
       { id: 'hoverfly', scenes: ['meadow','lake'], when: 'day', dry: true, weight: 0.6, tip: 10, special: true },
     ]
+    for(const visitor of VISITORS){
+      if(['bee','butterfly','ladybug','firefly','moth','robin','bumblebee','hoverfly'].includes(visitor.id))visitor.scenes.push('woodland')
+      if(['bee','butterfly','moth','hawkmoth','bumblebee'].includes(visitor.id))visitor.scenes.push('desert')
+    }
     const VISITOR_BY_ID = new Map(VISITORS.map(visitor => [visitor.id, visitor]))
 
     /** Long-term goals. `metric` names a counter in `achievementValue`. */
@@ -1711,6 +1880,7 @@ const NEW_SPECIES = [
       snow: { trait: 'frost', weather: 'rain' },
       volcano: { trait: 'ember', weather: 'clear' },
       lake: { trait: 'pearl', weather: 'rain' },
+      woodland:{trait:'pearl',weather:'rain'},desert:{trait:'ember',weather:'clear'},
     }
 
     /** Plots #1, #3 and #5 (even indexes) grow the species' second colour. */
@@ -1863,6 +2033,8 @@ const NEW_SPECIES = [
       return fillOrders({
         v: STATE_VERSION,
         coins: START_COINS,
+        ui: sanitizeUi(null),
+        discoveries: [], discoverySeq: 0,
         xp: 0,
         harvested: 0,
         scene: 'meadow',
@@ -1888,7 +2060,7 @@ const NEW_SPECIES = [
         exotics: {},
         specimens: {},
         commissions: { period: ecologyPeriod(now), accepted: {}, completed: [] }, patronage: 0, commissionLog: [],
-        study: {}, ecology: { period: ecologyPeriod(now), grounds: ['meadow'], observed: [], visitors: [], claimed: [] }, researchSeals: 0, journal: [],
+        study: {}, ecology: { period: ecologyPeriod(now), grounds: ['meadow'], observed: [], visitors: [], claimed: [] }, researchSeals: 0, researchSpent: 0, research: sanitizeResearch(null), journal: [],
         seed: 20261116,
         orderSeq: 1,
         lastTick: now,
@@ -2055,6 +2227,8 @@ const NEW_SPECIES = [
       return fillOrders({
         v: STATE_VERSION,
         coins: finiteOr(raw.coins, START_COINS),
+        ui: sanitizeUi(raw.ui),
+        discoveries: sanitizeDiscoveries(raw.discoveries), discoverySeq: Math.max(Math.floor(finiteOr(raw.discoverySeq,0)),...sanitizeDiscoveries(raw.discoveries).map(entry=>entry.id),0),
         xp: finiteOr(raw.xp, 0),
         harvested: finiteOr(raw.harvested, 0),
         scene: SCENE_BY_ID.has(raw.scene) ? raw.scene : 'meadow',
@@ -2082,11 +2256,54 @@ const NEW_SPECIES = [
         exotics: sanitizeCounts(raw.exotics, ':', id => TRAIT_BY_ID.has(id)),
         specimens: sanitizeSpecimens(raw.specimens),
         commissions: sanitizeCommissions(raw.commissions,now), patronage: Math.floor(finiteOr(raw.patronage,0)), commissionLog: sanitizeCommissionLog(raw.commissionLog),
-        study: sanitizeStudy(raw.study), ecology: sanitizeEcology(raw.ecology, now, scenes), researchSeals: Math.floor(finiteOr(raw.researchSeals, 0)), journal: sanitizeJournal(raw.journal),
+        study: sanitizeStudy(raw.study), ecology: sanitizeEcology(raw.ecology, now, scenes), researchSeals: Math.max(0, Math.floor(finiteOr(raw.researchSeals, 0))), researchSpent: Math.max(0, Math.floor(finiteOr(raw.researchSpent, 0))), research: sanitizeResearch(raw.research), journal: sanitizeJournal(raw.journal),
         seed: Math.floor(finiteOr(raw.seed, 20261116)) || 20261116,
         orderSeq: Math.max(1, Math.floor(finiteOr(raw.orderSeq, 1))),
         lastTick: Math.min(finiteOr(raw.lastTick, now), now),
       })
+    }
+
+    /* ── save files ──────────────────────────────────────────────
+     * The garden normally lives in this browser, which ties it to one origin and
+     * one profile. A save file is a portable copy of that state so a player can
+     * back it up or move to another browser; the envelope carries the versions
+     * needed to refuse a file this build cannot read. Both helpers are pure so
+     * the tests can exercise them without a DOM.
+     */
+    const SAVE_FORMAT = 'dsh-flower-garden'
+    const SAVE_VERSION = 1
+    const READABLE_STATE_VERSIONS = [1, 2, 3, STATE_VERSION]
+
+    function exportSave(state, now) {
+      return {
+        format: SAVE_FORMAT,
+        saveVersion: SAVE_VERSION,
+        stateVersion: STATE_VERSION,
+        exportedAt: new Date(now).toISOString(),
+        garden: state,
+      }
+    }
+
+    /** Returns a sanitized garden, or null when the payload is not a usable save. */
+    function importSave(payload, now) {
+      if (payload === null || typeof payload !== 'object' || Array.isArray(payload)) return null
+      const raw = payload.format === SAVE_FORMAT && payload.garden !== undefined ? payload.garden : payload.garden ?? payload
+      if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) return null
+      // Refuse anything sanitize would silently replace with a fresh garden, so a
+      // bad file never wipes the save it was meant to restore.
+      if (!READABLE_STATE_VERSIONS.includes(raw.v)) return null
+      if (raw.v < STATE_VERSION) {
+        // v1-v3 kept a flat garden, so only demand that the file looks like one.
+        const recognisable = ['coins', 'lastTick', 'plots', 'scenes', 'basket'].some(field => raw[field] !== undefined)
+        if (!recognisable) return null
+      } else if (raw.scenes === null || typeof raw.scenes !== 'object') {
+        return null
+      }
+      try {
+        return sanitize(raw, now)
+      } catch (error) {
+        return null
+      }
     }
 
 /* ecology-engine.fragment.js
@@ -2197,7 +2414,7 @@ function observeAt(state, sceneId, index, now) {
   const observed = ecology.observed.includes(species.id) ? ecology.observed : [...ecology.observed, species.id]
   const plots = slot.plots.slice()
   plots[index] = { ...plot, observedAt: now, studiedReblooms: reblooms, careCount: (plot.careCount ?? 0) + 1 }
-  const fee = 8 + Math.ceil(species.cost * 0.25)
+  const fee = researchFee(state, species)
   if (state.coins < fee) return null
   return {
     ...state,
@@ -2214,7 +2431,7 @@ function rebloomAt(state, sceneId, index, now) {
   const species = plot === null || plot === undefined ? undefined : SPECIES_BY_ID.get(plot.species)
   if (slot === undefined || index < 0 || index >= slot.unlocked || species === undefined || plot.resident !== true || plot.growthMs < growMsOf(species)
     || plot.observedAt === undefined) return null
-  const fee = 10 + Math.ceil(species.cost * 0.4)
+  const fee = researchFee(state, species, true)
   if (state.coins < fee) return null
   const plots = slot.plots.slice()
   plots[index] = {
@@ -2265,7 +2482,7 @@ function gardenEcology(state, now) {
     roles: [...roles],
     roleCoverage: roles.size,
     seasonal: seasonal.size,
-    visitorBonus: Math.min(ECO_VISITOR_CAP, roles.size * 0.02 + Math.min(0.04, seasonal.size * 0.005)),
+    visitorBonus: Math.min(ECO_VISITOR_CAP, roles.size * 0.02 + Math.min(0.04, seasonal.size * 0.005)) + researchLevel(state, 'ecology') * 0.02,
   }
 }
 
@@ -2582,7 +2799,7 @@ const ECOLOGY_API = { ECO_PERIOD_MS, ECO_OBSERVE_MS, ecologyPeriod, ecologyState
       const partner = plot.pollinated === true ? hybridPartner(slot, index) : null
       let bred = false
       if (partner !== null) {
-        const chance = Math.min(0.9, HYBRID_CHANCE + FACILITY_BY_ID.get('bench').step * facilityLevel(state, 'bench'))
+        const chance = hybridChance(state)
         if (draw() < chance) {
           const key = `${species.id}~${partner}`
           seeds = { ...seeds, [key]: (seeds[key] ?? 0) + 1 }
@@ -3467,6 +3684,9 @@ const ECOLOGY_API = { ECO_PERIOD_MS, ECO_OBSERVE_MS, ecologyPeriod, ecologyState
 
     /** What the plant stands in: meadow soil, a snow drift, cooled lava, or lake water. */
     function ground(sceneId) {
+      if(sceneId==='desert')return h('g',{key:'ground'},h('ellipse',{cx:50,cy:90,rx:26,ry:6,fill:'#c4a16e'}),h('path',{d:'M27 89Q45 84 73 88M31 92Q54 88 70 91',fill:'none',stroke:'#ead4a5',strokeWidth:1}),h('path',{d:'M35 87l3 -2 3 2M63 89l3 -2 2 2',fill:'#8e785b'}))
+      if(sceneId==='woodland')return h('g',{key:'ground'},h('ellipse',{cx:50,cy:90,rx:25,ry:6,fill:'#66533b'}),h('path',{d:'M27 88Q38 81 50 86Q63 81 75 88Q56 94 27 88Z',fill:'#6a8750'}),h('path',{d:'M33 87l5 -3 4 3 -5 2ZM59 88l5 -3 5 3 -5 2Z',fill:'#ae8d53'}))
+
       if (sceneId === 'snow') {
         return h('g', { key: 'ground' },
           h('ellipse', { cx: 50, cy: 90.2, rx: 23, ry: 4.6, fill: '#6f5a4b' }),
@@ -4882,7 +5102,28 @@ const NEW_PLANTS = {
      * shade, petal lengths); `trait` a curiosity; `tint` a hybrid. Without
      * `dna` it is the textbook specimen the flower book shows.
      */
+function regionRay(ink,key,x,y,count,len,width,fill) {
+ return Array.from({length:count},(_,i)=>petal(`${key}${i}`,{x,y,rot:i*360/count,len,w:width,fill:fill??ink.petal,stroke:ink.line,vein:ink.line,veinOpacity:.22}))
+}
+function regionCore(ink,key,x,y,r) { return h('g',{key},h('circle',{cx:x,cy:y,r,fill:ink.core,stroke:ink.pal.centerDeep,strokeWidth:.4}),dots(`${key}-dots`,Array.from({length:8},(_,i)=>polar(x,y,r*.6,i*45)),.42,ink.pal.center)) }
+const REGION_PLANTS = {
+ foxglove(ink,st){const top=st.top-5,parts=[stem(ink,top+40,{w:2.1}),leaf(ink,'base',{x:50,y:82,len:30,w:15,rot:-50,shape:'serrate',veins:6})];for(let i=0;i<7;i++){const x=44+(i%2)*9,y=top+i*5;parts.push(stemPath(`spike${i}`,`M50,${y+4}L${x},${y}`,ink.pal.stem,.7));if(!st.bloom)parts.push(bud(ink,`b${i}`,x,y,{len:8,w:4,rot:i%2?25:-25}));else parts.push(h('g',{key:`fox${i}`,transform:`translate(${x} ${y}) rotate(${i%2?18:-18})`},h('path',{d:'M-5,0Q-8,-8 -4,-13Q2,-17 8,-12Q10,-4 5,3Q0,7 -5,0Z',fill:ink.petal,stroke:ink.line,strokeWidth:.45}),h('ellipse',{cx:1,cy:-6,rx:2.2,ry:3.6,fill:ink.back,opacity:.7}))) }return parts},
+ bluebell(ink,st){const parts=[stemPath('scape','M50,90Q47,68 55,38',ink.pal.stem,1.5)];for(let i=0;i<6;i++)parts.push(leaf(ink,`leaf${i}`,{x:50,y:88,len:32-i*2,w:4,rot:-45+i*18}));for(let i=0;i<7;i++){const x=55+i*1.2,y=38+i*4;if(!st.bloom)parts.push(bud(ink,`b${i}`,x,y,{len:7,w:4,rot:70}));else parts.push(h('g',{key:`bell${i}`,transform:`translate(${x} ${y}) rotate(70)`},h('path',{d:'M0,0Q-6,4 -7,11Q0,14 7,11Q6,4 0,0Z',fill:ink.petal,stroke:ink.line,strokeWidth:.45}))) }return parts},
+ cyclamen(ink,st){const cx=54,cy=st.top+28,parts=[stemPath('pedicel',`M49,90Q44,${cy+20} ${cx},${cy-11}`,ink.pal.stem,1.8),h('ellipse',{key:'tuber',cx:49,cy:87,rx:13,ry:5,fill:ink.pal.stem,opacity:.5})]
+  for(let i=0;i<5;i++)parts.push(h('g',{key:`ivy${i}`,transform:`translate(49 82) rotate(${i*72})`},leaf(ink,'l',{x:0,y:0,len:21,w:13,rot:0,veins:5})))
+  if(!st.bloom)return [...parts,bud(ink,'b',cx,cy-9,{len:11,w:6,rot:160})]
+  parts.push(h('circle',{key:'back',cx,cy,r:8,fill:ink.back,stroke:ink.line,strokeWidth:.5}))
+  parts.push(h('circle',{key:'mouth',cx,cy:cy+2,r:3.4,fill:ink.core,stroke:ink.line,strokeWidth:.4}))
+  for(let i=0;i<5;i++){const ang=-160+i*35;const fill=i%2===0?ink.back:ink.petal;parts.push(petal(`unfurl${i}`,{x:cx+Math.cos(ang*Math.PI/180)*6,y:cy+6,rot:(i-2)*22,len:19,w:7.5,fill:fill,stroke:ink.line,tip:'point'}))}
+  return parts},
+ woodanemone(ink,st){const parts=[stem(ink,st.top+6,{w:1.5}),nfHeartLeaf(ink,'left',39,83,.7,-25),nfHeartLeaf(ink,'right',61,78,.65,35)];if(!st.bloom)return [...parts,bud(ink,'b',50,st.top+7,{len:11,w:6})];return [...parts,...regionRay(ink,'p',50,st.top,7,20,11,ink.petal),regionCore(ink,'k',50,st.top,3.8)]},
+ californiapoppy(ink,st){const y=st.top+7,parts=[stem(ink,y+12,{w:1.6}),nfFern(ink,'fern',50,85,28,-55)];if(!st.bloom)return [...parts,bud(ink,'b',50,y,{len:13,w:7})];return [...parts,...regionRay(ink,'p',50,y,4,28,19,ink.petal),h('circle',{key:'cup',cx:50,cy:y,r:4,fill:ink.core})]},
+ desertmarigold(ink,st){const y=st.top+4,parts=[stem(ink,y+5,{w:2})];for(let i=0;i<7;i++)parts.push(leaf(ink,`s${i}`,{x:50,y:88,len:28,w:6,rot:-70+i*23,fill:ink.leafBack}));if(!st.bloom)return [...parts,bud(ink,'b',50,y,{len:11,w:8})];return [...parts,...regionRay(ink,'p',50,y,28,20,4),regionCore(ink,'k',50,y,5.5)]},
+ penstemon(ink,st){const top=st.top-13,parts=[stem(ink,top+40,{w:1.8})];for(let i=0;i<5;i++)parts.push(leaf(ink,`l${i}`,{x:50,y:85-i*8,len:24-i*2,w:4,rot:i%2?55:-55}));for(let i=0;i<8;i++){const x=50+(i%2?5:-5),y=top+30-i*5;if(!st.bloom)parts.push(bud(ink,`b${i}`,x,y,{len:7,w:3,rot:i%2?20:-20}));else parts.push(h('g',{key:`tube${i}`,transform:`translate(${x} ${y}) rotate(${i%2?20:-20})`},h('path',{d:'M-3,5Q-4,-7 0,-11Q4,-7 3,5Q0,9 -3,5Z',fill:ink.petal,stroke:ink.line,strokeWidth:.45}),h('path',{d:'M-1,-1Q1,0 2,4',stroke:ink.pal.center,strokeWidth:1,fill:'none'}))) }return parts},
+ eveningprimrose(ink,st){const top=st.top-10,parts=[stemPath('tall',`M50,90Q49,55 50,${top}`,ink.pal.stem,2),leaf(ink,'base',{x:48,y:83,len:27,w:9,rot:-48})];for(let i=0;i<6;i++){const x=47+(i%2)*6,y=top+8+i*4;if(!st.bloom)parts.push(bud(ink,`b${i}`,x,y,{len:8,w:4,rot:i%2?25:-25}));else parts.push(...regionRay(ink,`p${i}`,x,y,4,13,9,ink.petal),regionCore(ink,`k${i}`,x,y,2.2))}return parts},
+}
     Object.assign(PLANTS, NEW_PLANTS)
+    Object.assign(PLANTS, REGION_PLANTS)
 
     function FlowerArt({ speciesId, stage, variant, dna, trait, tint }) {
       const species = SPECIES_BY_ID.get(speciesId) ?? SPECIES[0]
@@ -5536,12 +5777,217 @@ function specialTraitArt(ink, traitId, headY = HEAD_Y) {
     // ---------------------------------------------------------------------
     // §6 View.
     // ---------------------------------------------------------------------
+const GARDEN_TABS = ['garden','basket','orders','ecology','show','shop','flowers','visitors','settings']
+function sanitizeUi(raw) {
+  return { tab: GARDEN_TABS.includes(raw?.tab) ? raw.tab : 'garden', fontSize: [13,15,17,19].includes(raw?.fontSize) ? raw.fontSize : 15,
+    font: ['system','serif','rounded'].includes(raw?.font) ? raw.font : 'system' }
+}
+function dayPeriod(now) {
+  const hour=new Date(now).getHours()
+  return hour<5||hour>=19?'night':hour<7?'dawn':hour<11?'morning':hour<14?'noon':hour<17?'afternoon':'dusk'
+}
+function gardenClock(now) {
+  const date=new Date(now),pad=n=>String(n).padStart(2,'0')
+  return {time:`${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`,date:`${date.getFullYear()}-${pad(date.getMonth()+1)}-${pad(date.getDate())}`,
+    zone:Intl.DateTimeFormat().resolvedOptions().timeZone,period:dayPeriod(now)}
+}
+Object.assign(zh,{
+ 'tabs.garden':'花园','tabs.basket':'花篮','tabs.orders':'委托','tabs.ecology':'生态研究','tabs.show':'花展与设施','tabs.shop':'道具商店','tabs.flowers':'花卉图鉴','tabs.visitors':'访客图鉴','tabs.settings':'设置与成就',
+ 'tabs.label':'花园功能','settings.title':'阅读与显示','settings.size':'文字大小','settings.font':'字体风格','settings.system':'系统字体','settings.serif':'宋体 / 衬线','settings.rounded':'圆润 / 无衬线','settings.preview':'一株花，一段慢慢生长的故事。','settings.note':'字号、字体与当前标签会保存在本浏览器的花园存档中。字体使用本机已安装字体，不下载外部资源。','settings.reset':'花园存档',
+ 'clock.dawn':'清晨','clock.morning':'上午','clock.noon':'中午','clock.afternoon':'下午','clock.dusk':'傍晚','clock.night':'夜晚','clock.local':'本地时间','clock.note':'跟随设备本地时间与时区，场景光照随时段变化；天气是游戏模拟。','clock.scene':'{scene} · {period}',
+})
+Object.assign(en,{
+ 'tabs.garden':'Garden','tabs.basket':'Basket','tabs.orders':'Requests','tabs.ecology':'Ecology','tabs.show':'Shows & facilities','tabs.shop':'Shop','tabs.flowers':'Flowers','tabs.visitors':'Visitors','tabs.settings':'Settings & goals',
+ 'tabs.label':'Garden sections','settings.title':'Reading & display','settings.size':'Text size','settings.font':'Font style','settings.system':'System','settings.serif':'Serif','settings.rounded':'Rounded / sans-serif','settings.preview':'A flower, and a story that grows slowly.','settings.note':'Text size, font and current tab are saved with this browser’s garden. Fonts use installed local families; nothing is downloaded.','settings.reset':'Garden save',
+ 'clock.dawn':'Dawn','clock.morning':'Morning','clock.noon':'Noon','clock.afternoon':'Afternoon','clock.dusk':'Dusk','clock.night':'Night','clock.local':'Local time','clock.note':'Uses your device’s local clock and time zone. Scene lighting follows the time of day; weather is simulated.','clock.scene':'{scene} · {period}',
+})
+
+// scene-panorama.fragment.js
+// Insert inside the client factory. Depends only on React's h helper.
+// Static, self-contained panorama art: no images, network, timers or DOM access.
+function ScenePanorama({ sceneId, period = 'noon', weather = 'clear' }) {
+  const night = period === 'night'
+  const dawn = period === 'dawn'
+  const dusk = period === 'dusk'
+  weather = weather === 'rain' && sceneId === 'snow' ? 'snow' : weather === 'rain' && ['volcano','desert'].includes(sceneId) ? 'ash' : weather
+  const prefix = `fg-pan-${sceneId}-${period}-${weather}`
+  const sky = night ? '#101c35' : dawn ? '#e9b99e' : dusk ? '#d68b79' : period === 'morning' ? '#9bc7dc' : period === 'afternoon' ? '#75abc6' : '#7ab8d7'
+  const haze = night ? '#293653' : dawn || dusk ? '#f0b58c' : '#cfe4e6'
+  const sun = night ? null : dusk ? { cx: 930, cy: 76, r: 25, fill: '#ffc384' } : dawn ? { cx: 205, cy: 84, r: 23, fill: '#ffe0a5' } : { cx: period === 'morning' ? 350 : period === 'afternoon' ? 950 : 650, cy: period === 'noon' ? 35 : 64, r: 27, fill: '#fff1b6' }
+  const star = night ? Array.from({ length: 18 }, (_, i) => h('circle', { key: `star-${i}`, cx: 50 + ((i * 173) % 1080), cy: 22 + ((i * 67) % 110), r: i % 4 ? 1.2 : 1.8, fill: '#f7f4d4', opacity: .65 })) : []
+  const cloud = (x, y, scale, key, dark = false) => h('g', { key, transform: `translate(${x} ${y}) scale(${scale})`, opacity: dark ? .42 : .54 },
+    h('ellipse', { cx: 0, cy: 16, rx: 74, ry: 17, fill: dark ? '#67768d' : '#e8f0ed' }),
+    h('ellipse', { cx: -38, cy: 9, rx: 31, ry: 23, fill: dark ? '#728199' : '#f3f6ed' }),
+    h('ellipse', { cx: 13, cy: 1, rx: 43, ry: 34, fill: dark ? '#6f7d94' : '#f6f8f2' }),
+    h('ellipse', { cx: 51, cy: 12, rx: 28, ry: 20, fill: dark ? '#66758d' : '#e8f0ed' }))
+  const rain = weather === 'rain' ? Array.from({ length: 34 }, (_, i) => h('path', { key: `rain-${i}`, d: `M${22 + (i * 71) % 1160},${88 + (i * 31) % 110}l-8,25`, stroke: '#b8dce5', strokeWidth: 2, opacity: .48 })) : []
+  const snow = weather === 'snow' ? Array.from({ length: 42 }, (_, i) => h('circle', { key: `snow-${i}`, cx: 20 + ((i * 83) % 1160), cy: 70 + ((i * 47) % 195), r: i % 3 ? 2.2 : 3.2, fill: '#fff', opacity: .72 })) : []
+  const meadow = () => h('g', { key: 'meadow' },
+    h('path', { d: 'M0 170Q160 112 330 164T650 148T940 157T1200 130V300H0Z', fill: '#789c73' }),
+    h('path', { d: 'M0 207Q170 160 340 207T680 188T970 199T1200 175V300H0Z', fill: '#587b59' }),
+    ...Array.from({ length: 18 }, (_, i) => { const x = (i * 83) % 1190; const y = 210 + (i % 5) * 10; return h('g', { key: `grass-${i}` }, h('path', { d: `M${x},${y + 32}q-5,-20 -12,-27M${x},${y + 32}q4,-23 12,-31`, stroke: i % 2 ? '#88ae72' : '#a0bd77', strokeWidth: 2, fill: 'none' })) }),
+    h('path', { d: 'M0 252Q240 222 480 251T960 244T1200 251V300H0Z', fill: '#3f624b' }))
+  const snowfield = () => h('g', { key: 'snow' },
+    h('path', { d: 'M0 166L190 86L380 162L610 71L830 163L1040 92L1200 153V300H0Z', fill: '#718aa0' }),
+    h('path', { d: 'M0 180L190 98L380 174L610 84L830 174L1040 105L1200 164V300H0Z', fill: '#e9f3f4', opacity: .86 }),
+    h('path', { d: 'M0 212Q270 185 510 222T1200 210V300H0Z', fill: '#d7e7ea' }),
+    h('path', { d: 'M0 264Q180 243 360 268T720 260T1200 266V300H0Z', fill: '#b8d2da' }),
+    ...Array.from({ length: 9 }, (_, i) => { const x = 90 + i * 130; return h('path', { key: `pine-${i}`, d: `M${x},260L${x + 22},175L${x + 44},260M${x + 8},235L${x + 22},205L${x + 37},235`, fill: 'none', stroke: '#456775', strokeWidth: 5, strokeLinecap: 'round' }) }))
+  const volcano = () => h('g', { key: 'volcano' },
+    h('path', { d: 'M0 222L160 183L300 195L470 126L610 172L760 102L910 180L1030 142L1200 201V300H0Z', fill: '#574c4d' }),
+    h('path', { d: 'M0 250L200 218L350 235L510 162L650 218L805 143L950 224L1080 181L1200 226V300H0Z', fill: '#754b46' }),
+    h('path', { d: 'M455 132Q520 85 586 130L557 160Q520 146 482 164Z', fill: '#2d272b' }),
+    weather === 'ash' ? h('path', { d: 'M450 80Q600 45 780 100', fill: 'none', stroke: '#a89b91', strokeWidth: 21, opacity: .35 }) : null,
+    ...Array.from({ length: 10 }, (_, i) => { const x = 40 + i * 125; return h('path', { key: `rock-${i}`, d: `M${x},280l18,-45 24,45Z`, fill: i % 2 ? '#413b40' : '#8a5b4e' }) }))
+  const lake = () => h('g', { key: 'lake' },
+    h('path', { d: 'M0 174Q230 130 450 175T850 158T1200 167V300H0Z', fill: '#5f8796' }),
+    h('path', { d: 'M0 196Q240 168 480 200T900 185T1200 193V300H0Z', fill: '#6da6ae' }),
+    ...Array.from({ length: 12 }, (_, i) => { const x = 30 + i * 105; return h('path', { key: `reed-${i}`, d: `M${x},278Q${x - 8},225 ${x + 4},190M${x + 4},226Q${x + 25},207 ${x + 30},184`, fill: 'none', stroke: i % 2 ? '#668d67' : '#86a86f', strokeWidth: 4 }) }),
+    h('path', { d: 'M0 260Q200 244 400 264T800 257T1200 265', fill: 'none', stroke: '#b6d9d7', strokeWidth: 3, opacity: .7 }),
+    h('path', { d: 'M0 290Q240 271 470 291T930 285T1200 292', fill: 'none', stroke: '#9bc7c7', strokeWidth: 2, opacity: .6 }))
+  const woodland=()=>h('g',null,h('path',{d:'M0 175Q300 130 650 180T1200 155V300H0Z',fill:'#365d48'}),...Array.from({length:16},(_,i)=>{const x=i*83;return h('g',{key:i},h('path',{d:`M${x} 290l${i%2?8:-8} -145`,stroke:'#514b3e',strokeWidth:10+i%3*3}),h('ellipse',{cx:x,cy:140+i%3*17,rx:63,ry:67,fill:i%2?'#476f4d':'#294c3c'}))}),h('path',{d:'M440 300Q530 220 690 195Q610 240 600 300Z',fill:'#9a9272',opacity:.65}))
+  const desert=()=>h('g',null,h('path',{d:'M0 190Q190 100 420 180T820 165T1200 180V300H0Z',fill:'#c6a278'}),h('path',{d:'M0 250Q220 170 480 230T960 210T1200 240V300H0Z',fill:'#d5b281'}),h('path',{d:'M0 275Q390 215 800 275T1200 260V300H0Z',fill:'#ac8058'}),...Array.from({length:12},(_,i)=>h('path',{key:i,d:`M${70+i*97} 285l-8 -20m8 20l9 -27m-9 27l0 -32`,stroke:'#737253',strokeWidth:3,fill:'none'})))
+  const body = sceneId === 'woodland' ? woodland() : sceneId === 'desert' ? desert() : sceneId === 'snow' ? snowfield() : sceneId === 'volcano' ? volcano() : sceneId === 'lake' ? lake() : meadow()
+  return h('svg', { viewBox: '0 0 1200 300', preserveAspectRatio: 'xMidYMid slice', className: 'fg-panorama', 'aria-hidden': 'true' },
+    h('defs', null, h('linearGradient', { id: `${prefix}-sky`, x1: 0, y1: 0, x2: 0, y2: 1 }, h('stop', { offset: '0%', stopColor: sky }), h('stop', { offset: '100%', stopColor: haze })), h('linearGradient', { id: `${prefix}-veil`, x1: 0, y1: 0, x2: 0, y2: 1 }, h('stop', { offset: '0%', stopColor: '#fff', stopOpacity: .08 }), h('stop', { offset: '100%', stopColor: '#20363e', stopOpacity: .18 }))),
+    h('defs',null,
+      h('filter',{id:`${prefix}-grain`,x:0,y:0,width:'100%',height:'100%'},h('feTurbulence',{type:'fractalNoise',baseFrequency:'.018 .16',numOctaves:3,seed:8,stitchTiles:'stitch'}),h('feColorMatrix',{type:'saturate',values:0})),
+      h('linearGradient',{id:`${prefix}-land`,x1:0,y1:0,x2:0,y2:1},h('stop',{offset:'0%',stopColor:night?'#0d192b':'#ecedcf',stopOpacity:night?.65:0}),h('stop',{offset:'100%',stopColor:night?'#08101d':'#182c24',stopOpacity:night?.8:.3})),
+      h('radialGradient',{id:`${prefix}-glow`},h('stop',{offset:0,stopColor:'#ffe5a6',stopOpacity:.5}),h('stop',{offset:1,stopColor:'#ffe5a6',stopOpacity:0}))),
+    h('rect', { width: 1200, height: 300, fill: `url(#${prefix}-sky)` }),
+    sun?h('ellipse',{cx:sun.cx,cy:sun.cy,rx:190,ry:130,fill:`url(#${prefix}-glow)`}):h('g',null,h('circle',{cx:925,cy:55,r:19,fill:'#ecedcf'}),h('circle',{cx:934,cy:49,r:17,fill:sky})),
+    ...star, sun ? h('circle', { ...sun, opacity: .9 }) : null,
+    weather === 'overcast' || weather === 'rain' || weather === 'snow' ? [cloud(195, 58, 1.15, 'cloud-a', weather === 'rain' || weather === 'snow'), cloud(760, 92, .82, 'cloud-b', weather === 'rain' || weather === 'snow')] : null,
+    h('path',{d:'M0 158L90 123 180 150 280 108 390 144 510 96 630 149 780 101 900 149 1060 115 1200 146V240H0Z',fill:night?'#344158':'#8da5a6',opacity:.45}),
+    body,
+    sceneId==='lake'?h('g',{opacity:.35},...Array.from({length:20},(_,i)=>h('path',{key:i,d:`M${200+i*20},${195+i*4}h${230-i*7}`,stroke:night?'#bacbd5':'#e6e5c4',strokeWidth:1.2}))):null,
+    h('rect',{y:145,width:1200,height:155,filter:`url(#${prefix}-grain)`,opacity:night?.05:.13,style:{mixBlendMode:'soft-light'}}),
+    h('rect',{width:1200,height:300,fill:`url(#${prefix}-land)`}),
+    rain, snow, h('rect', { width: 1200, height: 300, fill: `url(#${prefix}-veil)` }))
+}
+
+function discoveryItems(before,after,kind,sceneId,index) {
+ const items=[]
+ const blooms=kind==='retain'?[after.scenes[sceneId].plots[index]]:kind==='harvest'?after.basket.slice(before.basket.length):[]
+ for(const bloom of blooms){
+  if(!bloom)continue
+  const key=itemKey(bloom), first=!before.specimens?.[key]
+  if(first||bloom.variant==='hidden'||bloom.trait||bloom.tint)items.push({type:'flower',species:bloom.species,variant:bloom.variant??'base',dna:bloom.dna,trait:bloom.trait,tint:bloom.tint,first,kept:kind==='retain'})
+ }
+ if(kind==='harvest'&&after.lastBred){const [species,tint]=after.lastBred.split('~');items.push({type:'seed',species,tint,variant:'base',first:!before.seeds?.[after.lastBred]})}
+ if(kind==='visitor')for(const visitor of VISITORS)if((after.visitors[visitor.id]??0)>(before.visitors[visitor.id]??0)&&(!(before.visitors[visitor.id]>0)||visitor.special))items.push({type:'visitor',visitor:visitor.id,first:!(before.visitors[visitor.id]>0)})
+ return items
+}
+function recordDiscoveries(state,items,now) {
+ if(!items.length)return state
+ const seq=(state.discoverySeq??0)+1
+ return {...state,discoverySeq:seq,discoveries:[...(state.discoveries??[]),{id:seq,at:now,items}].slice(-40)}
+}
+function sanitizeDiscoveries(raw) {
+ if(!Array.isArray(raw))return []
+ return raw.filter(entry=>entry&&Number.isFinite(entry.id)&&Number.isFinite(entry.at)&&entry.at>=0&&entry.at<=8640000000000000&&Array.isArray(entry.items)).map(entry=>({id:Math.floor(entry.id),at:entry.at,items:entry.items.slice(0,4).filter(item=>item&&(['flower','seed'].includes(item.type)?SPECIES_BY_ID.has(item.species):item.type==='visitor'&&VISITOR_BY_ID.has(item.visitor))).map(item=>{
+  if(item.type==='visitor')return {type:'visitor',visitor:item.visitor,first:item.first===true}
+  return {type:item.type,species:item.species,variant:['base','alt','hidden'].includes(item.variant)?item.variant:'base',dna:Number.isFinite(item.dna)?item.dna:undefined,trait:TRAIT_BY_ID.has(item.trait)?item.trait:undefined,tint:SPECIES_BY_ID.has(item.tint)?item.tint:undefined,first:item.first===true,kept:item.kept===true}
+ })})).filter(entry=>entry.items.length).slice(-40)
+}
+Object.assign(zh,{
+ 'discovery.title':'花园有新发现','discovery.first':'首次发现','discovery.special':'特殊收获','discovery.seed':'育出杂交种子','discovery.visitor':'特别的相遇','discovery.kept':'已留在花圃，也记入图鉴。','discovery.basket':'已收入花篮，外观已保存。','discovery.seedWhere':'种子已保存，空花圃的播种列表可选。','discovery.visitorWhere':'遇见记录已保存到访客图鉴。','discovery.dismiss':'收好这份发现','discovery.open':'查看图鉴','discovery.history':'发现记录','discovery.empty':'第一次遇见花卉、奇珍、杂交种子或访客时，会在这里留下记录。','discovery.historyNote':'最近 40 次发现保存在本浏览器。发现卡不会自动消失，读完再关闭。','discovery.return':'回看最新发现','discovery.count':'本次 {n} 项发现',
+ 'scene.woodland':'林地','scene.desert':'荒漠','weather.woodland.clear':'林间晴光','weather.woodland.overcast':'薄雾','weather.woodland.rain':'林雨','weather.desert.clear':'烈日','weather.desert.overcast':'浮云','weather.desert.rain':'沙尘',
+ 'regions.title':'地区与花卉','regions.note':'每个地区都有自己的花与访客。未解锁地区也可先查阅花卉指南；解锁后才能播种。','regions.flowers':'查看本区 {n} 种花','regions.grow':'前往花园','regions.locked':'待解锁 · {n} 金币','regions.current':'正在浏览：{name}','regions.filter':'选择图鉴地区',
+})
+Object.assign(en,{
+ 'discovery.title':'A discovery in your garden','discovery.first':'First discovery','discovery.special':'Special harvest','discovery.seed':'A hybrid seed','discovery.visitor':'A special encounter','discovery.kept':'Still growing in its plot, and recorded in the guide.','discovery.basket':'Stored in the basket with its appearance preserved.','discovery.seedWhere':'Seed saved. Choose it in an empty plot’s planting list.','discovery.visitorWhere':'Encounter saved in the visitor field guide.','discovery.dismiss':'Keep this discovery','discovery.open':'Open field guide','discovery.history':'Discovery journal','discovery.empty':'First flowers, curiosities, hybrid seeds and visitor encounters will appear here.','discovery.historyNote':'The latest 40 discoveries are saved in this browser. Discovery cards stay open until you dismiss them.','discovery.return':'Revisit latest discovery','discovery.count':'{n} discoveries this time',
+ 'scene.woodland':'Woodland','scene.desert':'Desert','weather.woodland.clear':'Dappled sun','weather.woodland.overcast':'Mist','weather.woodland.rain':'Forest rain','weather.desert.clear':'Bright sun','weather.desert.overcast':'Drifting cloud','weather.desert.rain':'Dust',
+ 'regions.title':'Regions & flowers','regions.note':'Each region has its own flowers and visitors. Browse guides before unlocking; planting requires the region to be open.','regions.flowers':'Explore {n} flowers','regions.grow':'Go to garden','regions.locked':'Locked · {n} coins','regions.current':'Browsing: {name}','regions.filter':'Flower guide region',
+})
+function DiscoveryCard({entry,t,onClose,onOpen}) {
+ const ref=React.useRef(null)
+ React.useEffect(()=>{const dialog=ref.current;if(dialog&&!dialog.open)dialog.showModal();return()=>{if(dialog?.open)dialog.close()}},[])
+ return h('dialog',{ref,className:'fg-dialog fg-discoveryDialog','aria-label':t('discovery.title'),onCancel:event=>{event.preventDefault();onClose()}},
+  h('header',{className:'fg-discoveryHead'},h('span',{className:'fg-badge'},t('discovery.count',{n:entry.items.length})),h('h2',null,t('discovery.title')),h('time',{dateTime:new Date(entry.at).toISOString()},new Date(entry.at).toLocaleString())),
+  h('div',{className:'fg-discoveryList'},entry.items.map((item,index)=>h('article',{key:index,className:'fg-discoveryItem'},
+   h('div',{className:'fg-discoveryArt'},item.type==='visitor'?h(VisitorArt,{id:item.visitor}):h(FlowerArt,{speciesId:item.species,stage:'bloom',variant:item.variant,dna:item.dna,trait:item.trait,tint:item.tint})),
+   h('div',{className:'fg-discoveryCopy'},h('span',{className:'fg-badge'},t(item.type==='seed'?'discovery.seed':item.type==='visitor'?'discovery.visitor':item.first?'discovery.first':'discovery.special')),
+    h('h3',null,item.type==='visitor'?t(`visitor.${item.visitor}`):bloomName(item,t)),
+    item.type==='flower'?h('p',null,t(`variant.${item.variant}`),item.trait?' · '+t(`trait.${item.trait}`):'',item.tint?' · '+t('hybrid.tag'):''):null,
+    h('p',{className:'fg-hint'},t(item.type==='seed'?'discovery.seedWhere':item.type==='visitor'?'discovery.visitorWhere':item.kept?'discovery.kept':'discovery.basket')),
+    h('button',{type:'button',className:'fg-btn',onClick:()=>onOpen(item)},t('discovery.open')))))),
+  h('footer',{className:'fg-discoveryFooter'},h('button',{type:'button',className:'fg-btn fg-btnPrimary',autoFocus:true,onClick:onClose},t('discovery.dismiss'))))
+}
+
+Object.assign(zh, {
+  'inventory.title':'道具背包', 'inventory.open':'道具背包 · {n}', 'inventory.note':'这里展示现有道具，兑换或购买后立即更新。花朵保存在花篮，杂交种子在下方单独展示。',
+  'inventory.count':'持有 ×{n}', 'inventory.seeds':'杂交种子', 'inventory.noSeeds':'暂无杂交种子；授粉花收获或育种委托可获得。', 'inventory.grow':'前往花园使用', 'inventory.close':'收起背包',
+  'inventory.fertilizer':'在花园选择未开花植株，点击施肥。', 'inventory.compost':'在花园的低地力花圃点击堆肥。', 'inventory.sprinkler':'在道具商店使用，为当前花地自动浇水。', 'inventory.charm':'在道具商店启用，为下一次收获或留园鉴定增加仙品机会。',
+  'reward.xp':'经验', 'reward.reputation':'委托声望', 'reward.seals':'研究印记', 'reward.title':'收获已到账', 'reward.research':'永久研究已解锁', 'reward.bag':'查看道具背包', 'reward.close':'收好奖励', 'reward.balance':'剩余研究印记 {n} 枚', 'reward.spent':'本次花费 {n} 枚研究印记', 'reward.owned':'入包后持有 ×{n}', 'reward.permanent':'永久生效 · {level}/2', 'reward.saved':'进度已保存，关闭后可继续养花。',
+})
+Object.assign(en, {
+  'inventory.title':'Supply bag', 'inventory.open':'Supply bag · {n}', 'inventory.note':'Your current supplies update immediately after purchases and exchanges. Flowers stay in the flower basket; hybrid seeds are listed separately below.',
+  'inventory.count':'Owned ×{n}', 'inventory.seeds':'Hybrid seeds', 'inventory.noSeeds':'No hybrid seeds yet. Find them through pollinated harvests or breeding letters.', 'inventory.grow':'Go to garden to use', 'inventory.close':'Close bag',
+  'inventory.fertilizer':'Choose a growing plant in the garden and feed it.', 'inventory.compost':'Apply compost to a garden plot with low fertility.', 'inventory.sprinkler':'Use from the shop to automatically water the current ground.', 'inventory.charm':'Activate from the shop to boost the next spirit identification on harvest or residency.',
+  'reward.xp':'Experience', 'reward.reputation':'Patron reputation', 'reward.seals':'Research seals', 'reward.title':'Rewards received', 'reward.research':'Permanent research unlocked', 'reward.bag':'View supply bag', 'reward.close':'Keep rewards', 'reward.balance':'Research seals remaining: {n}', 'reward.spent':'Spent {n} research seals', 'reward.owned':'Now in bag ×{n}', 'reward.permanent':'Permanent effect · {level}/2', 'reward.saved':'Progress saved. Close to continue gardening.',
+})
+function inventoryCount(state) {
+  return ITEMS.filter(item=>item.kind==='consumable').reduce((n,item)=>n+(state.bag?.[item.id]??0),0)+Object.values(state.seeds??{}).reduce((n,count)=>n+count,0)
+}
+function rewardForChange(before, next, t) {
+  const entries=[]
+  for(const item of ITEMS.filter(item=>item.kind==='consumable')) {
+    const gain=(next.bag?.[item.id]??0)-(before.bag?.[item.id]??0)
+    if(gain>0) entries.push({id:item.id,label:t(`item.${item.id}`),amount:`+${gain}`,owned:next.bag[item.id]})
+  }
+  for(const [id,key] of [['researchSeals','reward.seals'],['coins','stat.coins'],['ribbons','ribbon.label'],['xp','reward.xp'],['patronage','reward.reputation']]) {
+    const gain=(next[id]??0)-(before[id]??0)
+    if(gain>0)entries.push({id,label:t(key),amount:`+${gain}`})
+  }
+  for(const [key,count] of Object.entries(next.seeds??{})) {
+    const gain=count-(before.seeds?.[key]??0)
+    if(gain>0){const [species,tint]=key.split('~');entries.push({id:key,label:t('inventory.seeds')+' · '+bloomName({species,tint},t),amount:`+${gain}`,owned:count})}
+  }
+  for(const branch of RESEARCH_BRANCHES) {
+    const level=researchLevel(next,branch)
+    if(level>researchLevel(before,branch))entries.push({id:branch,label:t(`research.${branch}`),amount:t('reward.permanent',{level}),effect:t(`research.${branch}.effect`,{n:level*(branch==='care'?20:branch==='ecology'?2:5)})})
+  }
+  return entries.length?{entries,research:entries.some(entry=>RESEARCH_BRANCHES.includes(entry.id)),spent:Math.max(0,(before.researchSeals??0)-(next.researchSeals??0))}:null
+}
+function InventoryContents({state,t}) {
+  const seeds=Object.entries(state.seeds??{}).filter(([,count])=>count>0)
+  return h('div',{className:'fg-inventoryContents'},
+    h('p',{className:'fg-hint'},t('inventory.note')),
+    h('div',{className:'fg-inventoryGrid'},ITEMS.filter(item=>item.kind==='consumable').map(item=>h('article',{key:item.id,className:'fg-inventoryItem','data-supply':item.id},
+      h('span',{className:'fg-inventoryIcon'},h(ItemIcon,{id:item.id})),
+      h('div',null,h('h3',null,t(`item.${item.id}`)),h('strong',{className:'fg-inventoryCount'},t('inventory.count',{n:state.bag?.[item.id]??0})),h('p',null,t(`item.${item.id}.note`)),h('p',{className:'fg-hint'},t(`inventory.${item.id}`)))))),
+    state.charm?h('p',{className:'fg-badge fg-badgeWarn'},t('item.charmReady')):null,
+    h('h3',null,t('inventory.seeds')),
+    seeds.length?h('div',{className:'fg-inventoryGrid'},seeds.map(([key,count])=>{const [species,tint]=key.split('~');return h('article',{key,className:'fg-inventoryItem'},h('span',{className:'fg-inventoryIcon'},'🌱'),h('div',null,h('h3',null,bloomName({species,tint},t)),h('strong',{className:'fg-inventoryCount'},t('inventory.count',{n:count})),h('p',{className:'fg-hint'},t('discovery.seedWhere'))))})):h('p',{className:'fg-hint'},t('inventory.noSeeds')))
+}
+function useGardenDialog(ref) {
+  React.useEffect(()=>{const dialog=ref.current;if(dialog&&!dialog.open)dialog.showModal();return()=>{if(dialog?.open)dialog.close()}},[])
+}
+function InventoryDialog({state,t,onClose,onGarden,onShop}) {
+  const ref=React.useRef(null);useGardenDialog(ref)
+  return h('dialog',{ref,className:'fg-dialog fg-inventoryDialog','aria-label':t('inventory.title'),onCancel:event=>{event.preventDefault();onClose()}},
+    h('header',{className:'fg-inventoryHead'},h('h2',null,t('inventory.title')),h('button',{type:'button',className:'fg-btn',onClick:onClose,'aria-label':t('inventory.close')},'×')),
+    h(InventoryContents,{state,t}),
+    h('footer',{className:'fg-rewardActions'},h('button',{type:'button',className:'fg-btn',onClick:onGarden},t('inventory.grow')),h('button',{type:'button',className:'fg-btn',onClick:onShop},t('tabs.shop')),h('button',{type:'button',className:'fg-btn fg-btnPrimary',onClick:onClose,autoFocus:true},t('inventory.close'))))
+}
+function RewardDialog({reward,state,t,onClose,onBag}) {
+  const ref=React.useRef(null);useGardenDialog(ref)
+  return h('dialog',{ref,className:'fg-dialog fg-rewardDialog','aria-label':t(reward.research?'reward.research':'reward.title'),onCancel:event=>{event.preventDefault();onClose()}},
+    h('header',{className:'fg-rewardHead'},h('span',{className:'fg-rewardStar','aria-hidden':true},'✦'),h('h2',null,t(reward.research?'reward.research':'reward.title')),h('p',null,t('reward.saved'))),
+    h('div',{className:'fg-rewardList'},reward.entries.map(entry=>h('article',{key:entry.id,className:'fg-rewardItem'},
+      h('span',{className:'fg-inventoryIcon','aria-hidden':true},ITEM_BY_ID.has(entry.id)?h(ItemIcon,{id:entry.id}):'✦'),
+      h('div',null,h('h3',null,entry.label),entry.effect?h('p',null,entry.effect):null,entry.owned!==undefined?h('p',{className:'fg-hint'},t('reward.owned',{n:entry.owned})):null),h('strong',{className:'fg-rewardAmount'},entry.amount)))),
+    h('p',{className:'fg-rewardBalance'},reward.spent?t('reward.spent',{n:reward.spent})+' · ':'',t('reward.balance',{n:state.researchSeals??0})),
+    h('footer',{className:'fg-rewardActions'},h('button',{type:'button',className:'fg-btn',onClick:onBag},t('reward.bag')),h('button',{type:'button',className:'fg-btn fg-rewardConfirm',autoFocus:true,onClick:onClose},t('reward.close'))))
+}
+
     function GardenView(props) {
       const t = (props !== null && props !== undefined && typeof props.t === 'function') ? props.t : boundT
       const state = useSyncExternalStore(subscribeGarden, getState, getState)
       const [picker, setPicker] = React.useState(null)
       const [confirmReset, setConfirmReset] = React.useState(false)
-      const [codexOpen, setCodexOpen] = React.useState(false)
+      const [codexOpen, setCodexOpen] = React.useState(() => sanitizeUi(state.ui).tab === 'flowers')
       const [achOpen, setAchOpen] = React.useState(false)
       const [armed, setArmed] = React.useState(null)
       // Which basket bloom the player opened to look at.
@@ -5549,9 +5995,52 @@ function specialTraitArt(ink, traitId, headY = HEAD_Y) {
       // Which flower-book entry the player opened to look at.
       const [codexPreview, setCodexPreview] = React.useState(null)
       const [guestPreview, setGuestPreview] = React.useState(null)
+      const [guideRegion,setGuideRegion]=React.useState(state.scene)
+      const [discovery, setDiscovery] = React.useState(null)
+      const [reward, setReward] = React.useState(null)
+      const [inventoryOpen, setInventoryOpen] = React.useState(false)
+      // A parsed save file waiting for the player to confirm the overwrite.
+      const [pendingImport, setPendingImport] = React.useState(null)
+      const saveInput = React.useRef(null)
       const [toast, setToast] = React.useState({ text: '', key: 0, tone: 'ok', species: null })
       const [clock, setClock] = React.useState(() => Date.now())
       const rootRef = React.useRef(null)
+      const scrollRef = React.useRef(null)
+      const modalOpener = React.useRef(null)
+      function rememberOpener() { modalOpener.current = typeof document === 'undefined' ? null : document.activeElement }
+      function restoreOpener() {
+        window.setTimeout(() => {
+          const previous = modalOpener.current
+          if (previous?.isConnected && !previous.closest('[hidden]')) previous.focus()
+          else rootRef.current?.querySelector('[role="tab"][aria-selected="true"]')?.focus()
+        }, 0)
+      }
+      function openGuide(id) { rememberOpener(); setGuideRegion(SCENE_ID_OF.get(id)); setCodexOpen(true); setCodexPreview(`${id}:base`) }
+      function openGuest(id) { rememberOpener(); setGuestPreview(id) }
+      const scrollPositions = React.useRef({})
+      const ui = sanitizeUi(state.ui)
+      const activeTab = ui.tab
+      const clockInfo = gardenClock(clock)
+      const fontFamilies = {system:'system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif',serif:'"Songti SC", "Noto Serif CJK SC", "SimSun", Georgia, serif',rounded:'"SF Pro Rounded", "Arial Rounded MT Bold", "PingFang SC", sans-serif'}
+      function updateUi(patch) { commit({...getState(),ui:sanitizeUi({...getState().ui,...patch})},true) }
+      function selectTab(id, keyboard = false) {
+        if (!GARDEN_TABS.includes(id)) return
+        if (scrollRef.current) scrollPositions.current[activeTab] = scrollRef.current.scrollTop
+        updateUi({tab:id})
+        setArmed(null);setPicker(null);setConfirmReset(false)
+        if(id==='flowers')setCodexOpen(true)
+        window.setTimeout(()=>{if(scrollRef.current)scrollRef.current.scrollTop=scrollPositions.current[id]??0;if(keyboard)rootRef.current?.querySelector(`#fg-tab-${id}`)?.focus()},0)
+      }
+      function tabKeys(event,id) {
+        const index=GARDEN_TABS.indexOf(id)
+        const next=event.key==='ArrowRight'?(index+1)%GARDEN_TABS.length:event.key==='ArrowLeft'?(index+GARDEN_TABS.length-1)%GARDEN_TABS.length:event.key==='Home'?0:event.key==='End'?GARDEN_TABS.length-1:null
+        if(next===null)return
+        event.preventDefault();selectTab(GARDEN_TABS[next],true)
+      }
+      function panel(id,...children) {
+        return h('div',{key:id,id:`fg-panel-${id}`,role:'tabpanel','aria-labelledby':`fg-tab-${id}`,hidden:activeTab!==id,tabIndex:0,className:'fg-tabPanel'},...children)
+      }
+
 
       const [, forceRender] = React.useReducer(count => count + 1, 0)
       React.useEffect(() => {
@@ -5591,12 +6080,30 @@ function specialTraitArt(ink, traitId, headY = HEAD_Y) {
         if (toastKey === 0) return undefined
         const id = window.setTimeout(() => {
           setToast(current => (current.key === toastKey ? { text: '', key: 0, tone: 'ok' } : current))
-        }, 2800)
+        }, 6500)
         return () => {
           window.clearTimeout(id)
         }
       }, [toastKey])
 
+      function commitDiscovered(before,next,kind,index) {
+        const items=discoveryItems(before,next,kind,before.scene,index)
+        const recorded=recordDiscoveries(next,items,Date.now())
+        commit(recorded,true)
+        if(items.length){rememberOpener();setDiscovery(recorded.discoveries[recorded.discoveries.length-1])}
+        return items.length>0
+      }
+      function openDiscovered(item) {
+        setDiscovery(null)
+        if(item.type==='visitor'){selectTab('visitors');setGuestPreview(item.visitor)}
+        else{selectTab('flowers');setGuideRegion(SCENE_ID_OF.get(item.species));setCodexOpen(true);setCodexPreview(item.type==='seed'?`${item.species}:base`:itemKey(item))}
+        modalOpener.current=null
+      }
+      function commitReward(next) {
+        const result=rewardForChange(getState(),next,t)
+        commit(next,true)
+        if(result){rememberOpener();setReward(result)}
+      }
       function announce(text, tone, species) {
         setToast({ text, key: Date.now(), tone: tone ?? 'ok', species: species ?? null })
       }
@@ -5605,7 +6112,8 @@ function specialTraitArt(ink, traitId, headY = HEAD_Y) {
         window.setTimeout(() => {
           const root = rootRef.current
           if (root === null) return
-          const target = root.querySelector(selector) ?? (selector.startsWith('[data-codex=') ? root.querySelector('#fg-codex-toggle') : null)
+          const candidate = root.querySelector(selector) ?? (selector.startsWith('[data-codex=') ? root.querySelector('#fg-codex-toggle') : null)
+          const target = candidate && !candidate.closest('[hidden]') ? candidate : root.querySelector('[role="tab"][aria-selected="true"]')
           if (target !== null && typeof target.focus === 'function') target.focus()
         }, 0)
       }
@@ -5622,6 +6130,7 @@ function specialTraitArt(ink, traitId, headY = HEAD_Y) {
 
       /** Open one flower-book entry; clicking the same entry again closes it. */
       function showCodexEntry(speciesId, variant) {
+        rememberOpener()
         const key = `${speciesId}:${variant}`
         if (codexPreview === key) {
           setCodexPreview(null)
@@ -5667,6 +6176,7 @@ function specialTraitArt(ink, traitId, headY = HEAD_Y) {
         || state.seen[`${species.id}:alt`] !== undefined
         || state.seen[`${species.id}:hidden`] !== undefined).length
       const sceneSpecies = scene.species.map(id => SPECIES_BY_ID.get(id))
+      const guideScene=sceneOf(guideRegion)
       const weatherNote = [
         growth === 1 ? t('weather.steady') : t('weather.growth', { n: `${growth > 1 ? '+' : ''}${Math.round((growth - 1) * 100)}%` }),
         rainy ? (scene.rainWets ? t('weather.soilWet') : t('weather.soilDry')) : null,
@@ -5702,7 +6212,7 @@ function specialTraitArt(ink, traitId, headY = HEAD_Y) {
         const visitor = visitorAt(before.scene, index, plot, now, weatherAt(now), facilityLevel(before, 'hive'), gardenEcology(before, now).visitorBonus, before)
         const next = greetVisitor(before, before.scene, index, now, weatherAt(now))
         if (visitor === null || next === null) return
-        commit(next, true)
+        const hasDiscovery = commitDiscovered(before,next,'visitor',index)
         const words = {
           name: t(`visitor.${visitor.id}`),
           coins: visitor.tip,
@@ -5710,14 +6220,14 @@ function specialTraitArt(ink, traitId, headY = HEAD_Y) {
         }
         const fresh = (before.visitors[visitor.id] ?? 0) === 0 ? ` ${t('visitor.new')}` : ''
         announce(t('guest.greeted', { name: words.name, coins: words.coins, effect: t(`guest.effect.${VISITOR_INFO[visitor.id].role}`) }) + fresh, 'ok')
-        focusPlot(index, 'harvest')
+        if (!hasDiscovery) focusPlot(index, 'harvest')
       }
 
       function claim(achievementId) {
         const entry = ACHIEVEMENT_BY_ID.get(achievementId)
         const next = claimAchievement(getState(), achievementId)
         if (entry === undefined || next === null) return
-        commit(next, true)
+        commitReward(next)
         announce(t('ach.done', { name: t(`ach.${entry.id}.name`), n: entry.coins }), 'ok')
       }
 
@@ -5739,7 +6249,7 @@ function specialTraitArt(ink, traitId, headY = HEAD_Y) {
         }
         const next = buyItem(before, itemId)
         if (next === null) return
-        commit(next, true)
+        commitReward(next)
         announce(t('item.bought', { item: t(`item.${itemId}`) }), 'ok')
       }
 
@@ -5772,7 +6282,7 @@ function specialTraitArt(ink, traitId, headY = HEAD_Y) {
         }
         const next = harvestAt(before, before.scene, index, Date.now(), weatherAt(Date.now()), endResidency)
         if (next === null) return
-        commit(next, true)
+        const hasDiscovery = commitDiscovered(before,next,'harvest',index)
         const first = next.basket[before.basket.length]
         const spirit = first?.variant === 'hidden'
         let text = spirit ? t('reward.gold', { flower: bloomName(first, t), n: 3 })
@@ -5783,7 +6293,7 @@ function specialTraitArt(ink, traitId, headY = HEAD_Y) {
           text += ` · ${t('hybrid.seed', { name: t('hybrid.name', { form: t(`species.${form}`), tint: t(`species.${tint}`) }) })}`
         }
         announce(text, spirit ? 'gold' : 'ok', spirit ? species.id : null)
-        focusPlot(index, 'plant')
+        if (!hasDiscovery) focusPlot(index, 'plant')
       }
 
       function unlock(index) {
@@ -5868,6 +6378,68 @@ function specialTraitArt(ink, traitId, headY = HEAD_Y) {
         announce(t('action.resetDone'), 'info')
       }
 
+      // A save file is the only copy that leaves this browser, so the export is a
+      // plain JSON download and the import never replaces a garden before the
+      // player confirms it.
+      function exportFile() {
+        const text = JSON.stringify(exportSave(getState(), Date.now()), null, 2)
+        const stamp = new Date().toISOString().slice(0, 10)
+        try {
+          const blob = new Blob([text], { type: 'application/json' })
+          const url = URL.createObjectURL(blob)
+          const anchor = document.createElement('a')
+          anchor.href = url
+          anchor.download = `flower-garden-${stamp}.json`
+          anchor.rel = 'noopener'
+          document.body.appendChild(anchor)
+          anchor.click()
+          anchor.remove()
+          window.setTimeout(() => URL.revokeObjectURL(url), 1000)
+          announce(t('action.exported'), 'ok')
+        } catch (error) {
+          announce(t('action.exportFailed'), 'warn')
+        }
+      }
+
+      function pickSaveFile() {
+        const input = saveInput.current
+        if (input === null || input === undefined) return
+        input.value = ''
+        input.click()
+      }
+
+      function readSaveFile(event) {
+        const file = event.target.files?.[0]
+        if (file === undefined) return
+        const reader = new FileReader()
+        reader.onload = () => {
+          let parsed = null
+          try {
+            parsed = JSON.parse(String(reader.result))
+          } catch (error) {
+            parsed = null
+          }
+          const restored = parsed === null ? null : importSave(parsed, Date.now())
+          if (restored === null) {
+            announce(t('action.importBad'), 'warn')
+            return
+          }
+          setConfirmReset(false)
+          setPendingImport(restored)
+        }
+        reader.onerror = () => announce(t('action.importBad'), 'warn')
+        reader.readAsText(file)
+        event.target.value = ''
+      }
+
+      function confirmImport() {
+        if (pendingImport === null) return
+        commit(pendingImport, true)
+        setPendingImport(null)
+        setPicker(null)
+        announce(t('action.imported'), 'ok')
+      }
+
       function onKeyDown(event) {
         if (event.key !== 'Escape' || picker === null) return
         const index = picker
@@ -5923,8 +6495,8 @@ function specialTraitArt(ink, traitId, headY = HEAD_Y) {
               h('a',{href:trait.source,target:'_blank',rel:'noopener noreferrer',className:'fg-source'},t('trait.source')))))),
           h('div', { className: 'fg-basket' }, TRAITS.map(trait => h('span', { key: trait.id, className: 'fg-badge', title: t(`trait.${trait.id}.cause`) }, t(`trait.${trait.id}`), ' · ', t(`trait.${trait.id}.clue`)))),
           h('p', { className: 'fg-hint' }, t('hybrid.how')),
-          h('div', { className: 'fg-archiveGrid' }, archive.filter(entry => (entry.trait || entry.tint) && scene.species.includes(entry.species.id)).map(entry =>
-            h('button', { key: entry.key, type: 'button', className: 'fg-archiveEntry', 'data-codex': entry.key, onClick: () => setCodexPreview(entry.key) },
+          h('div', { className: 'fg-archiveGrid' }, archive.filter(entry => (entry.trait || entry.tint) && guideScene.species.includes(entry.species.id)).map(entry =>
+            h('button', { key: entry.key, type: 'button', className: 'fg-archiveEntry', 'data-codex': entry.key, onClick: () => { rememberOpener(); setCodexPreview(entry.key) } },
               h(FlowerArt, { speciesId: entry.species.id, stage: 'bloom', variant: entry.variant, trait: entry.trait, tint: entry.tint, dna: entry.dna }),
               h('span', null, bloomName({ species: entry.species.id, trait: entry.trait, tint: entry.tint }, t)),
               h('span', { className: 'fg-note' }, t(entry.recorded ? 'card.recorded' : 'codex.harvests', { n: entry.count }))))))
@@ -5936,7 +6508,7 @@ function specialTraitArt(ink, traitId, headY = HEAD_Y) {
         const transition = action === 'retain' ? retainAt : action === 'observe' ? observeAt : rebloomAt
         const next = transition(before, state.scene, index, now)
         if (!next) { announce(t('eco.error'), 'warn'); return }
-        commit(next, true)
+        if(action==='retain')commitDiscovered(before,next,'retain',index);else commit(next,true)
         const plot = next.scenes[state.scene].plots[index]
         announce(t(action === 'retain' ? 'eco.retained' : action === 'observe' ? 'eco.observed' : 'eco.rebloomed', { name: t(`species.${plot.species}`), n: next.study?.[plot.species]?.observations ?? 0 }))
       }
@@ -5944,7 +6516,7 @@ function specialTraitArt(ink, traitId, headY = HEAD_Y) {
       function renderResidentActions(plot, index, species) {
         const mature = plot.growthMs >= growMsOf(species)
         const wait = plot.observedAt === undefined ? 0 : Math.max(0, plot.observedAt + ECO_OBSERVE_MS - clock)
-        const fee = 8 + Math.ceil(species.cost * 0.25), prune = 10 + Math.ceil(species.cost * 0.4)
+        const fee = researchFee(state, species), prune = researchFee(state, species, true)
         return h('div', { className: 'fg-residentActions' },
           h('button', { type: 'button', className: 'fg-btn fg-btnSmall', disabled: plot.moisture >= 99.5, onClick: () => water(index) }, t('plot.water')),
           h('button', { type: 'button', className: 'fg-btn fg-btnSmall fg-btnPrimary', disabled: !mature || plot.moisture < 30 || wait > 0 || state.coins < fee, onClick: () => tend('observe',index) }, t('eco.observe',{n:fee})),
@@ -6298,7 +6870,7 @@ function specialTraitArt(ink, traitId, headY = HEAD_Y) {
         )
       }
 
-      const sceneOrder = ['meadow', 'snow', 'volcano', 'lake']
+      const sceneOrder = SCENES.map(ground=>ground.id)
       // Plots the water-all button would actually change.
       const thirsty = sprinklerLeftMs > 0 || rainWets ? 0 : slot.plots.filter(plot => {
         if (plot === null || plot === undefined || plot.moisture >= 99.5) return false
@@ -6314,7 +6886,7 @@ function specialTraitArt(ink, traitId, headY = HEAD_Y) {
           t(`visitor.when.${visitor.when}`),
           visitor.dry === true ? t('visitor.dry') : null,
         ].filter(Boolean).join(' · ')
-        return h('button', { type: 'button', key: visitor.id, className: 'fg-guest', 'data-guest': visitor.id, 'data-met': met ? 'true' : 'false', 'aria-label': t('guest.book') + ' · ' + t(`visitor.${visitor.id}`), onClick: () => setGuestPreview(visitor.id) },
+        return h('button', { type: 'button', key: visitor.id, className: 'fg-guest', 'data-guest': visitor.id, 'data-met': met ? 'true' : 'false', 'aria-label': t('guest.book') + ' · ' + t(`visitor.${visitor.id}`), onClick: () => openGuest(visitor.id) },
           h('span', { className: 'fg-guestArt' }, h(VisitorArt, { id: visitor.id })),
           h('div', { className: 'fg-guestBody' },
             h('div', { className: 'fg-guestName' },
@@ -6371,9 +6943,9 @@ function specialTraitArt(ink, traitId, headY = HEAD_Y) {
         return [id, found]
       }))
 
-      return h('div', { className: 'fg-view', ref: rootRef, onKeyDown: onKeyDown },
+      return h('div', { className: 'fg-view', ref: rootRef, onKeyDown: onKeyDown, style: {'--fg-font-size':`${ui.fontSize}px`,'--fg-font-family':fontFamilies[ui.font]}, 'data-tab':activeTab },
         h('style', { key: 'fg-style' }, CSS),
-        h('div', { className: 'fg-scroll' },
+        h('div', { className: 'fg-topbar' },
           h('header', { className: 'fg-header' },
             h('div', { className: 'fg-titleBlock' },
               h('h2', { className: 'fg-title' }, t('view.title')),
@@ -6411,6 +6983,8 @@ function specialTraitArt(ink, traitId, headY = HEAD_Y) {
               h('span', { className: 'fg-chipValue' }, t(`species.${featured}`)),
               h('span', { className: 'fg-chipKey' }, t('market.bonus', { n: marketPercent })),
               ),
+              h('time',{className:'fg-liveClock',dateTime:new Date(clock).toISOString(),title:t('clock.note')},
+                h('strong',null,clockInfo.time),h('span',null,t(`clock.${clockInfo.period}`)),h('small',null,clockInfo.date,' · ',clockInfo.zone)),
               h('span', { className: 'fg-chip', 'data-weather': weather },
                 h(WeatherGlyph, { kind: weather }),
                 h('span', { className: 'fg-chipValue' }, t(`weather.${scene.id}.${weather}`)),
@@ -6419,7 +6993,15 @@ function specialTraitArt(ink, traitId, headY = HEAD_Y) {
             ),
           ),
 
-          h('div', { className: 'fg-scenes', role: 'group', 'aria-label': t('plot.section') },
+          h('div',{className:'fg-toolbar'},
+            h('div',{className:'fg-tabs',role:'tablist','aria-label':t('tabs.label')},GARDEN_TABS.map(id=>h('button',{
+              key:id,id:`fg-tab-${id}`,type:'button',role:'tab','aria-selected':activeTab===id,'aria-controls':`fg-panel-${id}`,tabIndex:activeTab===id?0:-1,
+              className:'fg-tab',onClick:()=>selectTab(id),onKeyDown:event=>tabKeys(event,id)},t(`tabs.${id}`),id==='basket'?` ${state.basket.length}/${capacity}`:id==='orders'&&state.orders.some(order=>orderReady(state,order))?' •':null))),
+            h('button',{type:'button',className:'fg-btn fg-btnSmall fg-bagButton',onClick:()=>{rememberOpener();setInventoryOpen(true)}},t('inventory.open',{n:inventoryCount(state)})),
+            (state.discoveries??[]).length?h('button',{type:'button',className:'fg-btn fg-btnSmall fg-latestDiscovery',onClick:()=>{rememberOpener();setDiscovery(state.discoveries[state.discoveries.length-1])}},t('discovery.return')):null,
+            h('label',{className:'fg-quickSize'},t('settings.size'),h('select',{'aria-label':t('settings.size'),value:ui.fontSize,onChange:event=>updateUi({fontSize:Number(event.target.value)})},[13,15,17,19].map(size=>h('option',{key:size,value:size},`${size}px`)))))),
+        h('div',{className:'fg-scroll',ref:scrollRef},
+          h('div', { className: 'fg-scenes', hidden: activeTab !== 'garden', role: 'group', 'aria-label': t('plot.section') },
             sceneOrder.map(id => {
               const target = sceneOf(id)
               const targetSlot = state.scenes[id]
@@ -6452,13 +7034,7 @@ function specialTraitArt(ink, traitId, headY = HEAD_Y) {
             }),
           ),
 
-          h('nav', { className: 'fg-sectionHead', 'aria-label': t('view.label') },
-            h('button', { type: 'button', className: 'fg-btn fg-btnSmall', onClick: () => focusTarget('#fg-special-commissions') }, t('commission.title')),
-            h('button', { type: 'button', className: 'fg-btn fg-btnSmall', onClick: () => focusTarget('#fg-ecology') }, t('eco.title')),
-            h('button', { type: 'button', className: 'fg-btn fg-btnSmall', onClick: () => { setCodexOpen(true); focusTarget('#fg-codex-toggle') } }, t('codex.title')),
-            h('button', { type: 'button', className: 'fg-btn fg-btnSmall', onClick: () => focusTarget('#fg-show') }, t('show.title')),
-            h('button', { type: 'button', className: 'fg-btn fg-btnSmall', onClick: () => focusSection('basket') }, t('basket.title'))),
-          h('p', { className: 'fg-hint' },
+          h('p', { className: 'fg-hint', hidden: activeTab !== 'garden' },
             h('span', { className: 'fg-tipsTitle' }, t('hint.title')),
             ' ',
             t('hint.body'),
@@ -6479,7 +7055,12 @@ function specialTraitArt(ink, traitId, headY = HEAD_Y) {
           toast.text,
           ),
 
-          h('section', {
+          panel('garden',
+ h('div',{className:'fg-landscape','data-period':clockInfo.period},
+   h(ScenePanorama,{sceneId:scene.id,period:clockInfo.period,weather}),
+   h('div',{className:'fg-landscapeCaption'},h('span',null,t(`scene.${scene.id}`)),h('strong',null,t(`clock.${clockInfo.period}`)),h('span',null,t(`weather.${scene.id}.${weather}`))),
+   h('div',{className:'fg-landscapeTime'},h('strong',null,clockInfo.time),h('span',null,clockInfo.date,' · ',clockInfo.zone))),
+h('section', {
             className: 'fg-section fg-ground',
             style: { background: scene.tint, borderColor: scene.edge },
           },
@@ -6500,18 +7081,10 @@ function specialTraitArt(ink, traitId, headY = HEAD_Y) {
           h('p', { className: 'fg-hint' }, t('soil.tip')),
           h('p', { className: 'fg-hint' }, `${t('hybrid.seeds')} · ${Object.values(state.seeds ?? {}).reduce((sum, n) => sum + n, 0)} · ${t('hybrid.how')}`),
           h('div', { className: 'fg-grid' }, slot.plots.map(renderPlot)),
+          )
           ),
-
-          h('section', { className: 'fg-section' },
-            h('div', { className: 'fg-sectionHead' },
-              h('h3', { className: 'fg-sectionTitle', 'data-focus': 'orders', tabIndex: -1 }, t('order.title')),
-            ),
-            state.orders.length === 0
-              ? h('p', { className: 'fg-empty' }, t('order.empty'))
-              : h('div', { className: 'fg-orders' }, state.orders.map(renderOrder)),
-          ),
-
-          h('section', { className: 'fg-section' },
+          panel('basket',
+h('section', { className: 'fg-section' },
             h('div', { className: 'fg-sectionHead' },
               h('h3', { className: 'fg-sectionTitle', 'data-focus': 'basket', tabIndex: -1 }, t('basket.title')),
               h('span', { className: 'fg-sectionMeta' }, t('basket.capacity', { n: state.basket.length, max: capacity })),
@@ -6594,13 +7167,28 @@ function specialTraitArt(ink, traitId, headY = HEAD_Y) {
                   },
                 }),
               ],
+          )
           ),
-
-          h(SpecialCommissionBoard, { state, t, clock, onChange: next => commit(next,true), onSpecies: id => {setCodexOpen(true);setCodexPreview(`${id}:base`)}, onVisitor: id => setGuestPreview(id) }),
-          h(GardenEcology, { state, t, clock, onChange: next => commit(next, true), onSpecies: id => { setCodexOpen(true); setCodexPreview(`${id}:base`) } }),
-          h(GardenActivities, { state, t, clock, onChange: next => commit(next, true) }),
-
-          h('section', { className: 'fg-section' },
+          panel('orders',
+h('section', { className: 'fg-section' },
+            h('div', { className: 'fg-sectionHead' },
+              h('h3', { className: 'fg-sectionTitle', 'data-focus': 'orders', tabIndex: -1 }, t('order.title')),
+            ),
+            state.orders.length === 0
+              ? h('p', { className: 'fg-empty' }, t('order.empty'))
+              : h('div', { className: 'fg-orders' }, state.orders.map(renderOrder)),
+          ),
+h(SpecialCommissionBoard, { state, t, clock, onChange: commitReward, onSpecies: openGuide, onVisitor: openGuest })
+          ),
+          panel('ecology',
+h(GardenEcology, { state, t, clock, onChange: commitReward, onSpecies: openGuide })
+          ),
+          panel('show',
+h(GardenActivities, { state, t, clock, onChange: commitReward })
+          ),
+          panel('shop',
+h('section',{className:'fg-section fg-inventorySection'},h('h2',{className:'fg-sectionTitle'},t('inventory.title')),h(InventoryContents,{state,t})),
+h('section', { className: 'fg-section' },
             h('div', { className: 'fg-sectionHead' },
               h('h3', { className: 'fg-sectionTitle' }, t('item.section')),
               state.charm ? h('span', { className: 'fg-sectionOk' }, t('item.charmReady')) : null,
@@ -6649,18 +7237,66 @@ function specialTraitArt(ink, traitId, headY = HEAD_Y) {
                 ),
               )
             })),
+          )
           ),
+          panel('flowers',
+ h('section',{className:'fg-section'},h('h2',{className:'fg-sectionTitle'},t('regions.title')),h('p',{className:'fg-hint'},t('regions.note')),
+ h('div',{className:'fg-regionCards'},SCENES.map(region=>h('article',{key:region.id,className:'fg-regionCard','data-current':guideRegion===region.id},
+   h(ScenePanorama,{sceneId:region.id,period:clockInfo.period,weather:'clear'}),h('h3',null,t(`scene.${region.id}`)),
+   (state.scenes[region.id]?.unlocked??0)===0?h('span',{className:'fg-note'},t('regions.locked',{n:region.cost})):null,
+   h('button',{type:'button',className:'fg-btn',onClick:()=>{setGuideRegion(region.id);setCodexOpen(true)}},t('regions.flowers',{n:region.species.length})),
+   h('button',{type:'button',className:'fg-btn fg-btnGhost',onClick:()=>{selectTab('garden',true);if(state.scenes[region.id].unlocked>0)openScene(region.id);else setArmed(`scene:${region.id}`)}},t('regions.grow')))))),
+h('section', { className: 'fg-section' },
+            h('button', {
+              type: 'button',
+              className: 'fg-codexToggle',
+              id: 'fg-codex-toggle',
+              'aria-expanded': codexOpen ? 'true' : 'false',
+              'aria-controls': 'fg-codex',
+              onClick: () => {
+                setCodexOpen(value => !value)
+              },
+            },
+            h('span', { className: 'fg-sectionTitle' }, `${t('codex.title')} · ${t(`scene.${guideScene.id}`)}`),
+            h('span', { className: 'fg-sectionMeta' }, `${t('codex.progress', { n: discovered, total: totalEntries })} · ${t('codex.speciesProgress', { n: grownCount, total: SPECIES.length })}`),
+            h('span', { className: 'fg-codexTeaser' }, t('codex.teaser')),
+            h('span', { className: 'fg-caret', 'data-open': codexOpen ? 'true' : 'false' }, '▾'),
+            ),
+            codexOpen
+              ? h('div', { className: 'fg-codex', id: 'fg-codex', role: 'region', 'aria-labelledby': 'fg-codex-toggle' },
+                h('div', { className: 'fg-codexNotes' },
+                  h('p', { className: 'fg-codexHint' }, t('codex.hint')),
+                  h('p', { className: 'fg-codexHint' }, t('codex.altRule')),
+                  h('p', { className: 'fg-codexHint' }, t('codex.favoured', {
+                    w: t(`weather.${guideScene.id}.${guideScene.rainWets ? 'rain' : 'clear'}`),
+                  }), ' · ', t('codex.otherGround')),
+                ),
+                guideScene.species.map(id=>renderCodexCard(SPECIES_BY_ID.get(id))),
+                renderArchive(),
 
-          h('section', { className: 'fg-section' },
+              )
+              : null,
+          )
+          ),
+          panel('visitors',
+h('section', { className: 'fg-section' },
             h('div', { className: 'fg-sectionHead' },
               h('h3', { className: 'fg-sectionTitle' }, t('guest.book')),
               h('span', { className: 'fg-sectionMeta' }, t('ach.count', { n: metKinds, total: VISITORS.length })),
             ),
             h('p', { className: 'fg-empty' }, t('guest.boundary')),
             h('div', { className: 'fg-guests' }, VISITORS.map(renderGuest)),
+          )
           ),
-
-          h('section', { className: 'fg-section' },
+          panel('settings',
+h('section',{className:'fg-section'},h('h2',{className:'fg-sectionTitle'},t('discovery.history')),h('p',{className:'fg-hint'},t('discovery.historyNote')),
+ (state.discoveries??[]).length?h('div',{className:'fg-discoveryHistory'},state.discoveries.slice().reverse().map(entry=>h('button',{type:'button',key:entry.id,className:'fg-btn',onClick:()=>{rememberOpener();setDiscovery(entry)}},new Date(entry.at).toLocaleString(),' · ',entry.items.map(item=>item.type==='visitor'?t(`visitor.${item.visitor}`):bloomName(item,t)).join(' / ')))):h('p',{className:'fg-hint'},t('discovery.empty'))),
+h('section',{className:'fg-section fg-settings'},
+ h('h2',{className:'fg-sectionTitle'},t('settings.title')),
+ h('label',{className:'fg-settingRow'},t('settings.size'),h('select',{value:ui.fontSize,onChange:event=>updateUi({fontSize:Number(event.target.value)}),className:'fg-btn'},[13,15,17,19].map(size=>h('option',{key:size,value:size},`${size}px`)))),
+ h('label',{className:'fg-settingRow'},t('settings.font'),h('select',{value:ui.font,onChange:event=>updateUi({font:event.target.value}),className:'fg-btn'},['system','serif','rounded'].map(font=>h('option',{key:font,value:font},t(`settings.${font}`))))),
+ h('p',{className:'fg-fontPreview'},t('settings.preview')),h('p',{className:'fg-hint'},t('settings.note'))),
+h('section', { className: 'fg-section' },
             h('button', {
               type: 'button',
               className: 'fg-codexToggle',
@@ -6687,35 +7323,36 @@ function specialTraitArt(ink, traitId, headY = HEAD_Y) {
                 (achOpen ? ACHIEVEMENTS : readyAchievements).map(renderAchievement))
               : null,
           ),
-
-          h('section', { className: 'fg-section' },
+h('footer', { className: 'fg-footer' },
+            h('div', { className: 'fg-save' },
+              h('button', { type: 'button', className: 'fg-btn fg-btnGhost', id: 'fg-export', onClick: exportFile }, t('action.export')),
+              h('button', { type: 'button', className: 'fg-btn fg-btnGhost', id: 'fg-import', onClick: pickSaveFile }, t('action.import')),
+              h('input', {
+                ref: saveInput,
+                type: 'file',
+                accept: 'application/json,.json',
+                className: 'fg-fileInput',
+                tabIndex: -1,
+                'aria-hidden': 'true',
+                onChange: readSaveFile,
+              }),
+            ),
+            pendingImport === null
+              ? null
+              : h('div', { className: 'fg-savePending', id: 'fg-import-confirm', role: 'alertdialog', 'aria-label': t('action.importReview') },
+                h('span', { className: 'fg-saveAsking' }, t('action.importReview')),
+                h('button', { type: 'button', className: 'fg-btn fg-btnDanger', id: 'fg-import-confirm-yes', onClick: confirmImport }, t('action.importYes')),
+                h('button', { type: 'button', className: 'fg-btn fg-btnGhost', id: 'fg-import-cancel', onClick: () => setPendingImport(null) }, t('action.importNo')),
+              ),
             h('button', {
               type: 'button',
-              className: 'fg-codexToggle',
-              id: 'fg-codex-toggle',
-              'aria-expanded': codexOpen ? 'true' : 'false',
-              'aria-controls': 'fg-codex',
-              onClick: () => {
-                setCodexOpen(value => !value)
-              },
-            },
-            h('span', { className: 'fg-sectionTitle' }, `${t('codex.title')} · ${t(`scene.${scene.id}`)}`),
-            h('span', { className: 'fg-sectionMeta' }, `${t('codex.progress', { n: discovered, total: totalEntries })} · ${t('codex.speciesProgress', { n: grownCount, total: SPECIES.length })}`),
-            h('span', { className: 'fg-codexTeaser' }, t('codex.teaser')),
-            h('span', { className: 'fg-caret', 'data-open': codexOpen ? 'true' : 'false' }, '▾'),
-            ),
-            codexOpen
-              ? h('div', { className: 'fg-codex', id: 'fg-codex', role: 'region', 'aria-labelledby': 'fg-codex-toggle' },
-                h('div', { className: 'fg-codexNotes' },
-                  h('p', { className: 'fg-codexHint' }, t('codex.hint')),
-                  h('p', { className: 'fg-codexHint' }, t('codex.altRule')),
-                  h('p', { className: 'fg-codexHint' }, t('codex.favoured', {
-                    w: t(`weather.${scene.id}.${scene.rainWets ? 'rain' : 'clear'}`),
-                  }), ' · ', t('codex.otherGround')),
-                ),
-                sceneSpecies.map(renderCodexCard),
-                renderArchive(),
-                codexPreviewEntry === undefined ? null : h(BloomPreview, {
+              className: confirmReset ? 'fg-btn fg-btnDanger' : 'fg-btn fg-btnGhost',
+              id: 'fg-reset',
+              onClick: reset,
+            }, confirmReset ? t('action.resetConfirm') : t('action.reset')),
+          )
+          ),
+          codexPreviewEntry === undefined ? null : h(BloomPreview, {
                   key: 'codex-preview',
                   id: 'fg-codex-preview',
                   speciesId: codexPreviewEntry.species.id,
@@ -6733,21 +7370,15 @@ function specialTraitArt(ink, traitId, headY = HEAD_Y) {
                   onClose: () => {
                     const key = codexPreviewEntry.key
                     setCodexPreview(null)
-                    focusTarget(`[data-codex="${key}"]`)
+                    restoreOpener()
                   },
                 }),
-              )
-              : null,
-          ),
 
-          guestPreview ? h(VisitorPreview, { key: guestPreview, visitorId: guestPreview, state, t, onClose: () => { const id = guestPreview; setGuestPreview(null); focusTarget(`[data-guest="${id}"]`) } }) : null,
-          h('footer', { className: 'fg-footer' },
-            h('button', {
-              type: 'button',
-              className: confirmReset ? 'fg-btn fg-btnDanger' : 'fg-btn fg-btnGhost',
-              onClick: reset,
-            }, confirmReset ? t('action.resetConfirm') : t('action.reset')),
-          ),
+          reward ? h(RewardDialog,{reward,state,t,onClose:()=>{setReward(null);restoreOpener()},onBag:()=>{setReward(null);setInventoryOpen(true)}}) : null,
+          inventoryOpen ? h(InventoryDialog,{state,t,onClose:()=>{setInventoryOpen(false);restoreOpener()},onGarden:()=>{setInventoryOpen(false);selectTab('garden',true)},onShop:()=>{setInventoryOpen(false);selectTab('shop',true)}}) : null,
+          discovery ? h(DiscoveryCard,{entry:discovery,t,onClose:()=>{setDiscovery(null);restoreOpener()},onOpen:openDiscovered}) : null,
+          guestPreview ? h(VisitorPreview, { key: guestPreview, visitorId: guestPreview, state, t, onClose: () => { setGuestPreview(null); restoreOpener() } }) : null,
+
         ),
       )
     }
@@ -6757,24 +7388,105 @@ function specialTraitArt(ink, traitId, headY = HEAD_Y) {
     //    removes it; only `--dsw-alias-*` tokens carry furniture colors.
     // ---------------------------------------------------------------------
     const CSS = `
+.fg-dialog.fg-rewardDialog{--fg-reward-gold:#c89b2b;width:min(620px,calc(100vw - 28px));border:2px solid var(--fg-reward-gold);background:var(--dsw-alias-bg-layer-1);box-shadow:0 0 60px #d4af3733,0 24px 100px #0006}
+.fg-dialog.fg-rewardDialog::backdrop{background:#151008b8;backdrop-filter:blur(7px)}
+.fg-rewardHead{text-align:center;padding:28px 24px 20px;background:linear-gradient(145deg,#d4af372b,transparent);border-bottom:1px solid var(--fg-reward-gold)}
+.fg-rewardHead h2{margin:6px 0;font-size:1.7em;line-height:1.4;color:var(--dsw-alias-label-primary)}
+.fg-rewardHead p{margin:8px 0 0;color:var(--dsw-alias-label-secondary);line-height:1.6}
+.fg-rewardStar{display:block;font-size:3.4em;color:#d4af37;line-height:1.1;text-shadow:0 0 24px #d4af3766}
+.fg-rewardList{padding:22px;display:flex;flex-direction:column;gap:12px}
+.fg-rewardItem{display:flex;align-items:center;gap:14px;padding:16px;border:1px solid var(--fg-reward-gold);border-radius:14px;background:linear-gradient(100deg,#d4af3712,transparent)}
+.fg-rewardItem>div{min-width:0;flex:1}.fg-rewardItem h3{margin:0;font-size:1.1em;line-height:1.5}.fg-rewardItem p{margin:5px 0 0;line-height:1.6}
+.fg-rewardAmount{font-size:1.3em;color:var(--fg-reward-gold);white-space:normal;text-align:right;max-width:42%;overflow-wrap:anywhere}
+.fg-rewardBalance{padding:0 22px;margin:0 0 18px;line-height:1.7;text-align:center;color:var(--dsw-alias-label-secondary)}
+.fg-rewardActions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:10px;padding:0 22px 24px}
+.fg-rewardConfirm{background:#d4af37!important;color:#241b07!important;border-color:#d4af37!important;font-weight:700}
+.fg-bagButton{flex:none;border-color:#c89b2b!important}.fg-inventoryDialog{width:min(780px,calc(100vw - 28px))}
+.fg-inventoryHead{display:flex;align-items:center;justify-content:space-between;padding:20px 24px 0;gap:16px}.fg-inventoryHead h2{margin:0;line-height:1.5}
+.fg-inventoryContents{padding:18px 24px 24px}.fg-inventorySection .fg-inventoryContents{padding:0}
+.fg-inventoryGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:12px;margin-top:14px}
+.fg-inventoryItem{display:flex;align-items:flex-start;gap:14px;padding:16px;border:1px solid var(--dsw-alias-border-l2);border-radius:14px;background:var(--dsw-alias-bg-base)}
+.fg-inventoryItem>div{min-width:0;flex:1}.fg-inventoryItem h3{font-size:1.05em;margin:0 0 6px;line-height:1.5}.fg-inventoryItem p{margin:6px 0 0;font-size:.9em;line-height:1.7}
+.fg-inventoryIcon{display:flex;align-items:center;justify-content:center;flex:0 0 44px;width:44px;height:44px;border-radius:12px;background:#d4af371c;color:#c89b2b;font-size:1.7em}.fg-inventoryIcon svg{width:34px;height:34px}
+.fg-inventoryCount{font-size:1.3em;font-variant-numeric:tabular-nums;color:var(--dsw-alias-label-primary)}
+@media(max-width:480px){.fg-rewardItem{flex-wrap:wrap}.fg-rewardAmount{max-width:100%;margin-left:auto}.fg-rewardHead{padding:22px 16px}.fg-rewardList{padding:16px}.fg-inventoryContents{padding:16px}.fg-rewardActions .fg-btn{flex:1}}
+
+.fg-discoveryDialog{width:min(780px,calc(100vw - 28px))}
+.fg-discoveryHead{padding:24px 26px 16px;border-bottom:1px solid var(--dsw-alias-border-l1)}
+.fg-discoveryHead h2{margin:10px 0;font-size:1.6em;line-height:1.4}
+.fg-discoveryHead time{font-size:.8em;color:var(--dsw-alias-label-secondary)}
+.fg-discoveryList{display:flex;flex-direction:column;gap:16px;padding:20px 26px}
+.fg-discoveryItem{display:flex;align-items:center;gap:20px;border:1px solid var(--dsw-alias-border-l1);border-radius:16px;padding:14px;background:var(--dsw-alias-bg-layer-2)}
+.fg-discoveryArt{flex:0 0 150px;width:150px;height:150px;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse,#f3edcf,#d9e4d6);border-radius:14px}
+.fg-discoveryArt svg{width:140px;height:140px}
+.fg-discoveryCopy{min-width:0;display:flex;flex-direction:column;gap:8px}
+.fg-discoveryCopy h3{margin:0;font-size:1.3em;line-height:1.5}
+.fg-discoveryCopy p{margin:0;line-height:1.7}
+.fg-discoveryFooter{padding:0 26px 24px;display:flex;justify-content:flex-end}
+.fg-discoveryHistory{display:flex;flex-direction:column;gap:8px;max-height:380px;overflow:auto}
+.fg-regionCards{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+.fg-regionCard{display:flex;flex-direction:column;gap:9px;border:1px solid var(--dsw-alias-border-l1);border-radius:14px;padding:10px;min-width:0}
+.fg-regionCard[data-current=true]{border-color:var(--dsw-alias-state-success-primary)}
+.fg-regionCard .fg-panorama{height:90px;border-radius:9px}
+.fg-regionCard h3{margin:0;font-size:1em}
+.fg-view .fg-toast[data-show=true]{padding:12px 18px;border:1px solid var(--dsw-alias-border-l2);border-radius:12px;background:var(--dsw-alias-bg-layer-1);color:var(--dsw-alias-label-primary);font-size:1em;line-height:1.6;box-shadow:0 4px 16px #0002;margin:0}
+@media(max-width:550px){.fg-discoveryItem{flex-direction:column;align-items:stretch}.fg-discoveryArt{align-self:center}.fg-latestDiscovery{max-width:100px}}
+
+.fg-view [hidden]{display:none!important}
+.fg-view{font-family:var(--fg-font-family,system-ui);font-size:var(--fg-font-size,15px)}
+.fg-view button,.fg-view input,.fg-view select,.fg-view dialog{font-family:inherit}
+.fg-topbar{flex:none;max-height:42%;overflow:auto;padding:14px 24px 0;background:var(--dsw-alias-bg-base);border-bottom:1px solid var(--dsw-alias-border-l1);z-index:3}
+.fg-toolbar{display:flex;align-items:center;gap:12px;min-width:0}
+@media(max-width:650px){.fg-toolbar{flex-wrap:wrap;gap:8px;padding-bottom:8px}.fg-toolbar .fg-tabs{order:-1;flex:1 0 100%}.fg-toolbar .fg-quickSize{margin-left:auto}}
+.fg-tabs{display:flex;gap:3px;overflow-x:auto;min-width:0;flex:1;scrollbar-width:thin;padding:8px 0 0}
+.fg-tab{flex:none;border:0;border-bottom:3px solid transparent;background:transparent;color:var(--dsw-alias-label-secondary);font-size:.9em;padding:12px 10px;cursor:pointer;white-space:nowrap}
+.fg-tab[aria-selected=true]{border-bottom-color:var(--dsw-alias-state-success-primary);color:var(--dsw-alias-label-primary);font-weight:650}
+.fg-tab:focus-visible{outline:2px solid var(--dsw-alias-brand-primary);outline-offset:-3px}
+.fg-quickSize{display:flex;align-items:center;gap:6px;font-size:.8em;white-space:nowrap}
+.fg-quickSize select{background:var(--dsw-alias-bg-layer-1);color:inherit;border:1px solid var(--dsw-alias-border-l1);border-radius:7px;padding:5px;font-size:inherit}
+.fg-tabPanel{display:flex;flex-direction:column;gap:20px;outline:none}
+.fg-tabPanel:focus-visible{outline:2px solid var(--dsw-alias-brand-primary);outline-offset:3px}
+.fg-liveClock{display:grid;grid-template-columns:auto auto;gap:1px 8px;align-items:center;font-variant-numeric:tabular-nums;font-size:.85em}
+.fg-liveClock strong{font-size:1.15em;font-weight:600;letter-spacing:.04em}
+.fg-liveClock small{grid-column:1/-1;font-size:.78em;color:var(--dsw-alias-label-secondary)}
+.fg-settings{max-width:640px;padding:20px;border:1px solid var(--dsw-alias-border-l1);border-radius:16px}
+.fg-settingRow{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:10px 0}
+.fg-fontPreview{font-size:1.25em;line-height:1.8;padding:22px;border-radius:12px;background:var(--dsw-alias-bg-layer-2)}
+.fg-landscape{position:relative;isolation:isolate;overflow:hidden;border-radius:18px;height:clamp(180px,24vw,280px);background:#233d43}
+.fg-panorama{display:block;width:100%;height:100%}
+.fg-landscape::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,#091c2490,transparent 60%),linear-gradient(0deg,#071a2860,transparent 50%);pointer-events:none}
+.fg-landscapeCaption{position:absolute;z-index:1;left:26px;top:24px;display:flex;flex-direction:column;gap:8px;color:#fff9e9;text-shadow:0 2px 8px #10222b}
+.fg-landscapeCaption strong{font-size:2em;line-height:1.3;font-weight:500}
+.fg-landscapeCaption span{font-size:.9em}
+.fg-landscapeTime{position:absolute;z-index:1;right:22px;bottom:20px;display:flex;flex-direction:column;gap:6px;align-items:flex-end;color:#fff9e9;text-shadow:0 2px 8px #10222b;font-variant-numeric:tabular-nums}
+.fg-landscapeTime strong{font-size:1.6em;font-weight:500;letter-spacing:.04em}
+.fg-landscapeTime span{font-size:.75em}
+.fg-view .fg-btn{height:auto;min-height:2em;line-height:1.3;padding-top:.4em;padding-bottom:.4em;white-space:normal}
+.fg-view .fg-variant{height:auto;min-height:1.6em;line-height:1.4;padding-top:.15em;padding-bottom:.15em}
+.fg-view .fg-sceneChip{height:auto;min-height:2em;padding-top:.35em;padding-bottom:.35em}
+.fg-view .fg-chip{height:auto;min-height:1.9em}
+.fg-view .fg-seed,.fg-view .fg-bloom{height:auto;min-height:2em;padding-top:.35em;padding-bottom:.35em}
+.fg-view .fg-note,.fg-view .fg-itemNote{white-space:normal}
+@media(max-width:650px){.fg-topbar{padding:10px 12px 0}.fg-view .fg-scroll{padding:12px}.fg-topbar .fg-sub{display:none}.fg-topbar .fg-header{gap:8px}.fg-quickSize{font-size:.7em}.fg-landscapeCaption{left:18px;top:18px}.fg-landscapeTime{right:16px;bottom:14px}}
+
 .fg-ecology{padding:18px;border:1px solid var(--dsw-alias-border-l2);border-radius:20px;background:var(--dsw-alias-bg-layer-1)}
-.fg-ecoLead{margin:0;font-size:18px;line-height:1.6;font-weight:600}
-.fg-ecoDetails>summary{padding:10px 0;cursor:pointer;font-size:13px;font-weight:600}
+.fg-ecoLead{margin:0;font-size:calc(var(--fg-font-size,15px) * 1.3846);line-height:1.6;font-weight:600}
+.fg-ecoDetails>summary{padding:10px 0;cursor:pointer;font-size:calc(var(--fg-font-size,15px) * 1.0);font-weight:600}
 .fg-ecoProjects{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:12px;margin-top:12px}
 .fg-ecoProject{display:flex;flex-direction:column;gap:8px;padding:16px;border:1px solid var(--dsw-alias-border-l1);border-radius:14px;background:var(--dsw-alias-bg-base)}
-.fg-ecoProject h3{margin:0 0 4px;font-size:14px;line-height:1.6}
+.fg-ecoProject h3{margin:0 0 4px;font-size:calc(var(--fg-font-size,15px) * 1.0769);line-height:1.6}
 .fg-ecoTargets{display:flex;gap:5px;flex-wrap:wrap}
-.fg-purpose{display:flex;flex-direction:column;gap:5px;padding:12px;border-left:3px solid var(--dsw-alias-state-success-primary);background:var(--dsw-alias-bg-layer-2);font-size:12px;line-height:1.6}
-.fg-source{font-size:12px;color:var(--dsw-alias-brand-primary);text-decoration:underline}
+.fg-purpose{display:flex;flex-direction:column;gap:5px;padding:12px;border-left:3px solid var(--dsw-alias-state-success-primary);background:var(--dsw-alias-bg-layer-2);font-size:calc(var(--fg-font-size,15px) * 0.9231);line-height:1.6}
+.fg-source{font-size:calc(var(--fg-font-size,15px) * 0.9231);color:var(--dsw-alias-brand-primary);text-decoration:underline}
 .fg-residentActions{display:flex;flex-wrap:wrap;gap:6px}
 .fg-residentActions>.fg-hint{flex-basis:100%}
 .fg-notebooks{display:grid;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:8px;margin-top:12px}
 .fg-notebook{display:flex;flex-direction:column;gap:6px;align-items:stretch;text-align:left;padding:10px;border:1px solid var(--dsw-alias-border-l1);border-radius:10px;background:var(--dsw-alias-bg-base);color:inherit;font:inherit;cursor:pointer}
 .fg-notebook progress{width:100%;height:5px;accent-color:var(--dsw-alias-state-success-primary)}
 .fg-journal{display:flex;flex-direction:column;gap:8px;max-height:250px;overflow:auto}
-.fg-journalEntry{display:flex;flex-direction:column;gap:4px;padding:10px;border-bottom:1px solid var(--dsw-alias-border-l1);font-size:12px}
-.fg-guestNote strong{font-size:12px;color:var(--dsw-alias-label-secondary)}
-.fg-guestNote p{margin:3px 0 0;font-size:13px;line-height:1.7}
+.fg-journalEntry{display:flex;flex-direction:column;gap:4px;padding:10px;border-bottom:1px solid var(--dsw-alias-border-l1);font-size:calc(var(--fg-font-size,15px) * 0.9231)}
+.fg-guestNote strong{font-size:calc(var(--fg-font-size,15px) * 0.9231);color:var(--dsw-alias-label-secondary)}
+.fg-guestNote p{margin:3px 0 0;font-size:calc(var(--fg-font-size,15px) * 1.0);line-height:1.7}
 .fg-guest{appearance:none;color:inherit;font:inherit;text-align:left;cursor:pointer}
 .fg-guest:hover{border-color:var(--dsw-alias-brand-primary)}
 .fg-guest:focus-visible,.fg-notebook:focus-visible{outline:2px solid var(--dsw-alias-brand-primary);outline-offset:2px}
@@ -6791,10 +7503,10 @@ function specialTraitArt(ink, traitId, headY = HEAD_Y) {
 .fg-dialog .fg-previewArt svg{width:244px;height:244px}
 .fg-dialog .fg-note{white-space:normal;overflow:visible}
 .fg-dialog .fg-previewBody{gap:12px;flex-basis:260px}
-.fg-dialog .fg-previewName{font-size:24px;line-height:1.4;font-weight:600}
-.fg-dialog .fg-previewLatin{font-family:Georgia,serif;font-size:15px;line-height:1.5}
-.fg-dialog .fg-previewMeaning{font-size:15px;line-height:1.8}
-.fg-cardFact{margin:0;padding-top:12px;border-top:1px solid var(--dsw-alias-border-l1);font-size:12px;line-height:1.8;color:var(--dsw-alias-label-secondary)}
+.fg-dialog .fg-previewName{font-size:calc(var(--fg-font-size,15px) * 1.8462);line-height:1.4;font-weight:600}
+.fg-dialog .fg-previewLatin{font-family:Georgia,serif;font-size:calc(var(--fg-font-size,15px) * 1.1538);line-height:1.5}
+.fg-dialog .fg-previewMeaning{font-size:calc(var(--fg-font-size,15px) * 1.1538);line-height:1.8}
+.fg-cardFact{margin:0;padding-top:12px;border-top:1px solid var(--dsw-alias-border-l1);font-size:calc(var(--fg-font-size,15px) * 0.9231);line-height:1.8;color:var(--dsw-alias-label-secondary)}
 .fg-dialog .fg-previewActions{width:100%;flex-direction:row;flex-wrap:wrap;justify-content:flex-end;padding-top:16px;border-top:1px solid var(--dsw-alias-border-l1)}
 .fg-archive{grid-column:1/-1;display:flex;flex-direction:column;gap:12px;padding-top:16px;border-top:1px solid var(--dsw-alias-border-l1)}
 .fg-archiveGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
@@ -6802,32 +7514,32 @@ function specialTraitArt(ink, traitId, headY = HEAD_Y) {
 .fg-archiveEntry svg{width:120px;height:120px}
 .fg-archiveEntry:hover{background:var(--dsw-alias-bg-layer-2)}
 .fg-archiveEntry:focus-visible{outline:2px solid var(--dsw-alias-brand-primary);outline-offset:2px}
-@media(max-width:600px){.fg-dialog .fg-preview{padding:20px;justify-content:center}.fg-dialog .fg-previewArt{width:200px;height:220px}.fg-dialog .fg-previewArt svg{width:190px;height:190px}.fg-dialog .fg-previewBody{flex-basis:100%}.fg-dialog .fg-previewName{font-size:21px}}
+@media(max-width:600px){.fg-dialog .fg-preview{padding:20px;justify-content:center}.fg-dialog .fg-previewArt{width:200px;height:220px}.fg-dialog .fg-previewArt svg{width:190px;height:190px}.fg-dialog .fg-previewBody{flex-basis:100%}.fg-dialog .fg-previewName{font-size:calc(var(--fg-font-size,15px) * 1.6154)}}
 
-.fg-view{box-sizing:border-box;width:100%;height:100%;flex:1 1 auto;min-height:0;display:flex;flex-direction:column;background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);font-size:13px;line-height:20px}
-.fg-scroll{box-sizing:border-box;flex:1 1 auto;min-height:0;overflow:auto;display:flex;flex-direction:column;gap:16px;padding:18px 24px 176px}
+.fg-view{box-sizing:border-box;width:100%;height:100%;flex:1 1 auto;min-height:0;display:flex;flex-direction:column;background:var(--dsw-alias-bg-base);color:var(--dsw-alias-label-primary);font-size:calc(var(--fg-font-size,15px) * 1.0);line-height:calc(var(--fg-font-size,15px) * 1.5385)}
+.fg-scroll{box-sizing:border-box;flex:1 1 auto;min-height:0;overflow:auto;display:flex;flex-direction:column;gap:16px;padding:16px 24px 32px}
 .fg-header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;padding-bottom:14px;border-bottom:1px solid var(--dsw-alias-border-l1)}
 .fg-titleBlock{min-width:0;max-width:520px}
-.fg-title{margin:0;font-size:16px;line-height:24px;font-weight:600}
-.fg-sub{margin:2px 0 0;font-size:12px;line-height:18px;color:var(--dsw-alias-label-secondary)}
+.fg-title{margin:0;font-size:calc(var(--fg-font-size,15px) * 1.2308);line-height:calc(var(--fg-font-size,15px) * 1.8462);font-weight:600}
+.fg-sub{margin:2px 0 0;font-size:calc(var(--fg-font-size,15px) * 0.9231);line-height:calc(var(--fg-font-size,15px) * 1.3846);color:var(--dsw-alias-label-secondary)}
 .fg-stats{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .fg-chip{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 10px;border:1px solid var(--dsw-alias-border-l1);border-radius:999px;background:var(--dsw-alias-bg-layer-1)}
-.fg-chipValue{font-size:13px;font-weight:600;font-variant-numeric:tabular-nums}
-.fg-chipKey{font-size:11px;color:var(--dsw-alias-label-secondary)}
+.fg-chipValue{font-size:calc(var(--fg-font-size,15px) * 1.0);font-weight:600;font-variant-numeric:tabular-nums}
+.fg-chipKey{font-size:calc(var(--fg-font-size,15px) * 0.8462);color:var(--dsw-alias-label-secondary)}
 .fg-xpBar{display:inline-block;width:44px;height:4px;border-radius:999px;background:var(--dsw-alias-bg-layer-2);overflow:hidden}
 .fg-xpFill{display:block;height:100%;border-radius:999px;background:var(--dsw-alias-state-success-primary)}
 .fg-scenes{display:flex;gap:8px;flex-wrap:wrap}
-.fg-sceneChip{appearance:none;display:inline-flex;align-items:center;gap:8px;height:30px;padding:0 12px;border:1px solid var(--dsw-alias-border-l2);border-radius:999px;background:transparent;color:var(--dsw-alias-label-primary);font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;transition:border-color .15s ease}
+.fg-sceneChip{appearance:none;display:inline-flex;align-items:center;gap:8px;height:30px;padding:0 12px;border:1px solid var(--dsw-alias-border-l2);border-radius:999px;background:transparent;color:var(--dsw-alias-label-primary);font-family:inherit;font-size:calc(var(--fg-font-size,15px) * 0.9231);font-weight:600;cursor:pointer;transition:border-color .15s ease}
 .fg-sceneChip:focus-visible{outline:2px solid var(--dsw-alias-brand-primary);outline-offset:2px}
 .fg-sceneChip[data-active="true"]{box-shadow:inset 0 0 0 1px var(--dsw-alias-label-primary)}
 .fg-sceneChipArmed{border-color:var(--dsw-alias-state-error-primary)!important}
 .fg-sceneChipArmed .fg-sceneMeta{color:var(--dsw-alias-state-error-primary)}
 .fg-sceneChip[data-locked="true"]{opacity:.62;font-weight:500}
 .fg-sceneName{white-space:nowrap}
-.fg-sceneMeta{font-size:10px;font-weight:500;color:var(--dsw-alias-label-secondary);font-variant-numeric:tabular-nums;white-space:nowrap}
-.fg-hint{margin:0;font-size:11px;line-height:17px;color:var(--dsw-alias-label-secondary)}
+.fg-sceneMeta{font-size:calc(var(--fg-font-size,15px) * 0.7692);font-weight:500;color:var(--dsw-alias-label-secondary);font-variant-numeric:tabular-nums;white-space:nowrap}
+.fg-hint{margin:0;font-size:calc(var(--fg-font-size,15px) * 0.8462);line-height:calc(var(--fg-font-size,15px) * 1.3077);color:var(--dsw-alias-label-secondary)}
 .fg-hintWeather{display:inline-block;margin-left:8px;color:var(--dsw-alias-label-primary)}
-.fg-toast{position:sticky;top:0;z-index:1;min-height:18px;margin:0 -24px;padding:2px 24px 2px;font-size:12px;line-height:18px;color:var(--dsw-alias-state-success-primary)}
+.fg-toast{position:sticky;top:0;z-index:1;min-height:18px;margin:0 -24px;padding:2px 24px 2px;font-size:calc(var(--fg-font-size,15px) * 0.9231);line-height:calc(var(--fg-font-size,15px) * 1.3846);color:var(--dsw-alias-state-success-primary)}
 .fg-toast[data-show="true"]{background:var(--dsw-alias-bg-base)}
 .fg-toast[data-tone="warn"]{color:var(--dsw-alias-state-warn-primary)}
 .fg-toast[data-tone="info"]{color:var(--dsw-alias-label-secondary)}
@@ -6837,31 +7549,31 @@ function specialTraitArt(ink, traitId, headY = HEAD_Y) {
 .fg-section{display:flex;flex-direction:column;gap:10px}
 .fg-ground{padding:12px;border:1px solid var(--dsw-alias-border-l1);border-radius:16px}
 .fg-sectionHead{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.fg-sectionTitle{margin:0;font-size:12px;line-height:18px;font-weight:600;letter-spacing:.02em}
-.fg-sectionMeta{font-size:11px;color:var(--dsw-alias-label-secondary);font-variant-numeric:tabular-nums}
-.fg-sectionWarn{font-size:11px;color:var(--dsw-alias-state-warn-primary)}
-.fg-sectionOk{font-size:11px;color:var(--dsw-alias-state-success-primary)}
+.fg-sectionTitle{margin:0;font-size:calc(var(--fg-font-size,15px) * 0.9231);line-height:calc(var(--fg-font-size,15px) * 1.3846);font-weight:600;letter-spacing:.02em}
+.fg-sectionMeta{font-size:calc(var(--fg-font-size,15px) * 0.8462);color:var(--dsw-alias-label-secondary);font-variant-numeric:tabular-nums}
+.fg-sectionWarn{font-size:calc(var(--fg-font-size,15px) * 0.8462);color:var(--dsw-alias-state-warn-primary)}
+.fg-sectionOk{font-size:calc(var(--fg-font-size,15px) * 0.8462);color:var(--dsw-alias-state-success-primary)}
 .fg-items{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px}
 .fg-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--dsw-alias-border-l1);border-radius:12px;background:var(--dsw-alias-bg-layer-1);min-width:0}
 .fg-itemIcon{flex:none;display:inline-flex;width:20px;height:20px}
 .fg-itemBody{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:1px}
-.fg-itemName{display:flex;align-items:baseline;gap:6px;font-size:12px;font-weight:600}
-.fg-itemOwn{font-size:10px;font-weight:500;color:var(--dsw-alias-label-secondary);font-variant-numeric:tabular-nums}
-.fg-itemNote{font-size:11px;line-height:16px;color:var(--dsw-alias-label-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fg-itemName{display:flex;align-items:baseline;gap:6px;font-size:calc(var(--fg-font-size,15px) * 0.9231);font-weight:600}
+.fg-itemOwn{font-size:calc(var(--fg-font-size,15px) * 0.7692);font-weight:500;color:var(--dsw-alias-label-secondary);font-variant-numeric:tabular-nums}
+.fg-itemNote{font-size:calc(var(--fg-font-size,15px) * 0.8462);line-height:calc(var(--fg-font-size,15px) * 1.2308);color:var(--dsw-alias-label-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .fg-itemActions{flex:none;display:flex;gap:6px}
-.fg-itemMax{font-size:11px;color:var(--dsw-alias-label-secondary)}
-.fg-empty{margin:0;font-size:12px;line-height:18px;color:var(--dsw-alias-label-secondary)}
+.fg-itemMax{font-size:calc(var(--fg-font-size,15px) * 0.8462);color:var(--dsw-alias-label-secondary)}
+.fg-empty{margin:0;font-size:calc(var(--fg-font-size,15px) * 0.9231);line-height:calc(var(--fg-font-size,15px) * 1.3846);color:var(--dsw-alias-label-secondary)}
 .fg-orders{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px}
 .fg-order{display:flex;flex-direction:column;gap:8px;padding:10px 12px;border:1px solid var(--dsw-alias-border-l1);border-radius:12px;background:var(--dsw-alias-bg-layer-1)}
 .fg-order[data-ready="true"]{border-color:var(--dsw-alias-state-success-primary)}
 .fg-orderHead{display:flex;align-items:baseline;justify-content:space-between;gap:8px;flex-wrap:wrap}
-.fg-orderId{font-size:12px;font-weight:600}
-.fg-orderReward{font-size:11px;color:var(--dsw-alias-label-secondary);font-variant-numeric:tabular-nums}
+.fg-orderId{font-size:calc(var(--fg-font-size,15px) * 0.9231);font-weight:600}
+.fg-orderReward{font-size:calc(var(--fg-font-size,15px) * 0.8462);color:var(--dsw-alias-label-secondary);font-variant-numeric:tabular-nums}
 .fg-orderItems{display:flex;flex-direction:column;gap:3px}
-.fg-orderItem{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--dsw-alias-label-secondary)}
+.fg-orderItem{display:flex;align-items:center;gap:6px;font-size:calc(var(--fg-font-size,15px) * 0.9231);color:var(--dsw-alias-label-secondary)}
 .fg-orderItem[data-have="true"]{color:var(--dsw-alias-label-primary)}
-.fg-orderHave{margin-left:auto;font-size:11px;font-variant-numeric:tabular-nums}
-.fg-orderNote{margin:0;font-size:11px;line-height:16px;color:var(--dsw-alias-state-warn-primary)}
+.fg-orderHave{margin-left:auto;font-size:calc(var(--fg-font-size,15px) * 0.8462);font-variant-numeric:tabular-nums}
+.fg-orderNote{margin:0;font-size:calc(var(--fg-font-size,15px) * 0.8462);line-height:calc(var(--fg-font-size,15px) * 1.2308);color:var(--dsw-alias-state-warn-primary)}
 .fg-dot{flex:none;display:inline-block;width:11px;height:11px;border-radius:50%;border:1px solid transparent;box-sizing:border-box}
 .fg-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(186px,1fr));gap:12px}
 .fg-plot{box-sizing:border-box;display:flex;flex-direction:column;gap:8px;min-height:198px;padding:12px;border:1px solid var(--dsw-alias-border-l1);border-radius:14px;background:var(--dsw-alias-bg-layer-1)}
@@ -6887,42 +7599,42 @@ function specialTraitArt(ink, traitId, headY = HEAD_Y) {
 @keyframes fg-turn{to{transform:rotate(360deg)}}
 @keyframes fg-sway{from{transform:rotate(-1.6deg)}to{transform:rotate(1.6deg)}}
 .fg-plotHead{display:flex;align-items:baseline;justify-content:space-between;gap:8px;min-width:0}
-.fg-species{min-width:0;font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.fg-stage{flex:none;font-size:11px;color:var(--dsw-alias-label-secondary)}
+.fg-species{min-width:0;font-size:calc(var(--fg-font-size,15px) * 1.0);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fg-stage{flex:none;font-size:calc(var(--fg-font-size,15px) * 0.8462);color:var(--dsw-alias-label-secondary)}
 .fg-meter{position:relative;height:4px;border-radius:999px;background:var(--dsw-alias-bg-layer-2);overflow:hidden}
 .fg-meterFill{display:block;height:100%;border-radius:999px;background:var(--dsw-alias-state-success-primary);transition:width .4s linear}
 .fg-meterWet .fg-meterFill{background:var(--dsw-alias-label-secondary);opacity:.55}
 .fg-meterWet[data-low="true"] .fg-meterFill{background:var(--dsw-alias-state-error-primary);opacity:1}
 .fg-row{display:flex;align-items:baseline;justify-content:space-between;gap:8px;min-width:0}
-.fg-note{min-width:0;font-size:11px;line-height:16px;color:var(--dsw-alias-label-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fg-note{min-width:0;font-size:calc(var(--fg-font-size,15px) * 0.8462);line-height:calc(var(--fg-font-size,15px) * 1.2308);color:var(--dsw-alias-label-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .fg-noteWarn{color:var(--dsw-alias-state-warn-primary)}
 .fg-noteWet{flex:none;font-variant-numeric:tabular-nums}
 .fg-actions{margin-top:auto;display:flex;gap:8px}
-.fg-btn{appearance:none;box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;gap:6px;height:28px;padding:0 12px;border:1px solid var(--dsw-alias-border-l2);border-radius:8px;background:var(--dsw-alias-bg-layer-1);color:var(--dsw-alias-label-primary);font-family:inherit;font-size:12px;font-weight:500;line-height:1;cursor:pointer;transition:background .15s ease,border-color .15s ease}
+.fg-btn{appearance:none;box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;gap:6px;height:28px;padding:0 12px;border:1px solid var(--dsw-alias-border-l2);border-radius:8px;background:var(--dsw-alias-bg-layer-1);color:var(--dsw-alias-label-primary);font-family:inherit;font-size:calc(var(--fg-font-size,15px) * 0.9231);font-weight:500;line-height:1;cursor:pointer;transition:background .15s ease,border-color .15s ease}
 .fg-btn:hover:not(:disabled){background:var(--dsw-alias-bg-layer-2)}
 .fg-btn:focus-visible{outline:2px solid var(--dsw-alias-brand-primary);outline-offset:2px}
 .fg-btn:disabled{opacity:.45;cursor:not-allowed}
 .fg-btnBlock{width:100%}
 .fg-btnGrow{flex:1 1 0;min-width:0;padding:0 8px}
-.fg-btnSmall{height:24px;padding:0 10px;font-size:11px}
+.fg-btnSmall{height:24px;padding:0 10px;font-size:calc(var(--fg-font-size,15px) * 0.8462)}
 .fg-btnPrimary{border-color:var(--dsw-alias-state-success-primary);color:var(--dsw-alias-state-success-primary)}
 .fg-btnPrimary:hover:not(:disabled){background:var(--dsw-alias-bg-layer-2)}
 .fg-btnGhost{border-color:transparent;background:transparent;color:var(--dsw-alias-label-secondary)}
 .fg-btnGhost:hover:not(:disabled){background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-primary)}
 .fg-btnDanger{border-color:var(--dsw-alias-state-error-primary);color:var(--dsw-alias-state-error-primary);background:transparent}
 .fg-seeds{display:flex;flex-direction:column;gap:6px}
-.fg-seedsHead{font-size:11px;line-height:16px;color:var(--dsw-alias-label-secondary)}
-.fg-seedHint{font-size:11px;line-height:16px;color:var(--dsw-alias-state-warn-primary)}
+.fg-seedsHead{font-size:calc(var(--fg-font-size,15px) * 0.8462);line-height:calc(var(--fg-font-size,15px) * 1.2308);color:var(--dsw-alias-label-secondary)}
+.fg-seedHint{font-size:calc(var(--fg-font-size,15px) * 0.8462);line-height:calc(var(--fg-font-size,15px) * 1.2308);color:var(--dsw-alias-state-warn-primary)}
 .fg-seedGrid{display:flex;flex-direction:column;gap:4px;max-height:150px;overflow:auto;padding-right:2px}
-.fg-seed{display:flex;align-items:center;gap:5px;height:28px;padding:0 8px;border:1px solid var(--dsw-alias-border-l1);border-radius:8px;background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-primary);font-family:inherit;font-size:11px;cursor:pointer;text-align:left;min-width:0}
+.fg-seed{display:flex;align-items:center;gap:5px;height:28px;padding:0 8px;border:1px solid var(--dsw-alias-border-l1);border-radius:8px;background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-primary);font-family:inherit;font-size:calc(var(--fg-font-size,15px) * 0.8462);cursor:pointer;text-align:left;min-width:0}
 .fg-seed:hover:not(:disabled){border-color:var(--dsw-alias-border-l2)}
 .fg-seed:focus-visible{outline:2px solid var(--dsw-alias-brand-primary);outline-offset:2px}
 .fg-seed:disabled{opacity:.45;cursor:not-allowed}
 .fg-seedName{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.fg-seedMeta{margin-left:auto;flex:none;font-size:10px;color:var(--dsw-alias-label-secondary);font-variant-numeric:tabular-nums}
+.fg-seedMeta{margin-left:auto;flex:none;font-size:calc(var(--fg-font-size,15px) * 0.7692);color:var(--dsw-alias-label-secondary);font-variant-numeric:tabular-nums}
 .fg-seedCancel{align-self:flex-start;margin-top:2px}
 .fg-basket{display:flex;flex-wrap:wrap;gap:6px}
-.fg-bloom{display:inline-flex;align-items:center;gap:5px;height:26px;padding:0 9px;border:1px solid var(--dsw-alias-border-l1);border-radius:999px;background:var(--dsw-alias-bg-layer-1);color:var(--dsw-alias-label-primary);font-family:inherit;font-size:11px;cursor:pointer}
+.fg-bloom{display:inline-flex;align-items:center;gap:5px;height:26px;padding:0 9px;border:1px solid var(--dsw-alias-border-l1);border-radius:999px;background:var(--dsw-alias-bg-layer-1);color:var(--dsw-alias-label-primary);font-family:inherit;font-size:calc(var(--fg-font-size,15px) * 0.8462);cursor:pointer}
 .fg-bloom:hover{border-color:var(--dsw-alias-state-success-primary);background:var(--dsw-alias-bg-layer-2)}
 .fg-bloom:focus-visible{outline:2px solid var(--dsw-alias-brand-primary);outline-offset:2px}
 .fg-bloom[data-variant="hidden"]{border-color:#c99a1f;background:rgba(242,201,76,0.16)}
@@ -6935,12 +7647,12 @@ function specialTraitArt(ink, traitId, headY = HEAD_Y) {
 .fg-previewArt svg{width:168px;height:168px;overflow:visible}
 .fg-previewBody{flex:1 1 200px;min-width:0;display:flex;flex-direction:column;gap:3px}
 .fg-previewHead{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
-.fg-previewName{font-size:14px;font-weight:600}
-.fg-previewVariant{align-self:center;padding:0 6px;border-radius:999px;border:1px solid var(--dsw-alias-border-l2);font-size:10px;line-height:16px;color:var(--dsw-alias-label-secondary)}
+.fg-previewName{font-size:calc(var(--fg-font-size,15px) * 1.0769);font-weight:600}
+.fg-previewVariant{align-self:center;padding:0 6px;border-radius:999px;border:1px solid var(--dsw-alias-border-l2);font-size:calc(var(--fg-font-size,15px) * 0.7692);line-height:calc(var(--fg-font-size,15px) * 1.2308);color:var(--dsw-alias-label-secondary)}
 .fg-previewVariant[data-variant="hidden"]{border-color:#c99a1f;color:var(--dsw-alias-state-warn-primary)}
-.fg-previewLatin{font-size:11px;font-style:italic;color:var(--dsw-alias-label-secondary)}
-.fg-previewMeaning{font-size:12px;line-height:18px;color:var(--dsw-alias-label-primary)}
-.fg-previewStats{display:flex;gap:12px;flex-wrap:wrap;font-size:11px;color:var(--dsw-alias-label-secondary);font-variant-numeric:tabular-nums}
+.fg-previewLatin{font-size:calc(var(--fg-font-size,15px) * 0.8462);font-style:italic;color:var(--dsw-alias-label-secondary)}
+.fg-previewMeaning{font-size:calc(var(--fg-font-size,15px) * 0.9231);line-height:calc(var(--fg-font-size,15px) * 1.3846);color:var(--dsw-alias-label-primary)}
+.fg-previewStats{display:flex;gap:12px;flex-wrap:wrap;font-size:calc(var(--fg-font-size,15px) * 0.8462);color:var(--dsw-alias-label-secondary);font-variant-numeric:tabular-nums}
 .fg-previewActions{flex:none;display:flex;flex-direction:column;gap:6px;margin-left:auto}
 .fg-bloomArmed .fg-bloomPrice{color:var(--dsw-alias-state-error-primary)}
 .fg-bloomArt{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;flex:none}
@@ -6949,13 +7661,13 @@ function specialTraitArt(ink, traitId, headY = HEAD_Y) {
 .fg-bloomPrice{color:var(--dsw-alias-state-success-primary);font-variant-numeric:tabular-nums}
 .fg-codexToggle{appearance:none;display:flex;align-items:center;gap:10px;width:100%;padding:0;border:0;background:transparent;color:var(--dsw-alias-label-primary);font-family:inherit;cursor:pointer;text-align:left}
 .fg-codexToggle:focus-visible{outline:2px solid var(--dsw-alias-brand-primary);outline-offset:4px;border-radius:6px}
-.fg-caret{font-size:10px;color:var(--dsw-alias-label-secondary);transition:transform .15s ease}
+.fg-caret{font-size:calc(var(--fg-font-size,15px) * 0.7692);color:var(--dsw-alias-label-secondary);transition:transform .15s ease}
 .fg-caret[data-open="true"]{transform:rotate(180deg)}
 .fg-codexNotes{grid-column:1/-1;display:flex;flex-direction:column;gap:2px;margin-bottom:2px}
-.fg-codexHint{margin:0;font-size:11px;line-height:16px;color:var(--dsw-alias-label-secondary)}
-.fg-codexTeaser{font-size:10px;color:var(--dsw-alias-state-warn-primary)}
-.fg-goldTag{display:inline-block;padding:0 4px;border-radius:4px;background:rgba(242,201,76,0.35);color:var(--dsw-alias-label-primary);font-size:9px;line-height:13px}
-.fg-badge{display:inline-block;width:fit-content;padding:0 6px;border-radius:999px;border:1px solid currentColor;font-size:10px;line-height:14px}
+.fg-codexHint{margin:0;font-size:calc(var(--fg-font-size,15px) * 0.8462);line-height:calc(var(--fg-font-size,15px) * 1.2308);color:var(--dsw-alias-label-secondary)}
+.fg-codexTeaser{font-size:calc(var(--fg-font-size,15px) * 0.7692);color:var(--dsw-alias-state-warn-primary)}
+.fg-goldTag{display:inline-block;padding:0 4px;border-radius:4px;background:rgba(242,201,76,0.35);color:var(--dsw-alias-label-primary);font-size:calc(var(--fg-font-size,15px) * 0.6923);line-height:calc(var(--fg-font-size,15px) * 1.0)}
+.fg-badge{display:inline-block;width:fit-content;padding:0 6px;border-radius:999px;border:1px solid currentColor;font-size:calc(var(--fg-font-size,15px) * 0.7692);line-height:calc(var(--fg-font-size,15px) * 1.0769)}
 .fg-codex{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px}
 .fg-codexCard{display:flex;align-items:flex-start;gap:10px;padding:8px 10px;border:1px solid var(--dsw-alias-border-l1);border-radius:12px;background:var(--dsw-alias-bg-layer-1);min-width:0}
 .fg-codexCard[data-seen="false"]{background:transparent;border-style:dashed}
@@ -6969,18 +7681,18 @@ function specialTraitArt(ink, traitId, headY = HEAD_Y) {
 .fg-variantBtn:focus-visible{outline:2px solid var(--dsw-alias-brand-primary);outline-offset:2px}
 .fg-codexArt svg{width:60px;height:60px;overflow:visible}
 .fg-codexBody{min-width:0;display:flex;flex-direction:column;gap:2px}
-.fg-codexName{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.fg-codexLatin{font-size:10px;font-style:italic;color:var(--dsw-alias-label-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.fg-codexMeaning{font-size:11px;line-height:16px;color:var(--dsw-alias-label-primary)}
+.fg-codexName{font-size:calc(var(--fg-font-size,15px) * 0.9231);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fg-codexLatin{font-size:calc(var(--fg-font-size,15px) * 0.7692);font-style:italic;color:var(--dsw-alias-label-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fg-codexMeaning{font-size:calc(var(--fg-font-size,15px) * 0.8462);line-height:calc(var(--fg-font-size,15px) * 1.2308);color:var(--dsw-alias-label-primary)}
 .fg-codexVariants{display:flex;flex-wrap:wrap;gap:4px;margin-top:2px}
-.fg-variant{display:inline-flex;align-items:center;gap:4px;height:18px;padding:0 6px;border:1px solid var(--dsw-alias-border-l1);border-radius:999px;font-size:10px;color:var(--dsw-alias-label-secondary)}
+.fg-variant{display:inline-flex;align-items:center;gap:4px;height:18px;padding:0 6px;border:1px solid var(--dsw-alias-border-l1);border-radius:999px;font-size:calc(var(--fg-font-size,15px) * 0.7692);color:var(--dsw-alias-label-secondary)}
 .fg-variant[data-found="true"]{color:var(--dsw-alias-label-primary)}
 .fg-variant[data-variant="hidden"][data-found="true"]{border-color:#c99a1f;color:var(--dsw-alias-state-warn-primary)}
 .fg-variantCount{font-variant-numeric:tabular-nums}
 .fg-variantArt{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;flex:none}
 .fg-variantArt svg{width:16px;height:16px;overflow:visible}
 .fg-chipMarket{border-color:#c99a1f}
-.fg-marketTag{display:inline-block;padding:0 4px;border-radius:4px;border:1px solid #c99a1f;color:var(--dsw-alias-state-warn-primary);font-size:9px;line-height:13px}
+.fg-marketTag{display:inline-block;padding:0 4px;border-radius:4px;border:1px solid #c99a1f;color:var(--dsw-alias-state-warn-primary);font-size:calc(var(--fg-font-size,15px) * 0.6923);line-height:calc(var(--fg-font-size,15px) * 1.0)}
 .fg-headAction{margin-left:auto}
 .fg-badgeOk{color:var(--dsw-alias-state-success-primary)}
 .fg-badgeWarn{color:var(--dsw-alias-state-warn-primary)}
@@ -6991,17 +7703,21 @@ function specialTraitArt(ink, traitId, headY = HEAD_Y) {
 .fg-guestArt{flex:none;display:inline-flex;width:32px;height:32px}
 .fg-guestArt svg{width:32px;height:32px}
 .fg-guestBody{min-width:0;display:flex;flex-direction:column;gap:1px}
-.fg-guestName{display:flex;align-items:baseline;gap:6px;font-size:12px;font-weight:600}
-.fg-guestWhere{font-size:10px;line-height:15px;color:var(--dsw-alias-label-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fg-guestName{display:flex;align-items:baseline;gap:6px;font-size:calc(var(--fg-font-size,15px) * 0.9231);font-weight:600}
+.fg-guestWhere{font-size:calc(var(--fg-font-size,15px) * 0.7692);line-height:calc(var(--fg-font-size,15px) * 1.1538);color:var(--dsw-alias-label-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .fg-achs{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px}
 .fg-ach{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--dsw-alias-border-l1);border-radius:12px;background:var(--dsw-alias-bg-layer-1);min-width:0}
 .fg-ach[data-state="ready"]{border-color:var(--dsw-alias-state-success-primary)}
 .fg-ach[data-state="claimed"]{opacity:.6}
 .fg-achBody{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:2px}
-.fg-achName{font-size:12px;font-weight:600}
-.fg-achDesc{font-size:11px;line-height:16px;color:var(--dsw-alias-label-secondary)}
+.fg-achName{font-size:calc(var(--fg-font-size,15px) * 0.9231);font-weight:600}
+.fg-achDesc{font-size:calc(var(--fg-font-size,15px) * 0.8462);line-height:calc(var(--fg-font-size,15px) * 1.2308);color:var(--dsw-alias-label-secondary)}
 .fg-achMeter{flex:1 1 auto}
 .fg-footer{display:flex;align-items:flex-start;justify-content:flex-end;gap:16px;flex-wrap:wrap;padding-top:12px;border-top:1px solid var(--dsw-alias-border-l1)}
+.fg-footer .fg-save{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-right:auto}
+.fg-fileInput{display:none}
+.fg-savePending{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 12px;border:1px solid var(--dsw-alias-border-l2);border-radius:10px;background:var(--dsw-alias-bg-layer-1)}
+.fg-saveAsking{font-size:calc(var(--fg-font-size,15px) * 0.9231);color:var(--dsw-alias-label-secondary)}
 @media (prefers-reduced-motion:reduce){.fg-plant,.fg-sparkle,.fg-mote,.fg-haloRing,.fg-visitor,.fg-glow{animation:none}.fg-sparkle{opacity:.85}.fg-meterFill{transition:none}.fg-caret{transition:none}}
 `
 
@@ -7041,14 +7757,14 @@ function specialTraitArt(ink, traitId, headY = HEAD_Y) {
         }, GardenView))
       },
       /** Static pieces exported for layout tests only; the runtime never reads them. */
-      __components: { GardenView, FlowerArt, BloomPreview, VisitorArt, GardenActivities, VisitorPreview, GardenEcology, SpeciesPurpose, SpecialCommissionBoard, SpecialVisitorArt },
+      __components: { RewardDialog, InventoryDialog, InventoryContents, GardenView, FlowerArt, BloomPreview, VisitorArt, GardenActivities, VisitorPreview, GardenEcology, SpeciesPurpose, SpecialCommissionBoard, SpecialVisitorArt, ScenePanorama, DiscoveryCard },
       __traits: TRAITS,
       /** Dictionaries exported so tests render with the shipped copy. */
       __dicts: { zh, en },
       /** Pure game transitions and tuning, exported for unit tests only. */
       __game: {
-        ...ECOLOGY_API, ECO_PROFILES, VISITOR_INFO, studyLevel,
-        specialCommissions, commissionState, acceptCommission, commissionProgress, completeCommission, sanitizeCommissions, specialVisitorEligible,
+        ...ECOLOGY_API, inventoryCount, rewardForChange, RESEARCH_BRANCHES, RESEARCH_OFFERS, sanitizeResearch, researchLevel, researchFee, researchCost, upgradeResearch, exchangeResearch, hybridChance, ECO_PROFILES, VISITOR_INFO, studyLevel, GARDEN_TABS, sanitizeUi, dayPeriod, gardenClock,
+        discoveryItems, recordDiscoveries, sanitizeDiscoveries, specialCommissions, commissionState, acceptCommission, commissionProgress, completeCommission, sanitizeCommissions, specialVisitorEligible,
         SCENES, SPECIES, CODEX_ENTRIES, HIDDEN_PAL, UNLOCK_COSTS, XP_PER_LEVEL, PLOT_COUNT,
         START_COINS, DRY_SHARE, BASKET_CAPACITY, ORDER_SLOTS, WEATHER_MS, ITEMS, SPRINKLER_MS, CHARM_BONUS,
         freshState, sanitize, advancePlot, advanceState, plantAt, waterAt, harvestAt, unlockAt,
@@ -7066,6 +7782,7 @@ function specialTraitArt(ink, traitId, headY = HEAD_Y) {
         isPlainBloom, isWarm, showAt, showEntry, showAccepts, showPoints, exhibit,
         visitorAt, greetVisitor, visitBucket, isNight, waterAll, featuredSpecies, salePrice,
         achievementValue, achievementReady, claimAchievement,
+        exportSave, importSave, SAVE_FORMAT, SAVE_VERSION,
       },
       __css: CSS,
     }

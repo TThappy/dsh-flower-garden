@@ -64,11 +64,11 @@ const night = new Date(2026, 0, 1, 23, 30, 0).getTime()
 const noon = new Date(2026, 0, 1, 12, 0, 0).getTime()
 
 console.log('scenes and species')
-check('four scenes', game.SCENES.length === 4)
-check('forty-five species', game.SPECIES.length === 45)
+check('six scenes', game.SCENES.length === 6)
+check('fifty-three species', game.SPECIES.length === 53)
 check('every species belongs to exactly one scene', game.SPECIES.every(species => game.SCENES.filter(scene => scene.species.includes(species.id)).length === 1))
-check('every scene starts with at least four species', game.SCENES.every(scene => scene.species.length >= 5))
-check('ids are unique', new Set(game.SPECIES.map(species => species.id)).size === 45)
+check('every scene has at least four species', game.SCENES.every(scene => scene.species.length >= 4))
+check('ids are unique', new Set(game.SPECIES.map(species => species.id)).size === 53)
 check('each species names a drawing and a foliage', game.SPECIES.every(species => typeof species.head === 'string' && typeof species.leaf === 'string'))
 check('each species has a palette', game.SPECIES.every(species => typeof species.pal.petal === 'string'))
 check('every species has positive prices and pays back its seed', game.SPECIES.every(species => species.cost > 0 && species.sell > 0 && species.sell > species.cost))
@@ -77,16 +77,21 @@ check('codex covers base, second colour and hidden', game.CODEX_ENTRIES.length =
 check('scenes cost more as they go', game.SCENES[0].cost === 0
   && game.SCENES[1].cost < game.SCENES[2].cost
   && game.SCENES[2].cost < game.SCENES[3].cost)
+check('new regions contain eight species', game.sceneOf('woodland').species.length === 4 && game.sceneOf('desert').species.length === 4 && game.sceneOf('woodland').species.concat(game.sceneOf('desert').species).every(id => byId(id).head && byId(id).leaf))
+check('every species has a valid ecology profile', game.SPECIES.every(species => game.ecoProfile(species.id) !== null))
 
 console.log('fresh state')
 const start = game.freshState(1000)
 check('starts with 25 coins', start.coins === 25)
 check('opens on the meadow', start.scene === 'meadow')
-check('every scene exists', Object.keys(start.scenes).length === 4)
+check('every scene exists', Object.keys(start.scenes).length === game.SCENES.length)
 check('only the meadow is open', start.scenes.meadow.unlocked === 3
   && start.scenes.snow.unlocked === 0
   && start.scenes.volcano.unlocked === 0
-  && start.scenes.lake.unlocked === 0)
+  && start.scenes.lake.unlocked === 0
+  && start.scenes.woodland.unlocked === 0
+  && start.scenes.desert.unlocked === 0)
+check('five non-meadow regions start locked', game.SCENES.filter(scene => scene.id !== 'meadow').every(scene => start.scenes[scene.id].unlocked === 0))
 check('six empty plots per scene', start.scenes.meadow.plots.length === 6 && start.scenes.meadow.plots.every(plot => plot === null))
 check('empty basket', start.basket.length === 0)
 check('two orders are waiting', start.orders.length === game.ORDER_SLOTS)
@@ -560,6 +565,17 @@ check('v4 saves round-trip a composite specimen', savedV4.specimens['daisy:base:
 check('invalid hybrid and curiosity keys are dropped', savedV4.seeds['daisy~nope'] === undefined && savedV4.hybrids['daisy~daisy'] === undefined && savedV4.exotics['daisy:nope'] === undefined)
 check('legacy saves gain v4 defaults', game.sanitize({ v: 3, coins: 9, lastTick: 1 }, 2).v === 4 && game.sanitize({ v: 3, coins: 9, lastTick: 1 }, 2).ribbons === 0)
 
+console.log('save files leave the browser')
+const exportedSave = game.exportSave(savedV4, 200)
+check('a save file names its format and versions', exportedSave.format === game.SAVE_FORMAT && exportedSave.saveVersion === game.SAVE_VERSION && exportedSave.stateVersion === 4 && exportedSave.exportedAt === new Date(200).toISOString())
+const reimported = game.importSave(JSON.parse(JSON.stringify(exportedSave)), 300)
+check('an exported garden imports back intact', reimported !== null && reimported.coins === 77 && reimported.ribbons === 3 && reimported.scenes.meadow.soil[0] === 42 && reimported.specimens['daisy:base:twin~tulip'].dna === 13579)
+check('an imported garden is a copy of the file', reimported !== savedV4 && reimported.scenes !== savedV4.scenes)
+check('a bare garden state imports without the envelope', game.importSave({ ...savedV4 }, 300)?.coins === 77)
+check('imports reject junk instead of wiping the garden', game.importSave(null, 300) === null && game.importSave([], 300) === null && game.importSave('garden', 300) === null && game.importSave({ format: game.SAVE_FORMAT }, 300) === null && game.importSave({ v: 4 }, 300) === null && game.importSave({ v: 4, scenes: {} }, 300) !== null)
+check('imports reject a garden from a newer build', game.importSave({ ...exportedSave, garden: { ...savedV4, v: 99 } }, 300) === null)
+check('imports still accept a legacy v3 garden', game.importSave({ v: 3, coins: 9, lastTick: 1 }, 300)?.coins === 9)
+
 console.log('garden ecology and resident flowers')
 const ecologyNow = new Date(2026, 0, 2, 12, 0, 0).getTime()
 const residentPlot = { species: 'daisy', growthMs: growMs, moisture: 100, dried: false, dna: 86420 }
@@ -625,8 +641,16 @@ const sanitizedEcology = game.sanitizeEcology({ period: game.ecologyPeriod(ecolo
 check('ecology sanitization filters unknown observations and visitors', sanitizedEcology.observed.length === 1 && sanitizedEcology.visitors.length === 1)
 const nextPeriodEcology = game.sanitizeEcology({ period: game.ecologyPeriod(ecologyNow), observed: ['daisy'], visitors: ['bee'], claimed: ['eco-1'] }, ecologyNow + game.ECO_PERIOD_MS)
 check('cross-period ecology sanitization clears old progress', nextPeriodEcology.observed.length === 0 && nextPeriodEcology.visitors.length === 0 && nextPeriodEcology.claimed.length === 0)
-check('all species have valid ecology profiles', game.SPECIES.length === 45 && game.SPECIES.every(species => game.ecoProfile(species.id) !== null))
+check('all species have valid ecology profiles', game.SPECIES.length === 53 && game.SPECIES.every(species => game.ecoProfile(species.id) !== null))
 check('all thirteen visitors have complete field-guide metadata', game.VISITORS.length === 13 && game.VISITORS.every(visitor => ['latin', 'role', 'source', 'en', 'zh'].every(field => game.VISITOR_INFO[visitor.id]?.[field] !== undefined)))
+console.log('ui save and local garden clock')
+check('ui sanitizer preserves valid tab and display settings', JSON.stringify(game.sanitizeUi({ tab: 'basket', fontSize: 19, font: 'serif' })) === JSON.stringify({ tab: 'basket', fontSize: 19, font: 'serif' }))
+check('ui sanitizer falls back invalid values', JSON.stringify(game.sanitizeUi({ tab: 'nope', fontSize: 14, font: 'comic' })) === JSON.stringify({ tab: 'garden', fontSize: 15, font: 'system' }))
+check('garden tabs expose nine stable sections', game.GARDEN_TABS.length === 9 && game.GARDEN_TABS[0] === 'garden' && game.GARDEN_TABS[8] === 'settings')
+check('day periods honor every boundary', [0, 4, 5, 6, 7, 10, 11, 13, 14, 16, 17, 18, 19, 23].map(hour => game.dayPeriod(new Date(2026, 0, 1, hour).getTime())).join(',') === 'night,night,dawn,dawn,morning,morning,noon,noon,afternoon,afternoon,dusk,dusk,night,night')
+const localClockAt = new Date(2026, 6, 8, 17, 23, 41).getTime()
+const localClock = game.gardenClock(localClockAt)
+check('garden clock follows local device date and time', localClock.time === '17:23:41' && localClock.date === '2026-07-08' && localClock.period === 'dusk' && localClock.zone === Intl.DateTimeFormat().resolvedOptions().timeZone)
 
 console.log('special commissions, visitors and traits')
 const specialNow = ecologyNow
@@ -675,6 +699,70 @@ const traitPlot = { visits: 3, fed: 2, pollinated: true, guardianVisits: 2, spec
 const traits = game.traitCauses(traitPlot, 'meadow', 'rain', specialNow)
 check('new curiosity conditions are included', traits.includes('fasciated') && traits.includes('double') && traits.includes('leafy'))
 check('radial curiosity is limited to bilateral host species', game.traitCauses({ ...traitPlot, pollinated: false }, 'meadow', 'clear', specialNow).includes('radial') === false && game.traitCauses({ ...traitPlot, species: 'pansy' }, 'meadow', 'clear', specialNow).includes('radial') === true)
+
+console.log('research seals and permanent branches')
+const researchBase = { ...start, researchSeals: 3 }
+const careI = game.upgradeResearch(researchBase, 'care')
+check('a first research tier costs three seals', careI !== null && careI.researchSeals === 0 && careI.researchSpent === 3)
+check('research refuses a second branch without seals', game.upgradeResearch(careI, 'ecology') === null)
+check('research refuses an unknown branch', game.upgradeResearch({ ...researchBase, researchSeals: 99 }, 'weather') === null)
+const careII = game.upgradeResearch({ ...careI, researchSeals: 6 }, 'care')
+check('the second tier costs six seals', careII !== null && game.researchLevel(careII, 'care') === 2)
+check('a maxed branch cannot be upgraded again', game.upgradeResearch({ ...careII, researchSeals: 99 }, 'care') === null)
+check('tier savings reach twenty and forty percent', near(game.researchFee(careI, daisy) / (8 + Math.ceil(daisy.cost * .25)), 0.8) && near(game.researchFee(careII, daisy) / (8 + Math.ceil(daisy.cost * .25)), 0.6))
+check('rebloom fees follow the same care discount and round up', game.researchFee(careII, daisy, true) === Math.ceil((10 + Math.ceil(daisy.cost * .4)) * 0.6))
+const exchange = game.exchangeResearch({ ...researchBase, researchSeals: 2 }, 'sprinkler')
+check('an exchange spends seals and stocks the bag', exchange !== null && exchange.researchSeals === 0 && exchange.bag.sprinkler === 1)
+check('an exchange refuses unknown offers and short balances', game.exchangeResearch(researchBase, 'rose') === null && game.exchangeResearch({ ...researchBase, researchSeals: 0 }, 'charm') === null)
+check('spent seals survive a reload', game.sanitize(JSON.parse(JSON.stringify(exchange)), 5).researchSeals === 0 && game.sanitize(JSON.parse(JSON.stringify(exchange)), 5).researchSpent === 2)
+check('a legacy save starts with no research levels', game.sanitize({ coins: 10 }, 5).research.care === 0)
+const carePlot = { species: 'daisy', growthMs: growMs, moisture: 90, dried: false, resident: true, observedAt: 1 }
+const careGarden = { ...careII, coins: game.researchFee(careII, daisy), scenes: { ...careII.scenes, meadow: { ...careII.scenes.meadow, plots: [carePlot, null, null, null, null, null] } } }
+check('a care tier lets an observant keeper afford the observation', game.observeAt(careGarden, 'meadow', 0, specialNow) !== null)
+check('a care tier discounts the rebloom fee', game.rebloomAt({ ...careGarden, coins: game.researchFee(careII, daisy, true) }, 'meadow', 0, specialNow) !== null)
+const ecologyBonus = game.gardenEcology({ ...start, research: { care: 0, ecology: 2, breeding: 0 } }, specialNow).visitorBonus
+check('ecology tiers add visitor chance', near(ecologyBonus, game.gardenEcology(start, specialNow).visitorBonus + 0.04))
+check('breeding tiers add hybrid chance', near(game.hybridChance({ ...start, research: { care: 0, ecology: 0, breeding: 2 } }) - game.hybridChance(start), 0.1))
+
+console.log('global rewards and supply inventory')
+const rewardT = (key,params={}) => (plugin.__dicts.en[key]??key).replace(/\{(\w+)\}/g,(_,name)=>params[name]??`{${name}}`)
+const supplyBefore = {...researchBase, bag:{fertilizer:4,compost:0,sprinkler:0,charm:0}, seeds:{'daisy~tulip':2}}
+const supplyAfter = game.exchangeResearch(supplyBefore, 'fertilizer')
+const exchangeReward = game.rewardForChange(supplyBefore,supplyAfter,rewardT)
+check('exchange reward includes the gain and resulting inventory', exchangeReward.spent === 1 && exchangeReward.entries.length === 1 && exchangeReward.entries[0].amount === '+2' && exchangeReward.entries[0].owned === 6)
+check('inventory includes supplies and hybrid seed quantities', game.inventoryCount(supplyAfter) === 8)
+const upgradeReward = game.rewardForChange(researchBase,careI,rewardT)
+check('permanent research reward includes the unlocked effect', upgradeReward.research === true && upgradeReward.spent === 3 && upgradeReward.entries[0].effect.includes('20%'))
+check('care actions without a reward do not trigger a reward dialog', game.rewardForChange(supplyBefore,{...supplyBefore,coins:supplyBefore.coins-1},rewardT) === null)
+check('opening reward data never changes resources', supplyBefore.bag.fertilizer === 4 && supplyAfter.bag.fertilizer === 6 && supplyAfter.researchSeals === 2)
+const breedingReward = game.rewardForChange(breedingObserved,breedingDone,rewardT)
+check('special letter reward includes seeds, XP and reputation', ['daisy~tulip','xp','patronage','fertilizer','researchSeals'].every(id=>breedingReward.entries.some(entry=>entry.id===id)))
+
+console.log('discovery journal')
+const discoveryBefore = { ...game.freshState(specialNow), specimens: {}, visitors: {}, seeds: {} }
+const discoveryAfterRetain = { ...discoveryBefore, scenes: { ...discoveryBefore.scenes, meadow: { ...discoveryBefore.scenes.meadow, plots: [{ species: 'daisy', growthMs: growMs, moisture: 100, dried: false, dna: 2468 }, null, null, null, null, null] } } }
+const retainedItems = game.discoveryItems(discoveryBefore, discoveryAfterRetain, 'retain', 'meadow', 0)
+check('first retained flower creates a kept discovery with DNA', retainedItems.length === 1 && retainedItems[0].kept === true && retainedItems[0].dna === 2468)
+const repeatedBefore = { ...discoveryBefore, specimens: { 'daisy:base': { species: 'daisy', variant: 'base', dna: 2468, count: 1 } }, basket: [{ species: 'daisy', variant: 'base', dna: 2468 }] }
+const repeatedAfter = { ...discoveryAfterRetain, specimens: { 'daisy:base': { species: 'daisy', variant: 'base', dna: 2468, count: 2 } }, basket: [{ species: 'daisy', variant: 'base', dna: 2468 }, { species: 'daisy', variant: 'base', dna: 2468 }] }
+const repeatedItems = game.discoveryItems(repeatedBefore, repeatedAfter, 'harvest', 'meadow', 0)
+check('ordinary repeated flowers do not create discoveries', repeatedItems.length === 0)
+const specialFlowerAfter = { ...discoveryAfterRetain, scenes: { ...discoveryAfterRetain.scenes, meadow: { ...discoveryAfterRetain.scenes.meadow, plots: [{ ...discoveryAfterRetain.scenes.meadow.plots[0], variant: 'base', trait: 'double', tint: 'tulip' }, null, null, null, null, null] } } }
+const specialFlowerItems = game.discoveryItems(discoveryBefore, specialFlowerAfter, 'retain', 'meadow', 0)
+check('trait and tint discoveries retain full flower metadata', specialFlowerItems.length === 1 && specialFlowerItems[0].trait === 'double' && specialFlowerItems[0].tint === 'tulip' && specialFlowerItems[0].dna === 2468)
+const seedAfter = { ...discoveryAfterRetain, lastBred: 'daisy~tulip', seeds: { 'daisy~tulip': 1 } }
+check('hybrid seed discoveries preserve the seed type', game.discoveryItems(discoveryBefore, seedAfter, 'harvest', 'meadow', 0).some(item => item.type === 'seed' && item.tint === 'tulip'))
+const visitorBefore = { ...discoveryBefore, visitors: { bee: 1 } }
+const visitorAfter = { ...visitorBefore, visitors: { bee: 2, bumblebee: 1 } }
+const visitorItems = game.discoveryItems(visitorBefore, visitorAfter, 'visitor', 'meadow', 0)
+check('first visitors and special visitors create discoveries', visitorItems.length === 1 && visitorItems[0].visitor === 'bumblebee')
+const recordedDiscovery = game.recordDiscoveries(discoveryBefore, retainedItems, specialNow)
+check('recording discoveries does not change game resources', recordedDiscovery.coins === discoveryBefore.coins && recordedDiscovery.basket.length === discoveryBefore.basket.length && recordedDiscovery.discoverySeq === 1)
+const fortyOne = Array.from({ length: 41 }, (_, index) => ({ id: index + 1, at: specialNow + index, items: [{ type: 'flower', species: 'daisy', variant: 'base', dna: index }] }))
+const savedDiscoveries = game.sanitizeDiscoveries([{ id: 99, at: -1, items: [{ type: 'flower', species: 'daisy' }] }, ...fortyOne])
+check('discovery sanitization keeps the latest forty valid entries', savedDiscoveries.length === 40 && savedDiscoveries[0].id === 2 && savedDiscoveries.every(entry => entry.items[0].dna !== undefined))
+const roundTripDiscoveries = game.sanitizeDiscoveries(recordedDiscovery.discoveries)
+check('discovery records round-trip with DNA and kept metadata', roundTripDiscoveries.length === 1 && roundTripDiscoveries[0].items[0].dna === 2468 && roundTripDiscoveries[0].items[0].kept === true)
 
 console.log('achievements')
 const firstBloom = game.ACHIEVEMENTS.find(entry => entry.id === 'firstBloom')
