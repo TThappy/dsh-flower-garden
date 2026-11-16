@@ -50,7 +50,7 @@ const plugin = definition.factory(name => {
   return React
 })
 const game = plugin.__game
-const { GardenView, FlowerArt, BloomPreview, VisitorArt, GardenActivities } = plugin.__components
+const { GardenView, FlowerArt, BloomPreview, VisitorArt, GardenActivities, VisitorPreview, GardenEcology, SpeciesPurpose, SpecialCommissionBoard } = plugin.__components
 const DICT = plugin.__dicts.en
 const ZH_DICT = plugin.__dicts.zh
 
@@ -108,8 +108,8 @@ check('ships its stylesheet', html.includes('.fg-view{'))
 check('explains the reset', body.includes('Reset garden'))
 check('lists the shop while empty', (body.match(/class="fg-item"/g) ?? []).length === 5)
 check('names the market favourite', body.includes('Market today') && body.includes('sells +50%'))
-check('lists every visitor as unseen', (body.match(/class="fg-guest" data-met="false"/g) ?? []).length === game.VISITORS.length)
-check('explains the visitors', body.includes('Open flowers attract visitors'))
+check('lists every visitor as unseen', (body.match(/class="fg-guest"[^>]*data-met="false"/g) ?? []).length === game.VISITORS.length)
+check('explains the visitors', body.includes('Visitor field guide') && (body.match(/class="fg-guest"/g) ?? []).length === game.VISITORS.length)
 check('the achievements start collapsed', body.includes('id="fg-ach-toggle"') && !body.includes('class="fg-ach"'))
 check('counts the achievements', body.includes(`0/${game.ACHIEVEMENTS.length}`))
 check('every translation key resolves', !UNRESOLVED.test(body), (UNRESOLVED.exec(body) ?? [])[1])
@@ -188,6 +188,21 @@ const activities = renderToStaticMarkup(React.createElement(GardenActivities, {
 check('renders the flower show activity panel', activities.includes('aria-label="Flower show"') && activities.includes('Flower show'))
 check('renders the garden works activity panel', activities.includes('aria-label="Garden works"') && activities.includes('Garden works'))
 check('activity cards carry stable order semantics', (activities.match(/class="fg-order"/g) ?? []).length >= 3)
+const specialBoard = renderToStaticMarkup(React.createElement(SpecialCommissionBoard, {
+  state: game.sanitize(stocked, Date.now()), t, clock: Date.now(), onChange() {}, onSpecies() {}, onVisitor() {},
+}))
+check('renders four special commission offers', specialBoard.includes('id="fg-special-commissions"') && (specialBoard.match(/data-commission="/g) ?? []).length === 4)
+check('special board exposes period-stable offer controls', specialBoard.includes('commission.accept') || specialBoard.includes('Accept'))
+const ecologyPanel = renderToStaticMarkup(React.createElement(GardenEcology, {
+  state: game.sanitize(stocked, Date.now()), t, clock: Date.now(), onChange() {}, onSpecies() {},
+}))
+check('renders the ecology panel and projects', ecologyPanel.includes('id="fg-ecology"') && ecologyPanel.includes('ecoProjects'))
+const visitorPreview = renderToStaticMarkup(React.createElement(VisitorPreview, { visitorId: 'bee', state: stocked, t, onClose() {} }))
+check('visitor preview uses a native dialog and source link', visitorPreview.startsWith('<dialog') && visitorPreview.includes('fg-source') && visitorPreview.includes('Apis spp.'))
+const purpose = renderToStaticMarkup(React.createElement(SpeciesPurpose, { speciesId: 'daisy', observations: 3, t }))
+check('species purpose shows role and study level', purpose.includes('fg-purpose') && purpose.includes('Research records: 3'))
+check('every species has an ecology profile', game.SPECIES.every(species => game.ecoProfile(species.id) !== null))
+check('visitor info covers every visitor', game.VISITORS.every(visitor => game.VISITOR_INFO[visitor.id] && typeof game.VISITOR_INFO[visitor.id].role === 'string'))
 
 console.log('visitors, pollination and the water-all button')
 // Find a moment when a visitor is on plot #1, then render at exactly that moment.

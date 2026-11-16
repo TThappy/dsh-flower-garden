@@ -1,8 +1,8 @@
 {
   "name": "dsh-flower-garden",
-  "version": "2.4.0",
+  "version": "2.6.0",
   "private": true,
-  "description": "Flower garden: a DeepSeek Harness session-view plugin with individual plants, hybrid breeding, curiosities, soil care, themed flower shows and a specimen collection.",
+  "description": "A living flower garden: 45 flowers, 13 visitors, 12 curiosities, special commissions, resident plants and recurring ecological studies.",
   "type": "module",
   "exports": {
     ".": "./index.js",

@@ -5,7 +5,7 @@
  * as a tab beside Chat and Trajectory, and paints the flower-growing game inside
  * the session body.
  *
- * Four scenes (meadow, snowfield, volcanic crater, lakeside) hold twenty-five
+ * Four scenes (meadow, snowfield, volcanic crater, lakeside) hold forty-five
  * species, each drawn from its real morphology (see the `head` field and the
  * per-species art section). Every species has a codex entry per colour variant:
  * a plain bloom, a natural second colour on odd-numbered plots, and a rare gold
@@ -34,7 +34,7 @@ window.__ModuleLoader__.load({
     const zh = {
       'view.label': '花园',
       'view.title': '我的花园',
-      'header.subtitle': '草原、雪原、火山口、湖畔四块地，二十五种花；每块地的花不一样，天气不一样，来访的客人也不一样。',
+      'header.subtitle': '草原、雪原、火山口、湖畔四块地，四十五种花；每块地的花不一样，天气不一样，来访的客人也不一样。',
       'stat.coins': '金币',
       'stat.level': '等级',
       'stat.levelValue': '等级 {n}',
@@ -238,7 +238,7 @@ window.__ModuleLoader__.load({
       'order.empty': '暂时没有委托，交付一束后会出现新的。',
       'order.goldOnly': '委托只用原色/别色交付，金花留给卖出。',
       'hint.title': '小贴士',
-      'hint.body': '花只在土壤湿润时生长，浇透一次大约能长到七成半；四块地同时生长，切换不会停。离开页面期间最多补算 12 小时（土壤会干，干了就停止生长）。收获进花篮：卖原色最省事，凑花束交付更划算；仙品留着卖，是 3 倍价。开花后不急着收，等访客来授粉能多收一朵；今日花市点名的花多卖五成。同一种花别一口气卖太多，也别在同一块地里连着种——会跌价、会伤地。',
+      'hint.body': '四块花地同时生长，离线最多补算 12 小时。花开以后，可以留园长养，观察同一株的变化、搭配生态角色、完成周期考察；也可以收获、育种或送展。种植指南和访客图鉴都能点击查看，每一株都可以有自己的位置。',
       'market.title': '今日花市',
       'market.bonus': '卖价 +{n}%',
       'market.note': '今日花市：{flower}卖价 +{n}%。每天零点换一种，只在已解锁花地的花里选；花束委托的报酬不受影响。',
@@ -246,7 +246,7 @@ window.__ModuleLoader__.load({
       'plot.waterAll': '全部浇水 · {n}',
       'plot.pollinated': '已授粉 · 收获 ×2',
       'visitor.section': '访客',
-      'visitor.hint': '开着的花会引来访客。点它打个招呼：拿一点小费，这朵花也被授粉，收获时多得一朵。先别急着收，等等看谁会来。',
+      'visitor.hint': '开花引来访客：传粉者授粉、护园者恢复地力、水岸访客补湿度；所有遇见都留下生态足迹。点击卡片查看图鉴。',
       'visitor.greet': '和{name}打招呼',
       'visitor.met': '{name}来过了：金币 +{coins}，{flower}已授粉，收获时多得一朵',
       'visitor.again': '{name}也来了：金币 +{coins}',
@@ -458,7 +458,7 @@ window.__ModuleLoader__.load({
     const en = {
       'view.label': 'Garden',
       'view.title': 'My garden',
-      'header.subtitle': 'Four grounds — meadow, snowfield, crater, lakeside — and twenty-five flowers, each ground with its own species, sky and visitors.',
+      'header.subtitle': 'Four grounds — meadow, snowfield, crater, lakeside — and forty-five flowers, each ground with its own species, sky and visitors.',
       'stat.coins': 'Coins',
       'stat.level': 'Level',
       'stat.levelValue': 'Lv.{n}',
@@ -662,7 +662,7 @@ window.__ModuleLoader__.load({
       'order.empty': 'No order right now; a new one appears after each delivery.',
       'order.goldOnly': 'Bouquets take plain or second-colour blooms; keep the gold for selling.',
       'hint.title': 'Tip',
-      'hint.body': 'Flowers grow only while the soil is wet, and one watering carries them about three quarters of the way. All four grounds grow at once, and switching between them never pauses anything. Away from the tab the garden replays up to 12 hours — the soil still dries, and growth stops when it does. Harvested blooms go to the basket: sell them, or fill a bouquet order for a better price; keep the spirit blooms, they sell for 3×. Leave an open flower a while and a visitor may pollinate it for a second bloom; the market’s flower of the day sells for half as much again. Do not flood the market with one flower or grow it twice running in one plot: the price drops and the soil tires.',
+      'hint.body': 'All four grounds grow together, with up to 12 hours of offline progress. Keep a bloomed plant alive, observe its changes, build a diverse border and complete recurring field studies; or harvest, breed and exhibit it. Open the flower and visitor guides to find a place for every plant.',
       'market.title': 'Market today',
       'market.bonus': 'sells +{n}%',
       'market.note': 'Market today: {flower} sells for +{n}%. It changes at midnight and is always a flower from a ground you have opened; bouquet rewards are not affected.',
@@ -670,7 +670,7 @@ window.__ModuleLoader__.load({
       'plot.waterAll': 'Water all · {n}',
       'plot.pollinated': 'Pollinated · harvest ×2',
       'visitor.section': 'Visitors',
-      'visitor.hint': 'Open flowers attract visitors. Click one to greet it: it leaves a small tip and pollinates the flower, which then gives a second bloom at harvest. Wait a little before picking and see who turns up.',
+      'visitor.hint': 'Open flowers attract pollinators, garden guardians and waterside visitors with different game effects. Every encounter makes an ecological record. Click a card to open its field guide.',
       'visitor.greet': 'Greet the {name}',
       'visitor.met': 'A {name} came by: +{coins} coins, and the {flower} is pollinated — one more bloom at harvest',
       'visitor.again': 'A {name} dropped in too: +{coins} coins',
@@ -880,6 +880,459 @@ window.__ModuleLoader__.load({
     }
 
     // ---------------------------------------------------------------------
+Object.assign(zh, {
+  'species.cosmos': '波斯菊', 'latin.cosmos': 'Cosmos bipinnatus', 'codex.cosmos': '轻盈、和谐与自在', 'fact.cosmos': '细裂的叶片像羽毛；花盘外缘的舌状花常有缺刻。',
+  'species.zinnia': '百日草', 'latin.zinnia': 'Zinnia elegans', 'codex.zinnia': '长久的陪伴与热情', 'fact.zinnia': '叶片对生，花序顶部的小管状花围绕花心逐次开放。',
+  'species.cornflower': '矢车菊', 'latin.cornflower': 'Centaurea cyanus', 'codex.cornflower': '清澈与温柔的相遇', 'fact.cornflower': '花序外围有扩大的漏斗状小花，花序下方有层叠的总苞片。',
+  'species.calendula': '金盏花', 'latin.calendula': 'Calendula officinalis', 'codex.calendula': '温暖、守候与日光', 'fact.calendula': '金黄至橙色的舌状花围着中央小花，叶片较宽而略带绒毛。',
+  'species.snapdragon': '金鱼草', 'latin.snapdragon': 'Antirrhinum majus', 'codex.snapdragon': '活力与好奇心', 'fact.snapdragon': '两唇形的花冠组成直立花序，花口闭合，形似张嘴的小鱼。',
+  'species.crocus': '春番红花', 'latin.crocus': 'Crocus vernus', 'codex.crocus': '春天的第一声问候', 'fact.crocus': '花从地下球茎抽出，细长叶片有白色中线；并非采收香料藏红花的物种。',
+  'species.daffodil': '黄水仙', 'latin.daffodil': 'Narcissus pseudonarcissus', 'codex.daffodil': '新生与明亮的希望', 'fact.daffodil': '六枚花被片围着喇叭状副花冠，叶片细长呈带状。',
+  'species.primrose': '欧洲报春', 'latin.primrose': 'Primula vulgaris', 'codex.primrose': '初春与新的开始', 'fact.primrose': '起皱的叶片形成基生莲座，花瓣末端常有浅缺刻。',
+  'species.pansy': '三色堇', 'latin.pansy': 'Viola tricolor', 'codex.pansy': '思念与细小的心意', 'fact.pansy': '五枚花瓣大小不同，花瓣上深色脉纹朝向花心。',
+  'species.bleedingheart': '荷包牡丹', 'latin.bleedingheart': 'Lamprocapnos spectabilis', 'codex.bleedingheart': '珍惜与柔软的牵挂', 'fact.bleedingheart': '拱形花梗上悬垂着心形花，内侧浅色花瓣伸出如小水滴。',
+  'species.hibiscus': '朱槿', 'latin.hibiscus': 'Hibiscus rosa-sinensis', 'codex.hibiscus': '热烈与当下的美好', 'fact.hibiscus': '五枚宽花瓣围绕突出花外的雄蕊柱，柱顶可见分枝的柱头。',
+  'species.birdofparadise': '鹤望兰', 'latin.birdofparadise': 'Strelitzia reginae', 'codex.birdofparadise': '自由与远方', 'fact.birdofparadise': '舟状佛焰苞托着橙色萼片和蓝色花瓣，叶片宽大而长柄。',
+  'species.gazania': '勋章菊', 'latin.gazania': 'Gazania rigens', 'codex.gazania': '勇气与阳光', 'fact.gazania': '舌状花基部常有深色斑，花序在充足日照下展开。',
+  'species.redhotpoker': '火炬花', 'latin.redhotpoker': 'Kniphofia uvaria', 'codex.redhotpoker': '向上的热情', 'fact.redhotpoker': '密集管状小花形成火炬形花序，下部开放小花与上部花苞常呈不同色调。',
+  'species.desertrose': '沙漠玫瑰', 'latin.desertrose': 'Adenium obesum', 'codex.desertrose': '坚韧与积蓄的生命力', 'fact.desertrose': '膨大的茎基能够储水，枝端开漏斗状花；它不是蔷薇属的玫瑰。',
+  'species.marshmarigold': '驴蹄草', 'latin.marshmarigold': 'Caltha palustris', 'codex.marshmarigold': '湿地里的明亮问候', 'fact.marshmarigold': '常生于湿地，亮黄色的花被是萼片，叶片呈心形至肾形。',
+  'species.forgetmenot': '沼生勿忘草', 'latin.forgetmenot': 'Myosotis scorpioides', 'codex.forgetmenot': '记得与长久的牵念', 'fact.forgetmenot': '浅蓝色五裂小花有黄色花眼，弯卷的花序随开花逐渐伸展。',
+  'species.astilbe': '落新妇', 'latin.astilbe': 'Astilbe chinensis', 'codex.astilbe': '温柔的陪伴', 'fact.astilbe': '许多细小花聚成羽毛状圆锥花序，复叶的边缘带锯齿。',
+  'species.cardinalflower': '鲜红半边莲', 'latin.cardinalflower': 'Lobelia cardinalis', 'codex.cardinalflower': '鲜明的热情', 'fact.cardinalflower': '管状红花具有两枚上裂片和三枚较显眼的下裂片，常见于湿润生境。',
+  'species.arrowhead': '欧洲慈姑', 'latin.arrowhead': 'Sagittaria sagittifolia', 'codex.arrowhead': '清净与向上的生长', 'fact.arrowhead': '挺水叶呈箭头状，白花有三枚花瓣，花序上的花常轮生排列。',
+})
+Object.assign(en, {
+  'species.cosmos': 'Garden cosmos', 'latin.cosmos': 'Cosmos bipinnatus', 'codex.cosmos': 'Lightness, harmony and freedom', 'fact.cosmos': 'Finely divided leaves look feathery; the outer ray florets often have notched tips.',
+  'species.zinnia': 'Common zinnia', 'latin.zinnia': 'Zinnia elegans', 'codex.zinnia': 'Lasting companionship and warmth', 'fact.zinnia': 'Opposite leaves sit below a flower head whose small disk florets open in succession.',
+  'species.cornflower': 'Cornflower', 'latin.cornflower': 'Centaurea cyanus', 'codex.cornflower': 'Clarity and a gentle meeting', 'fact.cornflower': 'Enlarged funnel-shaped outer florets surround the disk above overlapping involucral bracts.',
+  'species.calendula': 'Pot marigold', 'latin.calendula': 'Calendula officinalis', 'codex.calendula': 'Warmth, patience and sunlight', 'fact.calendula': 'Yellow to orange ray florets surround the disk; its broad leaves are slightly hairy.',
+  'species.snapdragon': 'Snapdragon', 'latin.snapdragon': 'Antirrhinum majus', 'codex.snapdragon': 'Energy and curiosity', 'fact.snapdragon': 'Closed, two-lipped corollas form an upright raceme, each resembling a small mouth.',
+  'species.crocus': 'Spring crocus', 'latin.crocus': 'Crocus vernus', 'codex.crocus': 'The first greeting of spring', 'fact.crocus': 'Flowers arise from a corm and narrow leaves have a white midline. This is not the saffron-producing species.',
+  'species.daffodil': 'Wild daffodil', 'latin.daffodil': 'Narcissus pseudonarcissus', 'codex.daffodil': 'Renewal and bright hope', 'fact.daffodil': 'Six tepals surround a trumpet-shaped corona above long, strap-like leaves.',
+  'species.primrose': 'Common primrose', 'latin.primrose': 'Primula vulgaris', 'codex.primrose': 'Early spring and beginnings', 'fact.primrose': 'Wrinkled leaves form a basal rosette; the pale petals often have a shallow notch.',
+  'species.pansy': 'Wild pansy', 'latin.pansy': 'Viola tricolor', 'codex.pansy': 'Remembrance and small kindnesses', 'fact.pansy': 'Five unequal petals carry dark veins that guide toward the flower centre.',
+  'species.bleedingheart': 'Bleeding heart', 'latin.bleedingheart': 'Lamprocapnos spectabilis', 'codex.bleedingheart': 'Tenderness and affection', 'fact.bleedingheart': 'Heart-shaped flowers hang from arching stems, with pale inner petals projecting like drops.',
+  'species.hibiscus': 'Chinese hibiscus', 'latin.hibiscus': 'Hibiscus rosa-sinensis', 'codex.hibiscus': 'Warmth and beauty in the moment', 'fact.hibiscus': 'Five broad petals surround a projecting staminal column topped by branching stigmas.',
+  'species.birdofparadise': 'Bird of paradise', 'latin.birdofparadise': 'Strelitzia reginae', 'codex.birdofparadise': 'Freedom and distant horizons', 'fact.birdofparadise': 'A boat-shaped spathe supports orange sepals and blue petals above broad, long-stalked leaves.',
+  'species.gazania': 'Treasure flower', 'latin.gazania': 'Gazania rigens', 'codex.gazania': 'Courage and sunshine', 'fact.gazania': 'Dark basal marks often ring the ray florets, and the heads open in strong sunlight.',
+  'species.redhotpoker': 'Red-hot poker', 'latin.redhotpoker': 'Kniphofia uvaria', 'codex.redhotpoker': 'An upward flame of energy', 'fact.redhotpoker': 'Dense tubular flowers make a torch-shaped raceme; lower open florets often differ in colour from upper buds.',
+  'species.desertrose': 'Desert rose', 'latin.desertrose': 'Adenium obesum', 'codex.desertrose': 'Resilience and stored strength', 'fact.desertrose': 'Its swollen stem base stores water, with funnel-shaped flowers near branch tips. It is not a true rose.',
+  'species.marshmarigold': 'Marsh marigold', 'latin.marshmarigold': 'Caltha palustris', 'codex.marshmarigold': 'A bright wetland greeting', 'fact.marshmarigold': 'A wetland plant with heart- to kidney-shaped leaves; its bright yellow floral parts are sepals.',
+  'species.forgetmenot': 'Water forget-me-not', 'latin.forgetmenot': 'Myosotis scorpioides', 'codex.forgetmenot': 'Remembrance and lasting affection', 'fact.forgetmenot': 'Five-lobed pale blue flowers have yellow eyes; curled flower clusters gradually uncoil as they bloom.',
+  'species.astilbe': 'Chinese astilbe', 'latin.astilbe': 'Astilbe chinensis', 'codex.astilbe': 'Gentle companionship', 'fact.astilbe': 'Many tiny flowers form feathery panicles above compound leaves with toothed margins.',
+  'species.cardinalflower': 'Cardinal flower', 'latin.cardinalflower': 'Lobelia cardinalis', 'codex.cardinalflower': 'Vivid enthusiasm', 'fact.cardinalflower': 'Red tubular flowers have two upper lobes and three prominent lower lobes; it favours moist habitats.',
+  'species.arrowhead': 'Arrowhead', 'latin.arrowhead': 'Sagittaria sagittifolia', 'codex.arrowhead': 'Clarity and upward growth', 'fact.arrowhead': 'Emergent leaves are arrow-shaped; its white flowers have three petals and occur in whorls.',
+})
+// Research-backed visitor copy. Game roles are abstractions, not claims of guaranteed effects.
+const VISITOR_INFO = {
+  bee: {
+    latin: 'Apis spp.', role: 'pollinator',
+    source: 'https://www.xerces.org/pollinator-conservation/about-pollinators',
+    zh: { diet: '花蜜与花粉。', habitat: '有花源和适宜巢址的环境；图中为蜜蜂属的概括形象。', relationship: '采食时可在花朵间携带花粉，是花园的传粉访客。', fact: '蜂类身体上的毛有助于收集和转移花粉；蜜蜂只是蜂类的一部分。' },
+    en: { diet: 'Nectar and pollen.', habitat: 'Flower-rich habitats with suitable nesting resources; the drawing represents honey bees generally.', relationship: 'Carries pollen between flowers while foraging, contributing to pollination.', fact: 'Hairs help bees collect and transfer pollen. Honey bees are only one part of bee diversity.' },
+  },
+  butterfly: {
+    latin: 'Pieris rapae', role: 'pollinator',
+    source: 'https://butterfly-conservation.org/butterflies/small-white',
+    zh: { diet: '成虫吸食花蜜；幼虫取食十字花科及旱金莲等寄主植物。', habitat: '花园、菜地及其他开放环境，白天访花。', relationship: '成虫是访花传粉者；保留幼虫寄主同样有助于完成它的生命周期。', fact: '菜粉蝶的白色前翅有较小的黑色翅尖与斑点，不要与体型较大的大菜粉蝶混淆。' },
+    en: { diet: 'Adults take nectar; caterpillars feed on brassicas, nasturtiums and other host plants.', habitat: 'Gardens, allotments and other open habitats; visits flowers by day.', relationship: 'Adults can transfer pollen. Suitable caterpillar host plants also support its life cycle.', fact: 'The Small White has small dark forewing tips and spots. It is distinct from the larger Large White.' },
+  },
+  ladybug: {
+    latin: 'Coccinella septempunctata', role: 'guardian',
+    source: 'https://www.rhs.org.uk/biodiversity/ladybirds',
+    zh: { diet: '主要捕食蚜虫。', habitat: '常见于有猎物的花园枝叶间。', relationship: '主要生态角色是捕食者，帮助维持食物网；游戏将它作为守护访客，不作为专职传粉者。', fact: '七星瓢虫成虫通常为红色鞘翅、七枚黑斑，体长约 5–8 毫米。不是所有瓢虫都具有同样食性。' },
+    en: { diet: 'Primarily aphids.', habitat: 'Often found on garden foliage where prey is available.', relationship: 'Primarily a predator in the food web; represented as a garden guardian rather than a dedicated pollinator.', fact: 'Seven-spot ladybirds are usually red with seven black spots and measure about 5–8 mm. Not all ladybirds share the same diet.' },
+  },
+  dragonfly: {
+    latin: 'Anisoptera', role: 'waterside',
+    source: 'https://british-dragonflies.org.uk/odonata/life-cycle-and-biology/',
+    zh: { diet: '幼虫捕食水中小动物；成虫捕捉飞行昆虫。', habitat: '池塘、河流、湿地及周边环境；晴好天气更容易观察成虫。', relationship: '不是传粉者。水边植物可供幼虫攀爬羽化，保留水陆交界栖地能支持它的生活。', fact: '蜻蜓没有蛹期，直接从水生幼虫羽化为成虫；水边茎叶上可能留下空的幼虫蜕皮。' },
+    en: { diet: 'Larvae hunt aquatic animals; adults catch flying insects.', habitat: 'Ponds, rivers, wetlands and surrounding habitats; adults are easier to observe in fine weather.', relationship: 'Not a pollinator. Waterside plants provide supports for emergence, linking aquatic and terrestrial habitat.', fact: 'Dragonflies have no pupal stage. An empty larval skin may remain on a waterside stem after emergence.' },
+  },
+  firefly: {
+    latin: 'Lampyridae', role: 'guardian',
+    source: 'https://www.xerces.org/endangered-species/fireflies/about',
+    zh: { diet: '许多幼虫捕食软体无脊椎动物；成虫食性随种类变化。', habitat: '许多种依赖湿润土壤、落叶或湿地；图中采用暮夜闪光型。', relationship: '本游戏不把萤火虫作为传粉者。保留湿润微生境、减少夜间光干扰，可作为暗夜生态观察目标。', fact: '萤火虫其实是甲虫。所有萤火虫幼虫都能发光，但并非所有种类的成虫都会发光或在夜间活动。' },
+    en: { diet: 'Many larvae prey on soft-bodied invertebrates; adult diets vary by species.', habitat: 'Many use moist soil, leaf litter or wetlands; this drawing represents a dusk- or night-flashing type.', relationship: 'Not treated as a pollinator here. Moist microhabitats and reduced light disturbance support dark-sky wildlife observation.', fact: 'Fireflies are beetles. Their larvae produce light, but not every species has glowing or night-active adults.' },
+  },
+  moth: {
+    latin: 'Sphingidae', role: 'pollinator',
+    source: 'https://www.xerces.org/pollinator-conservation/about-pollinators',
+    zh: { diet: '本图采用有长喙、吸食花蜜的天蛾类型；不同种幼虫需要不同寄主植物。', habitat: '有合适蜜源与幼虫寄主的环境；游戏采用夜间访花型。', relationship: '部分天蛾访花时参与传粉。为夜间访花者保留蜜源，可成为夜花种植与观察的目标。', fact: '这是天蛾科的概括形象，不代表一种具体天蛾；并非所有天蛾都在夜间活动，蜂鸟鹰蛾就是白天访花的例子。' },
+    en: { diet: 'This depiction represents a long-tongued nectar-feeding hawk-moth; caterpillar host plants vary by species.', habitat: 'Habitats with suitable nectar plants and larval hosts; the game represents a nocturnal flower-visiting type.', relationship: 'Some hawk-moths contribute to pollination while feeding. Nectar for night visitors gives night-flowering plants a role in the garden.', fact: 'This is a family-level hawk-moth depiction, not a named species. Not all hawk-moths fly at night: the hummingbird hawk-moth visits flowers by day.' },
+  },
+  robin: {
+    latin: 'Erithacus rubecula', role: 'guardian',
+    source: 'https://www.bto.org/learn/about-birds/birdfacts/robin',
+    zh: { diet: '以地面小型无脊椎动物等为食；不是以花蜜为主的访花鸟。', habitat: '林地、灌丛、乡村及城镇；雪原是游戏场景，不代表它专栖高山雪地。', relationship: '不是通常的花卉传粉者。可作为鸟类观察和栖地营造的访客，鼓励保留遮蔽与多样植被。', fact: '这里的知更鸟指欧亚鸲，橙红色胸前很醒目；它与英文也叫 robin 的美洲旅鸫不是同一种鸟。' },
+    en: { diet: 'Small ground-dwelling invertebrates and other foods; not primarily a nectar-feeding bird.', habitat: 'Woodland, scrub, villages and towns; the snowfield is a game setting, not a claim of alpine specialization.', relationship: 'Not a typical flower pollinator. A visitor for bird observation and habitat care, supported by shelter and varied vegetation.', fact: 'This is the European robin, recognized by its orange-red breast, not the American robin that shares its English common name.' },
+  },
+  honeycreeper: {
+    latin: 'Drepanis coccinea', role: 'pollinator',
+    source: 'https://dlnr.hawaii.gov/wildlife/birds/iiwi/',
+    zh: { diet: '主要花蜜，也取食小型节肢动物。', habitat: '夏威夷的中湿、湿润森林，常与 ʻōhiʻa 和 koa 林相关；不是裸露熔岩或硫雾环境。', relationship: 'ʻIʻiwi 是 ʻōhiʻa（红火山花）的重要传粉鸟，能把这种花与火山岛森林的生态关系连接起来。', fact: '朱红色身体、黑色翅尾和粉红色弯长喙是它的特征。它会寻找开花的 ʻōhiʻa 树，有时飞行很远。' },
+    en: { diet: 'Mostly nectar, supplemented with small arthropods.', habitat: 'Mesic and wet Hawaiian forests associated with ʻōhiʻa and koa, not bare lava or sulfur fumes.', relationship: 'The ʻiʻiwi is an important ʻōhiʻa pollinator, linking this flower to the ecology of Hawaiian island forests.', fact: 'Vermilion plumage, black wings and tail, and a long pink downcurved bill identify this bird. It may travel far to find flowering ʻōhiʻa.' },
+  },
+  kingfisher: {
+    latin: 'Alcedo atthis', role: 'waterside',
+    source: 'https://www.bto.org/learn/about-birds/birdfacts/kingfisher',
+    zh: { diet: '捕食水中猎物，以捕鱼著称。', habitat: '低地河流及静水水域，常停在水边枝条上。', relationship: '不是传粉者。适合作为水岸观察与栖地任务的访客；它的出现不能单独证明水质合格。', fact: '普通翠鸟颜色鲜艳，却不容易在栖枝上被发现；尖细叫声常比蓝绿色身影先被注意到。' },
+    en: { diet: 'Aquatic prey; well known for fishing.', habitat: 'Lowland rivers and still waters, often using waterside perches.', relationship: 'Not a pollinator. A visitor for waterside observation and habitat goals; one sighting is not a water-quality test.', fact: 'Despite its bright plumage, a perched Common kingfisher can be hard to spot. Its piping call often reveals it first.' },
+  },
+}
+
+    Object.assign(VISITOR_INFO, {
+      bumblebee: {latin:'Bombus terrestris',role:'pollinator',source:'https://en.wikipedia.org/wiki/Bombus_terrestris',
+        zh:{diet:'成虫取食花蜜、采集花粉。',habitat:'欧洲及邻近地区的草地、花园等；常在地下筑巢。',relationship:'重要的访花传粉昆虫；多毛身体有助携带花粉。',fact:'粗壮黑黄条带是辨识线索；蜂后与工蜂尾端颜色可有差异，图中采用浅色尾端工蜂形象。'},
+        en:{diet:'Adults feed on nectar and collect pollen.',habitat:'Grasslands and gardens in Europe and nearby regions; nests are often underground.',relationship:'A flower-visiting pollinator with a hairy body that carries pollen.',fact:'Stout black-and-yellow markings are distinctive; queen and worker tail colours differ. This drawing uses a pale-tailed worker.'}},
+      swallowtail: {latin:'Papilio machaon',role:'pollinator',source:'https://en.wikipedia.org/wiki/Papilio_machaon',
+        zh:{diet:'成虫吸蜜；幼虫常用伞形科寄主，随地区种群而异。',habitat:'分布广泛，常见于开放草地等环境。',relationship:'成虫访花，幼虫另需合适的寄主植物。游戏蜜源角色不能代替真实寄主要求。',fact:'黄色底翅、黑纹、后翅尾突和红眼斑构成它的辨识特征。'},
+        en:{diet:'Adults drink nectar; caterpillars often use umbellifer hosts, varying by population.',habitat:'Widely distributed, often in open habitats.',relationship:'Adults visit flowers; caterpillars need suitable hosts. Game nectar roles do not replace real host requirements.',fact:'Yellow wings, black patterning, hindwing tails and red eyespots distinguish it.'}},
+      hawkmoth: {latin:'Macroglossum stellatarum',role:'pollinator',source:'https://en.wikipedia.org/wiki/Macroglossum_stellatarum',
+        zh:{diet:'成虫用长喙吸蜜；幼虫常取食拉拉藤等寄主。',habitat:'有适合花源的花园、草地等环境。',relationship:'悬停访花并参与传粉，活动方式看起来像小蜂鸟。',fact:'它主要昼行，有褐色前翅和橙色后翅；与图鉴中的夜行型天蛾不同。'},
+        en:{diet:'Adults take nectar with a long proboscis; caterpillars often feed on bedstraws.',habitat:'Gardens and other habitats with suitable flowers.',relationship:'Hovers to feed and contributes to pollination, resembling a tiny hummingbird.',fact:'Primarily day-flying with brown forewings and orange hindwings, distinct from the nocturnal hawk-moth entry.'}},
+      hoverfly: {latin:'Episyrphus balteatus',role:'pollinator',source:'https://en.wikipedia.org/wiki/Episyrphus_balteatus',
+        zh:{diet:'成虫取食花蜜与花粉；幼虫捕食蚜虫。',habitat:'花园、草地和林缘等有花植物的环境。',relationship:'成虫是传粉访客；幼虫在食物网中是捕食者，两阶段角色不同。',fact:'腹部橙黑相间、外形拟蜂，但属于双翅目，只有一对功能性翅。'},
+        en:{diet:'Adults eat nectar and pollen; larvae prey on aphids.',habitat:'Flower-rich gardens, grasslands and woodland edges.',relationship:'Adults pollinate, while larvae are predators: different life stages play different roles.',fact:'Orange-and-black abdominal bands mimic a bee, but it is a fly with one pair of functional wings.'}},
+    })
+    for (const [id, info] of Object.entries(VISITOR_INFO)) {
+      for (const field of ['diet','habitat','relationship','fact']) {
+        zh[`guest.${id}.${field}`] = info.zh[field]
+        en[`guest.${id}.${field}`] = info.en[field]
+      }
+    }
+// Special commissions: optional, period-stable requests with explicit consumption.
+const COMMISSION_KINDS = ['bouquet','loan','breeding','watch']
+function commissionState(state,now) {
+  const period=ecologyPeriod(now)
+  return state.commissions?.period===period ? state.commissions : {period,accepted:{},completed:[]}
+}
+function specialCommissions(state,now) {
+  const period=ecologyPeriod(now), grounds=ecologyState(state,now).grounds
+  const species=SPECIES.filter(item=>grounds.includes(SCENE_ID_OF.get(item.id))).slice().sort((a,b)=>hashUnit(period,SPECIES.indexOf(a),807)-hashUnit(period,SPECIES.indexOf(b),807))
+  const hours=Array.from({length:6},(_,i)=>period*ECO_PERIOD_MS+i*3600000)
+  const day=hours.some(time=>!isNight(time))
+  const visitors=VISITORS.filter(visitor=>visitor.scenes.some(id=>grounds.includes(id))&&(day?visitor.special:visitor.when==='night'))
+  const visitor=visitors[Math.floor(hashUnit(period,81,2)*visitors.length)]
+  return COMMISSION_KINDS.map(kind=>({id:`special:${period}:${kind}`,kind,period,endsAt:(period+1)*ECO_PERIOD_MS,
+    warm:period%2===0, species:kind==='loan'?species.slice(0,2).map(item=>item.id):[], visitor:kind==='watch'?visitor?.id:undefined}))
+}
+function acceptCommission(state,id,now) {
+  const offer=specialCommissions(state,now).find(item=>item.id===id), current=commissionState(state,now)
+  if(!offer||current.accepted[id]||current.completed.includes(id))return null
+  const baseline={at:now,study:Object.fromEntries(Object.entries(state.study??{}).map(([key,value])=>[key,value.observations])),visitors:{...state.visitors}}
+  return {...state,commissions:{...current,accepted:{...current.accepted,[id]:baseline}}}
+}
+function commissionProgress(state,offer,now,indices=[]) {
+  const current=commissionState(state,now), accepted=current.accepted[offer.id]
+  const active=accepted!==undefined&&offer.period===current.period&&!current.completed.includes(offer.id)
+  const residents=[]
+  for(const slot of Object.values(state.scenes))for(const plot of slot.plots)if(plot?.resident&&plot.growthMs>=growMsOf(SPECIES_BY_ID.get(plot.species)))residents.push(plot)
+  let ready=false,have=0,total=1,seedKey=null
+  let reward={coins:0,xp:8,ribbons:0,seals:0,trust:1}
+  if(offer.kind==='bouquet') {
+    total=3
+    const unique=Array.isArray(indices)&&indices.length===new Set(indices).size&&indices.every(index=>Number.isInteger(index)&&index>=0&&index<state.basket.length)
+    const items=unique?indices.map(index=>state.basket[index]):[]
+    const eligible=items.every(item=>isPlainBloom(item)&&isWarm(paletteOf(SPECIES_BY_ID.get(item.species),item.variant).petal)===offer.warm)
+    have=eligible?new Set(items.map(item=>item.species)).size:0
+    ready=active&&unique&&eligible&&items.length===3&&have===3
+    reward={...reward,coins:ready?Math.round(items.reduce((sum,item)=>sum+itemValue(item),0)*1.8)+25:0,xp:12,trust:2}
+  } else if(offer.kind==='loan') {
+    total=offer.species.length
+    have=offer.species.filter(id=>residents.some(plot=>plot.species===id)&&(state.study?.[id]?.observations??0)>(accepted?.study[id]??0)).length
+    ready=active&&total===2&&have===total
+    reward={...reward,ribbons:2,trust:2}
+  } else if(offer.kind==='breeding') {
+    const plot=residents.find(plot=>plot.tint&&plot.observedAt>accepted?.at&&(state.study?.[plot.species]?.observations??0)>(accepted?.study[plot.species]??0))
+    if(plot)seedKey=`${plot.species}~${plot.tint}`
+    have=plot?1:0;ready=active&&!!plot;reward={...reward,seals:1,trust:3,fertilizer:1}
+  } else if(offer.kind==='watch') {
+    have=offer.visitor&&((state.visitors?.[offer.visitor]??0)>(accepted?.visitors[offer.visitor]??0))?1:0
+    ready=active&&have===1;reward={...reward,seals:2,trust:2,compost:1}
+  }
+  return {active,ready,have,total,reward,seedKey}
+}
+function completeCommission(state,id,now,indices=[]) {
+  const offer=specialCommissions(state,now).find(item=>item.id===id)
+  if(!offer)return null
+  const progress=commissionProgress(state,offer,now,indices)
+  if(!progress.ready)return null
+  const current=commissionState(state,now), reward=progress.reward
+  const consumed=offer.kind==='bouquet'?new Set(indices):new Set()
+  const seeds={...state.seeds}
+  if(progress.seedKey)seeds[progress.seedKey]=(seeds[progress.seedKey]??0)+1
+  return {...state,coins:state.coins+reward.coins,xp:state.xp+reward.xp,ribbons:(state.ribbons??0)+reward.ribbons,
+    researchSeals:(state.researchSeals??0)+reward.seals,patronage:(state.patronage??0)+reward.trust,
+    basket:consumed.size?state.basket.filter((_,index)=>!consumed.has(index)):state.basket,seeds,
+    bag:{...state.bag,fertilizer:(state.bag.fertilizer??0)+(reward.fertilizer??0),compost:(state.bag.compost??0)+(reward.compost??0)},
+    commissions:{...current,completed:[...current.completed,id]},
+    commissionLog:[...(state.commissionLog??[]),{id,kind:offer.kind,at:now,trust:reward.trust}].slice(-60)}
+}
+function sanitizeCommissions(raw,now) {
+  const period=ecologyPeriod(now), empty={period,accepted:{},completed:[]}
+  if(!raw||raw.period!==period)return empty
+  const valid=id=>COMMISSION_KINDS.some(kind=>id===`special:${period}:${kind}`)
+  const accepted={}
+  for(const [id,value] of Object.entries(raw.accepted&&typeof raw.accepted==='object'?raw.accepted:{})) {
+    if(!valid(id)||!value||typeof value!=='object')continue
+    accepted[id]={at:finiteOr(value.at,now),study:Object.fromEntries(Object.entries(value.study&&typeof value.study==='object'?value.study:{}).filter(([key])=>SPECIES_BY_ID.has(key)).map(([key,n])=>[key,Math.floor(finiteOr(n,0))])),visitors:sanitizeVisitors(value.visitors)}
+  }
+  return {period,accepted,completed:Array.isArray(raw.completed)?[...new Set(raw.completed.filter(valid))]:[]}
+}
+function sanitizeCommissionLog(raw) {
+  return Array.isArray(raw)?raw.filter(item=>item&&typeof item.id==='string'&&COMMISSION_KINDS.includes(item.kind)&&Number.isFinite(item.at)).slice(-60).map(item=>({id:item.id.slice(0,90),kind:item.kind,at:Math.max(0,item.at),trust:Math.min(3,Math.floor(finiteOr(item.trust,0)))})):[]
+}
+function specialVisitorEligible(visitor,plot,state,weather) {
+  if(!visitor.special)return true
+  if(!plot||plot.moisture<50)return false
+  const profile=ecoProfile(plot.species), ecology=state?gardenEcology(state,state.lastTick):{species:0,roleCoverage:0}
+  if(visitor.id==='bumblebee')return ['nectar','pollen'].includes(profile?.role)||['snapdragon','cardinalflower','pansy'].includes(plot.species)
+  if(!plot.resident)return false
+  if(visitor.id==='swallowtail')return profile?.role==='nectar'&&ecology.species>=3&&weather==='clear'
+  if(visitor.id==='hawkmoth')return ['snapdragon','plumeria','lily','redhotpoker','cardinalflower'].includes(plot.species)
+  if(visitor.id==='hoverfly')return ecology.roleCoverage>=2
+  return false
+}
+
+Object.assign(zh,{
+ 'commission.title':'特别来信','commission.intro':'每 6 小时换一批委托。先接受来信，再完成新观察；过期没有惩罚。仅定制花束消耗你亲自选中的普通花，其他委托保留活株。',
+ 'commission.bouquet':'花艺师 · 定制花束','commission.loan':'植物园 · 活株借展','commission.breeding':'育种师 · 种苗交流','commission.watch':'自然学家 · 特别观察',
+ 'commission.desc.bouquet':'挑选 3 个不同品种、符合主题色的普通花各 1 朵。奇珍、仙品和杂交花不会被误选。',
+ 'commission.desc.loan':'接受后各观察一次指定品种，并让两种留园株保持盛开。只登记借展档案，不移走植株。',
+ 'commission.desc.breeding':'接受后观察一株盛开的杂交留园株。交流后保留母株，并获得同类型的杂交种子。',
+ 'commission.desc.watch':'接受后遇见这位访客。点击名字可查阅出现线索；仅本次来信之后的遇见有效。',
+ 'commission.accept':'接受来信','commission.active':'进行中','commission.done':'已完成','commission.expired':'来信或选花已变化，请重新查看。','commission.submit':'完成委托','commission.confirm':'确认交付选中的 3 朵花','commission.confirmKeep':'确认记录 · 保留所有植株',
+ 'commission.pick':'选花清单 · {n}/3','commission.empty':'花篮暂无符合主题的普通花。','commission.progress':'进度 {n}/{total}','commission.theme':'本期主题：{name}',
+ 'commission.reward.bouquet':'报酬：所选花基础价值 ×1.8 +25 金币、12 经验、2 声望','commission.reward.loan':'报酬：2 绶带、8 经验、2 声望','commission.reward.breeding':'报酬：同类型杂交种子 ×1、肥料 ×1、研究印记 ×1、8 经验、3 声望','commission.reward.watch':'报酬：研究印记 ×2、堆肥 ×1、8 经验、2 声望',
+ 'commission.trust':'委托声望 {n}','commission.completed':'来信已完成，花园的故事又多了一页。','commission.journal':'往来信笺（最近 {n} 封）','commission.record':'{date} · 声望 +{n}',
+ 'visitor.special':'特殊访客','visitor.bumblebee':'欧洲熊蜂','visitor.swallowtail':'金凤蝶','visitor.hawkmoth':'蜂鸟鹰蛾','visitor.hoverfly':'细扁食蚜蝇',
+ 'visitor.clue':'游戏出现线索','visitor.clue.bumblebee':'白天 · 草原、雪原或湖畔 · 盛开的蜜源/花粉花或三色堇 · 湿度至少 50%；普通成熟花也可吸引。',
+ 'visitor.clue.swallowtail':'晴天白昼 · 草原或湖畔 · 至少 3 种湿润盛开的留园株 · 当前花为蜜源角色。',
+ 'visitor.clue.hawkmoth':'白天 · 草原、火山口或湖畔 · 留园的金鱼草、鸡蛋花、百合、火炬花或鲜红半边莲 · 湿度至少 50%。',
+ 'visitor.clue.hoverfly':'白天不下雨 · 草原或湖畔 · 湿润盛开的留园株覆盖至少 2 种生态角色 · 当前株湿度至少 50%。',
+ 'visitor.chanceNote':'满足条件后会进入低权重候选池，不保证立即出现。',
+ 'trait.fasciated':'缀化','trait.radial':'辐射花冠','trait.double':'重瓣','trait.leafy':'花叶化',
+ 'trait.fasciated.cause':'游戏条件：鉴定前有至少 3 次访客和 2 次施肥。','trait.radial.cause':'游戏条件：金鱼草、鲜红半边莲或三色堇在鉴定前被特殊熊蜂访过。',
+ 'trait.double.cause':'游戏条件：鉴定前已授粉，并施肥至少一次。','trait.leafy.cause':'游戏条件：鉴定前有至少 2 次护园访客，在雨天鉴定。',
+ 'trait.fasciated.clue':'常受照料、访客很多的那一株','trait.radial.clue':'两侧对称的小花，遇上特殊熊蜂','trait.double.clue':'一次施肥，一次授粉','trait.leafy.clue':'雨中，护园访客再次来过',
+ 'trait.fasciated.fact':'缀化是生长点异常形成扁带、脊状等形态的现象；真实成因多样，不能由照料次数推断。',
+ 'trait.radial.fact':'辐射对称化（peloria）指原本两侧对称的花变成辐射对称；并非任何花变大或变圆都属于它。',
+ 'trait.double.fact':'重瓣花具有额外花瓣，有些来自雄蕊花瓣化。部分重瓣品种可供访客的花粉、花蜜较少。',
+ 'trait.leafy.fact':'花叶化指花器官发育成叶状结构，与只变绿的绿变不同；真实情况下可能涉及发育、环境或病原影响。',
+ 'trait.boundary':'奇珍获取条件属于游戏创作，不表示浇水、施肥或动物访问会在现实中造成这些变异。霜晶、熔火等为幻想款。',
+ 'trait.guide':'奇珍观察指南','trait.source':'形态资料（Wiki）',
+})
+Object.assign(en,{
+ 'commission.title':'Special letters','commission.intro':'New requests arrive every six hours. Accept first, then make new observations; expiry has no penalty. Only bespoke bouquets consume the ordinary blooms you explicitly select. Other requests keep living plants.',
+ 'commission.bouquet':'Florist · Bespoke bouquet','commission.loan':'Botanic garden · Living exhibit','commission.breeding':'Breeder · Seed exchange','commission.watch':'Naturalist · Special sighting',
+ 'commission.desc.bouquet':'Select one ordinary bloom from each of three different species in the requested colour theme. Curiosities, spirit blooms and hybrids are excluded.',
+ 'commission.desc.loan':'After accepting, observe each requested species and keep both resident species in bloom. The exhibit is recorded without moving your plants.',
+ 'commission.desc.breeding':'After accepting, observe a blooming hybrid resident. Keep the parent and receive one matching hybrid seed.',
+ 'commission.desc.watch':'Meet this visitor after accepting. Open its name for appearance clues; earlier lifetime sightings do not count.',
+ 'commission.accept':'Accept letter','commission.active':'In progress','commission.done':'Completed','commission.expired':'The letter or flower selection changed. Please review it again.','commission.submit':'Complete request','commission.confirm':'Confirm delivery of these 3 blooms','commission.confirmKeep':'Confirm record · keep every plant',
+ 'commission.pick':'Selected blooms · {n}/3','commission.empty':'No eligible ordinary blooms in the basket.','commission.progress':'Progress {n}/{total}','commission.theme':'Theme: {name}',
+ 'commission.reward.bouquet':'Reward: selected base value ×1.8 +25 coins, 12 XP, 2 reputation','commission.reward.loan':'Reward: 2 ribbons, 8 XP, 2 reputation','commission.reward.breeding':'Reward: 1 matching hybrid seed, 1 fertiliser, 1 research seal, 8 XP, 3 reputation','commission.reward.watch':'Reward: 2 research seals, 1 compost, 8 XP, 2 reputation',
+ 'commission.trust':'Patron reputation {n}','commission.completed':'Letter completed: another page in your garden story.','commission.journal':'Correspondence (latest {n})','commission.record':'{date} · reputation +{n}',
+ 'visitor.special':'Special visitor','visitor.bumblebee':'Buff-tailed bumblebee','visitor.swallowtail':'Old World swallowtail','visitor.hawkmoth':'Hummingbird hawk-moth','visitor.hoverfly':'Marmalade hoverfly',
+ 'visitor.clue':'Game appearance clues','visitor.clue.bumblebee':'Daytime · meadow, snowfield or lake · blooming nectar/pollen-role flower or pansy · at least 50% moisture; residency is not required.',
+ 'visitor.clue.swallowtail':'Sunny daytime · meadow or lake · at least three moist blooming resident species · a nectar-role host flower.',
+ 'visitor.clue.hawkmoth':'Daytime · meadow, crater or lake · resident snapdragon, plumeria, lily, red-hot poker or cardinal flower · at least 50% moisture.',
+ 'visitor.clue.hoverfly':'Dry daytime · meadow or lake · at least two ecological roles among moist blooming residents · host moisture at least 50%.',
+ 'visitor.chanceNote':'Meeting the conditions adds it to the low-weight visitor pool; an immediate visit is not guaranteed.',
+ 'trait.fasciated':'Crested','trait.radial':'Radial corolla','trait.double':'Double-flowered','trait.leafy':'Leafy flower',
+ 'trait.fasciated.cause':'Game condition: at least three visits and two feeds before identification.','trait.radial.cause':'Game condition: a special bumblebee visited a snapdragon, cardinal flower or pansy before identification.',
+ 'trait.double.cause':'Game condition: pollinated and fed at least once before identification.','trait.leafy.cause':'Game condition: at least two guardian visits, identified in rain.',
+ 'trait.fasciated.clue':'Well tended, often visited','trait.radial.clue':'A bilateral flower meets a special bumblebee','trait.double.clue':'One feed and a pollen visit','trait.leafy.clue':'Two guardian visits, then rain',
+ 'trait.fasciated.fact':'Fasciation changes a growing point into flattened or crested forms. It has varied real causes; care counts cannot diagnose them.',
+ 'trait.radial.fact':'Peloria is radial symmetry developing in a normally bilaterally symmetrical flower; it does not mean any flower simply getting larger or rounder.',
+ 'trait.double.fact':'Double flowers have extra petals, sometimes through conversion of stamens. Some double varieties offer less accessible pollen or nectar.',
+ 'trait.leafy.fact':'Phyllody transforms floral organs into leaf-like structures, unlike greening alone. Real cases can involve developmental, environmental or pathogen factors.',
+ 'trait.boundary':'Discovery conditions are fictional game rules, not claims that watering, feeding or visitors cause these changes in real plants. Frost and ember forms are fantasy varieties.',
+ 'trait.guide':'Curiosity field guide','trait.source':'Morphology source (Wiki)',
+})
+
+function SpecialCommissionBoard({state,t,clock,onChange,onSpecies,onVisitor}) {
+ const offers=specialCommissions(state,clock),current=commissionState(state,clock)
+ const [selected,setSelected]=React.useState([]),[armed,setArmed]=React.useState(null),[notice,setNotice]=React.useState('')
+ React.useEffect(()=>{setSelected(items=>items.filter(item=>state.basket.includes(item)));setArmed(null)},[state.basket])
+ React.useEffect(()=>{setSelected([]);setArmed(null)},[current.period])
+ function accept(id){const next=acceptCommission(getState(),id,Date.now());if(next){onChange(next);setArmed(null);setSelected([])}}
+ function finish(offer){
+  const before=getState(),now=Date.now(),indices=selected.map(item=>before.basket.indexOf(item))
+  const live=specialCommissions(before,now).find(item=>item.id===offer.id)
+  if(!live||!commissionProgress(before,live,now,indices).ready){setArmed(null);setNotice(t('commission.expired'));return}
+  const signature=offer.kind==='bouquet'?JSON.stringify(selected.map(item=>[itemKey(item),item.dna])):offer.id
+  if(armed?.id!==offer.id||armed.signature!==signature||armed.until<now){setArmed({id:offer.id,signature,until:now+5000});return}
+  const next=completeCommission(before,offer.id,now,indices);setArmed(null)
+  if(next){onChange(next);setSelected([]);setNotice(t('commission.completed'))}
+ }
+ return h('section',{className:'fg-section',id:'fg-special-commissions',tabIndex:-1},
+  h('div',{className:'fg-sectionHead'},h('h2',{className:'fg-sectionTitle'},t('commission.title')),h('span',{className:'fg-chip'},t('commission.trust',{n:state.patronage??0}))),
+  h('p',{className:'fg-hint'},t('commission.intro')),
+  h('div',{className:'fg-ecoProjects'},offers.map(offer=>{
+   const indices=selected.map(item=>state.basket.indexOf(item)),progress=commissionProgress(state,offer,clock,indices),done=current.completed.includes(offer.id)
+   const eligible=state.basket.filter(item=>isPlainBloom(item)&&isWarm(paletteOf(SPECIES_BY_ID.get(item.species),item.variant).petal)===offer.warm)
+   return h('article',{key:offer.id,className:'fg-ecoProject','data-commission':offer.kind},
+    h('h3',null,t(`commission.${offer.kind}`)),h('p',{className:'fg-hint'},t(`commission.desc.${offer.kind}`)),
+    h('p',{className:'fg-hint'},t('show.left',{n:formatDuration(offer.endsAt-clock,t)})),
+    offer.kind==='bouquet'?h('p',{className:'fg-note'},t('commission.theme',{name:t(offer.warm?'show.theme.warm':'show.theme.cool')})):null,
+    offer.kind==='loan'?h('div',{className:'fg-ecoTargets'},offer.species.map(id=>h('button',{type:'button',key:id,className:'fg-btn fg-btnSmall',onClick:()=>onSpecies(id)},t(`species.${id}`)))):null,
+    offer.kind==='watch'&&offer.visitor?h('button',{type:'button',className:'fg-btn fg-btnSmall',onClick:()=>onVisitor(offer.visitor)},t(`visitor.${offer.visitor}`)):null,
+    h('p',{className:'fg-hint'},t(`commission.reward.${offer.kind}`)),
+    progress.active&&offer.kind==='bouquet'?h('details',{className:'fg-ecoDetails'},h('summary',null,t('commission.pick',{n:selected.length})),
+      eligible.length===0?h('p',{className:'fg-hint'},t('commission.empty')):eligible.map((item,index)=>h('button',{type:'button',key:index,className:'fg-btn fg-btnSmall','aria-pressed':selected.includes(item),disabled:!selected.includes(item)&&(selected.length>=3||selected.some(other=>other.species===item.species)),onClick:()=>{setArmed(null);setSelected(items=>items.includes(item)?items.filter(other=>other!==item):[...items,item])}},selected.includes(item)?'✓ ':'○ ',bloomName(item,t),' · ',t(`variant.${item.variant}`),' #',index+1))):null,
+    progress.active?h('span',{className:'fg-note'},t('commission.progress',{n:progress.have,total:progress.total})):null,
+    offer.kind==='bouquet'&&progress.ready?h('strong',null,t('order.reward',{coins:progress.reward.coins,xp:progress.reward.xp})):null,
+    h('button',{type:'button',className:armed?.id===offer.id&&armed.until>=clock?'fg-btn fg-btnDanger':'fg-btn',disabled:done||(progress.active&&!progress.ready),onClick:()=>progress.active?finish(offer):accept(offer.id)},done?t('commission.done'):!progress.active?t('commission.accept'):armed?.id===offer.id&&armed.until>=clock?t(offer.kind==='bouquet'?'commission.confirm':'commission.confirmKeep'):t('commission.submit')))
+  })),
+  (state.commissionLog??[]).length?h('details',{className:'fg-ecoDetails'},h('summary',null,t('commission.journal',{n:state.commissionLog.length})),h('div',{className:'fg-journal'},state.commissionLog.slice(-8).reverse().map(entry=>h('div',{key:entry.id,className:'fg-journalEntry'},t(`commission.${entry.kind}`),h('span',null,t('commission.record',{date:new Date(entry.at).toLocaleDateString(),n:entry.trust})))))):null,
+  h('p',{role:'status',className:'fg-sectionOk'},notice))
+}
+
+// Long-lived garden UI; integrated into the client factory.
+const ECO_PROFILES = Object.fromEntries([
+  ['dandelion','pollen',0,'bee'],['daisy','nectar',0,'butterfly'],['cherry','shelter',0,'ladybug'],['tulip','pollen',0,'bee'],['lavender','nectar',1,'bee'],['poppy','pollen',1,'bee'],['sunflower','seed',2,'ladybug'],['lily','night',1,'moth'],['rose','shelter',1,'ladybug'],['hydrangea','shelter',1,'butterfly'],
+  ['snowdrop','pollen',3,'robin'],['hellebore','nectar',3,'robin'],['plum','shelter',3,'robin'],['edelweiss','pollen',1,'robin'],['camellia','shelter',3,'robin'],
+  ['cactus','pollen',1,'bee'],['lehua','nectar',1,'honeycreeper'],['agave','nectar',2,'moth'],['silversword','seed',1,'bee'],['plumeria','night',1,'moth'],
+  ['pickerel','nectar',1,'bee'],['loosestrife','nectar',2,'butterfly'],['iris','water',0,'dragonfly'],['waterlily','water',1,'kingfisher'],['lotus','seed',1,'dragonfly'],
+  ['cosmos','nectar',2,'butterfly'],['zinnia','nectar',2,'butterfly'],['cornflower','seed',1,'ladybug'],['calendula','pollen',0,'bee'],['snapdragon','nectar',0,'bee'],
+  ['crocus','pollen',0,'robin'],['daffodil','pollen',0,'robin'],['primrose','nectar',0,'robin'],['pansy','shelter',0,'robin'],['bleedingheart','shelter',0,'robin'],
+  ['hibiscus','nectar',1,'honeycreeper'],['birdofparadise','nectar',0,'honeycreeper'],['gazania','pollen',1,'bee'],['redhotpoker','nectar',2,'honeycreeper'],['desertrose','shelter',1,'moth'],
+  ['marshmarigold','water',0,'dragonfly'],['forgetmenot','water',0,'butterfly'],['astilbe','shelter',1,'firefly'],['cardinalflower','nectar',2,'butterfly'],['arrowhead','water',1,'kingfisher'],
+].map(([id,role,season,visitor]) => [id,{role,season,visitor}]))
+
+Object.assign(zh, {
+  'eco.title':'活着的花园', 'eco.guide':'留一株花，慢慢认识它',
+  'eco.intro':'开花后可「留园」：花不会被消耗，保留自己的外观与经历。浇水、付费观察、修剪复花，逐步写出每个品种的研究笔记。留园株约 45 分钟才会干透，缺水只暂停观察，不会死亡。',
+  'eco.role.nectar':'蜜源花境','eco.role.pollen':'花粉花境','eco.role.seed':'种实观察','eco.role.shelter':'庇护花境','eco.role.water':'水岸花境','eco.role.night':'夜访花境',
+  'eco.roles':'生态角色 {n}/6','eco.diversity':'留园 {n} 株 · {species} 个品种','eco.bonus':'访客出现率 +{n}%','eco.season':'本期花季：{season}',
+  'eco.rules':'生态角色、访客偏好、6 小时花季和复花速度是游戏设计，并非真实植物的生长日历或地域共生关系。角色越多样、当季活株越丰富，访客出现率越高（最多 +12%）；湿度低于 30% 暂不计入。',
+  'eco.purpose':'花园里的位置','eco.affinity':'游戏访客偏好：{name}','eco.flowerSeason':'主题花季：{name}',
+  'eco.retain':'留园养成','eco.resident':'留园活株','eco.retained':'{name}留在花园了。它的外观与第一次鉴定结果将一直保留。',
+  'eco.observe':'观察养护 · {n} 金币','eco.observed':'记录{name}：研究累计 {n} 次','eco.cooldown':'下次观察：{n}','eco.needWater':'湿度至少 30% 才能观察',
+  'eco.rebloom':'修剪复花 · {n} 金币','eco.rebloomed':'{name}开始新一轮生长，下一次观察额外 +1 研究记录。','eco.rebloomNote':'复花保留同一株的 DNA 和奇珍形态；新花期首次观察 +2 研究记录，其后每 10 分钟可观察 +1。',
+  'eco.history':'养护 {n} 次 · 复花 {cycles} 轮','eco.retire':'结束留园并收获','eco.retireConfirm':'确认结束留园？','eco.error':'暂时无法进行：请检查湿度、成熟状态、冷却和金币。',
+  'eco.study':'品种研究','eco.notes':'已研究 {n}/{total} 种','eco.observations':'研究记录 {n} 次','eco.level.0':'尚未观察','eco.level.1':'初识','eco.level.2':'熟悉','eco.level.3':'共生',
+  'eco.milestones':'每种花各自积累：1 次初识、3 次熟悉、6 次共生。达标后仍可继续记录；研究与个体留园经历永久保留。',
+  'eco.projects':'生态考察','eco.project.1':'花与访客初访','eco.project.2':'多样花境巡礼','eco.project.3':'共生花园档案',
+  'eco.projectNote':'每 6 小时更换目标。观察指定品种的留园活株，并在本期遇见指定访客；提交只收考察费用，不消耗花朵。印记与档案永久积累，金币和绶带每期都有新的用途。',
+  'eco.targets':'本期观察目标','eco.guests':'本期访客记录','eco.fee':'考察费用：{coins} 金币 + {ribbons} 绶带','eco.reward':'永久收藏：{n} 枚研究印记','eco.submit':'提交考察','eco.confirm':'确认支付并归档','eco.done':'本期已归档','eco.missing':'还需完成目标或准备费用','eco.submitted':'考察已归档，获得 {n} 枚研究印记。',
+  'eco.seals':'研究印记 {n}','eco.journal':'花园档案 · 最近 {n} 期记录','eco.journalEntry':'{date} · {season}季 · {n} 枚印记','eco.left':'本期还剩 {n}','eco.source':'植物资料来源',
+  'guest.book':'访客图鉴','guest.diet':'食性','guest.habitat':'生境','guest.relationship':'在花园中的角色','guest.fact':'观察笔记','guest.met':'遇见 {n} 次','guest.unmet':'尚未遇见 · 可先阅读观察线索','guest.source':'资料来源',
+  'guest.pollinator':'传粉访客','guest.guardian':'护园访客','guest.waterside':'水岸访客',
+  'guest.effect.pollinator':'游戏效果：授粉，收获时可多一朵，并提供杂交机会。','guest.effect.guardian':'游戏效果：本花圃地力 +6；记录生态足迹，不授粉。','guest.effect.waterside':'游戏效果：本花圃湿度 +20%；记录生态足迹，不授粉。',
+  'guest.boundary':'资料介绍真实生态；金币、地力与湿度奖励属于游戏设定。','guest.greeted':'遇见{name}：{effect}，获得 {coins} 金币。',
+  'visitor.moth':'天蛾（夜行型）','visitor.robin':'欧亚鸲（知更鸟）','visitor.kingfisher':'普通翠鸟',
+})
+Object.assign(en, {
+  'eco.title':'A living garden','eco.guide':'Keep a plant, learn its story',
+  'eco.intro':'Choose “Keep growing” after bloom. The plant stays alive with its individual appearance. Water it, fund observations and prune for another flowering cycle to build a notebook for each species. Resident soil takes about 45 minutes to dry; dryness pauses study without killing the plant.',
+  'eco.role.nectar':'Nectar border','eco.role.pollen':'Pollen border','eco.role.seed':'Seed study','eco.role.shelter':'Shelter border','eco.role.water':'Waterside border','eco.role.night':'Night visitor border',
+  'eco.roles':'Ecological roles {n}/6','eco.diversity':'{n} residents · {species} species','eco.bonus':'Visitor chance +{n}%','eco.season':'Theme season: {season}',
+  'eco.rules':'Roles, visitor preferences, six-hour seasons and repeat blooms are game rules, not real growing calendars or geographic communities. Diverse roles and in-season residents raise visitor chance by up to 12%. Plants below 30% moisture do not count.',
+  'eco.purpose':'A place in the garden','eco.affinity':'Game visitor preference: {name}','eco.flowerSeason':'Theme season: {name}',
+  'eco.retain':'Keep growing','eco.resident':'Resident plant','eco.retained':'{name} stays in the garden. Its appearance and first identification are preserved.',
+  'eco.observe':'Observe & tend · {n} coins','eco.observed':'{name}: {n} research records','eco.cooldown':'Next observation: {n}','eco.needWater':'At least 30% moisture is needed',
+  'eco.rebloom':'Prune for rebloom · {n} coins','eco.rebloomed':'{name} begins another cycle. The next observation earns one extra record.','eco.rebloomNote':'Reblooming keeps DNA and curiosity traits. The first study of a new cycle earns 2 records; later observations earn 1 with a ten-minute cooldown.',
+  'eco.history':'Tended {n} times · {cycles} reblooms','eco.retire':'End residency & harvest','eco.retireConfirm':'Confirm ending residency?','eco.error':'Not ready: check moisture, maturity, cooldown and coins.',
+  'eco.study':'Species notebooks','eco.notes':'Studied {n}/{total} species','eco.observations':'Research records: {n}','eco.level.0':'Not yet studied','eco.level.1':'Acquainted','eco.level.2':'Familiar','eco.level.3':'Companion',
+  'eco.milestones':'Each species has its own milestones: 1, 3 and 6 observations. Keep recording beyond them; research and each resident’s care history persist.',
+  'eco.projects':'Ecological field studies','eco.project.1':'Flowers & visitors','eco.project.2':'Diverse borders','eco.project.3':'A garden community',
+  'eco.projectNote':'Targets change every six hours. Observe the specified resident species and meet the listed visitors this period. Submission pays a study fee without consuming flowers. Permanent seals and journal entries give coins and ribbons a recurring purpose.',
+  'eco.targets':'Observe this period','eco.guests':'Visitors this period','eco.fee':'Study fee: {coins} coins + {ribbons} ribbons','eco.reward':'Permanent collection: {n} research seals','eco.submit':'Submit study','eco.confirm':'Confirm fee & archive','eco.done':'Archived this period','eco.missing':'Complete the targets and prepare the fee','eco.submitted':'Study archived: {n} research seals earned.',
+  'eco.seals':'Research seals: {n}','eco.journal':'Garden journal · latest {n} entries','eco.journalEntry':'{date} · {season} · {n} seals','eco.left':'This period ends in {n}','eco.source':'Botanical source',
+  'guest.book':'Visitor field guide','guest.diet':'Diet','guest.habitat':'Habitat','guest.relationship':'Garden relationship','guest.fact':'Field notes','guest.met':'Met {n} times','guest.unmet':'Not yet met · read the field clues','guest.source':'Source',
+  'guest.pollinator':'Pollinator','guest.guardian':'Garden guardian','guest.waterside':'Waterside visitor',
+  'guest.effect.pollinator':'Game effect: pollination can yield another bloom and enable hybrid seeds.','guest.effect.guardian':'Game effect: +6 fertility in this plot; an ecological record, no pollination.','guest.effect.waterside':'Game effect: +20% moisture in this plot; an ecological record, no pollination.',
+  'guest.boundary':'The notes describe real ecology; coin, soil and moisture rewards are game rules.','guest.greeted':'Met {name}: {effect} Earned {coins} coins.',
+  'visitor.moth':'Nocturnal hawk-moth','visitor.robin':'European robin','visitor.kingfisher':'Common kingfisher',
+})
+
+function studyLevel(n) { return n >= 6 ? 3 : n >= 3 ? 2 : n >= 1 ? 1 : 0 }
+function SpeciesPurpose({ speciesId, t, observations = 0 }) {
+  const profile = ecoProfile(speciesId)
+  if (!profile) return null
+  return h('div', { className:'fg-purpose' },
+    h('strong', null, t('eco.purpose')),
+    h('span', null, t(`eco.role.${profile.role}`)),
+    h('span', null, t('eco.flowerSeason', { name: t(`show.season.${SEASONS[profile.season]}`) })),
+    h('span', null, t('eco.affinity', { name: t(`visitor.${profile.visitor}`) })),
+    h('span', null, `${t(`eco.level.${studyLevel(observations)}`)} · ${t('eco.observations', { n: observations })}`))
+}
+
+function VisitorPreview({ visitorId, state, t, onClose }) {
+  const ref = React.useRef(null)
+  React.useEffect(() => { const dialog=ref.current; if(dialog && !dialog.open) dialog.showModal(); return () => { if(dialog?.open) dialog.close() } }, [])
+  const visitor=VISITOR_BY_ID.get(visitorId), info=VISITOR_INFO[visitorId]
+  if(!visitor || !info) return null
+  return h('dialog', { ref, className:'fg-dialog', 'aria-label':t(`visitor.${visitorId}`), onCancel:event=>{event.preventDefault();onClose()}, onClick:event=>{if(event.target===event.currentTarget)onClose()} },
+    h('div',{className:'fg-preview'},
+      h('div',{className:'fg-previewArt fg-visitorPortrait'}, h(VisitorArt,{id:visitorId})),
+      h('div',{className:'fg-previewBody'},
+        h('h2',{className:'fg-previewName'},t(`visitor.${visitorId}`)),
+        h('div',{className:'fg-previewLatin'},info.latin),
+        h('span',{className:'fg-badge'},t(`guest.${info.role}`)),
+        h('p',{className:'fg-hint'},(state.visitors[visitorId]??0)>0?t('guest.met',{n:state.visitors[visitorId]}):t('guest.unmet')),
+        ['diet','habitat','relationship','fact'].map(field=>h('div',{key:field,className:'fg-guestNote'},h('strong',null,t(`guest.${field}`)),h('p',null,t(`guest.${visitorId}.${field}`)))),
+        h('p',{className:'fg-hint'},visitor.scenes.map(id=>t(`scene.${id}`)).join(' / '),' · ',t(`visitor.when.${visitor.when}`),visitor.dry?' · '+t('visitor.dry'):null),
+        visitor.special ? h('div',{className:'fg-purpose'},h('strong',null,t('visitor.clue')),h('span',null,t(`visitor.clue.${visitorId}`)),h('span',null,t('visitor.chanceNote'))) : null,
+        h('p',{className:'fg-hint'},t(`guest.effect.${info.role}`)),
+        h('p',{className:'fg-hint'},t('guest.boundary')),
+        h('a',{href:info.source,target:'_blank',rel:'noopener noreferrer',className:'fg-source'},t('guest.source'))),
+      h('div',{className:'fg-previewActions'},h('button',{type:'button',className:'fg-btn',onClick:onClose},t('card.close')))))
+}
+
+function GardenEcology({state,t,clock,onChange,onSpecies}) {
+  const ecology=ecologyState(state,clock), stats=gardenEcology(state,clock), projects=ecoProjects(state,clock)
+  const [armed,setArmed]=React.useState(null), [notice,setNotice]=React.useState('')
+  function submit(project) {
+    const now=Date.now(), current=getState(), live=ecoProjects(current,now).find(item=>item.id===project.id)
+    if(!live || live.species.join()!==project.species.join()) {setArmed(null);return}
+    if(armed?.id!==project.id || now>armed.until){setArmed({id:project.id,until:now+5000});return}
+    const next=submitStudy(current,project.id,now);setArmed(null)
+    if(!next){setNotice(t('eco.missing'));return}
+    onChange(next);setNotice(t('eco.submitted',{n:project.seals}))
+  }
+  return h('section',{className:'fg-section fg-ecology',id:'fg-ecology',tabIndex:-1},
+    h('div',{className:'fg-sectionHead'},h('h2',{className:'fg-sectionTitle'},t('eco.title')),h('span',{className:'fg-chip'},t('eco.seals',{n:state.researchSeals??0}))),
+    h('p',{className:'fg-ecoLead'},t('eco.guide')),
+    h('p',{className:'fg-hint'},t('eco.intro')),
+    h('div',{className:'fg-sectionHead'},
+      h('span',{className:'fg-badge'},t('eco.diversity',{n:stats.residents,species:stats.species})),
+      h('span',{className:'fg-badge'},t('eco.roles',{n:stats.roleCoverage})),
+      h('span',{className:'fg-badge'},t('eco.bonus',{n:Math.round(stats.visitorBonus*100)})),
+      h('span',{className:'fg-badge'},t('eco.season',{season:t(`show.season.${SEASONS[ecology.period%4]}`)}))),
+    h('p',{className:'fg-hint'},t('eco.rules')),
+    h('details',{className:'fg-ecoDetails',open:true},h('summary',null,t('eco.projects'),' · ',t('eco.left',{n:formatDuration((ecology.period+1)*ECO_PERIOD_MS-clock,t)})),
+      h('p',{className:'fg-hint'},t('eco.projectNote')),
+      h('div',{className:'fg-ecoProjects'},projects.map((project,index)=>{
+        const done=ecology.claimed.includes(project.id)
+        const ready=project.species.every(id=>ecology.observed.includes(id))&&project.visitors.every(id=>ecology.visitors.includes(id))&&state.coins>=project.coins&&(state.ribbons??0)>=project.ribbons
+        return h('article',{className:'fg-ecoProject',key:project.id},
+          h('h3',null,t(`eco.project.${index+1}`)),
+          h('span',{className:'fg-note'},t('eco.targets')),
+          h('div',{className:'fg-ecoTargets'},project.species.map(id=>h('button',{type:'button',className:'fg-btn fg-btnSmall',key:id,onClick:()=>onSpecies(id)},ecology.observed.includes(id)?'✓ ':'○ ',t(`species.${id}`)))),
+          h('span',{className:'fg-note'},t('eco.guests')),
+          h('p',{className:'fg-hint'},project.visitors.map(id=>(ecology.visitors.includes(id)?'✓ ':'○ ')+t(`visitor.${id}`)).join(' · ')),
+          h('p',{className:'fg-hint'},t('eco.fee',project)),h('p',{className:'fg-hint'},t('eco.reward',{n:project.seals})),
+          h('button',{type:'button',className:armed?.id===project.id&&armed.until>=clock?'fg-btn fg-btnDanger':'fg-btn',disabled:done||!ready,onClick:()=>submit(project)},done?t('eco.done'):armed?.id===project.id&&armed.until>=clock?t('eco.confirm'):t('eco.submit')),
+          !done&&!ready?h('span',{className:'fg-note'},t('eco.missing')):null)
+      }))),
+    h('details',{className:'fg-ecoDetails'},h('summary',null,t('eco.study'),' · ',t('eco.notes',{n:Object.values(state.study??{}).filter(entry=>entry.observations>0).length,total:SPECIES.length})),
+      h('p',{className:'fg-hint'},t('eco.milestones')),h('p',{className:'fg-hint'},t('eco.rebloomNote')),
+      h('div',{className:'fg-notebooks'},SPECIES.map(species=>{
+        const n=state.study?.[species.id]?.observations??0
+        return h('button',{type:'button',key:species.id,className:'fg-notebook',onClick:()=>onSpecies(species.id)},
+          h('span',null,t(`species.${species.id}`)),h('span',{className:'fg-note'},`${t(`eco.level.${studyLevel(n)}`)} · ${n}`),
+          h('progress',{max:6,value:Math.min(6,n),'aria-label':t(`species.${species.id}`)}))
+      }))),
+    (state.journal??[]).length>0?h('details',{className:'fg-ecoDetails'},h('summary',null,t('eco.journal',{n:state.journal.length})),
+      h('div',{className:'fg-journal'},state.journal.slice(-12).reverse().map(entry=>h('div',{className:'fg-journalEntry',key:entry.id},h('strong',null,t('eco.journalEntry',{date:new Date(entry.at).toLocaleDateString(),season:t(`show.season.${SEASONS[entry.period%4]}`),n:entry.seals})),h('span',null,entry.species.map(id=>t(`species.${id}`)).join(' · ')))))):null,
+    h('p',{role:'status','aria-live':'polite',className:'fg-sectionOk'},notice))
+}
+
     // §2 Scenes, species and colour variants.
     //    `head` picks the drawing, `leaf` the foliage, `alt` the second colour
     //    that odd-numbered plots grow.
@@ -1038,7 +1491,39 @@ window.__ModuleLoader__.load({
         alt: { petal: '#fdfbf7', petalDeep: '#e8e0d2' },
       },
     ]
+const NEW_SPECIES = [
+  { id: 'cosmos', scene: 'meadow', cost: 8, growSec: 100, sell: 17, xp: 3, head: 'cosmos', leaf: 'pinnate', pal: { petal: '#e68bb7', petalDeep: '#b94584', center: '#f6cd45', centerDeep: '#a67818', stem: '#719958', leaf: '#82a766' }, alt: { petal: '#fff9f2', petalDeep: '#e3d8c9' } },
+  { id: 'zinnia', scene: 'meadow', cost: 20, growSec: 195, sell: 42, xp: 8, head: 'zinnia', leaf: 'opposite', pal: { petal: '#e86870', petalDeep: '#b93053', center: '#e9ad32', centerDeep: '#98541b', stem: '#67874a', leaf: '#80a85c' }, alt: { petal: '#f2b546', petalDeep: '#d17f25' } },
+  { id: 'cornflower', scene: 'meadow', cost: 16, growSec: 165, sell: 34, xp: 6, head: 'cornflower', leaf: 'needle', pal: { petal: '#688fe0', petalDeep: '#4053a8', center: '#655197', centerDeep: '#40335f', stem: '#6e9272', leaf: '#8ba88a' } },
+  { id: 'calendula', scene: 'meadow', cost: 12, growSec: 135, sell: 26, xp: 5, head: 'calendula', leaf: 'spoon', pal: { petal: '#f6b442', petalDeep: '#dc7527', center: '#a95c23', centerDeep: '#6e391c', stem: '#739755', leaf: '#8aaf68' } },
+  { id: 'snapdragon', scene: 'meadow', cost: 56, growSec: 450, sell: 128, xp: 25, head: 'snapdragon', leaf: 'opposite', pal: { petal: '#e685ae', petalDeep: '#ba4b83', center: '#f8de91', centerDeep: '#dba849', stem: '#6c8e55', leaf: '#83a76b' }, alt: { petal: '#f8e09a', petalDeep: '#ddba58' } },
+  { id: 'crocus', scene: 'snow', cost: 10, growSec: 110, sell: 22, xp: 4, head: 'crocus', leaf: 'strap', pal: { petal: '#b391df', petalDeep: '#7e5ab2', center: '#efa735', centerDeep: '#bb651c', stem: '#7e9662', leaf: '#799b66' }, alt: { petal: '#f8f6ed', petalDeep: '#ded9d0' } },
+  { id: 'daffodil', scene: 'snow', cost: 20, growSec: 200, sell: 44, xp: 8, head: 'daffodil', leaf: 'strap', pal: { petal: '#fae16c', petalDeep: '#d6b842', center: '#f7ae31', centerDeep: '#bb7621', stem: '#7e9c63', leaf: '#94ac76' } },
+  { id: 'primrose', scene: 'snow', cost: 14, growSec: 150, sell: 31, xp: 5, head: 'primrose', leaf: 'spoon', pal: { petal: '#fbefba', petalDeep: '#ddce86', center: '#e4b337', centerDeep: '#a87a1d', stem: '#76985c', leaf: '#8aad6a' } },
+  { id: 'pansy', scene: 'snow', cost: 30, growSec: 270, sell: 66, xp: 12, head: 'pansy', leaf: 'serrate', pal: { petal: '#a984d5', petalDeep: '#6b4794', center: '#f1cb51', centerDeep: '#4c305d', stem: '#729561', leaf: '#8ab075' }, alt: { petal: '#f5d25a', petalDeep: '#d9aa2b' } },
+  { id: 'bleedingheart', scene: 'snow', cost: 60, growSec: 470, sell: 140, xp: 26, head: 'bleedingheart', leaf: 'pinnate', pal: { petal: '#eb85a6', petalDeep: '#bd4e7b', center: '#fff7f5', centerDeep: '#ddcbd2', stem: '#81976a', leaf: '#8da87c' } },
+  { id: 'hibiscus', scene: 'volcano', cost: 28, growSec: 250, sell: 61, xp: 11, head: 'hibiscus', leaf: 'serrate', pal: { petal: '#ee7068', petalDeep: '#ba3b46', center: '#f5cc57', centerDeep: '#a76a20', stem: '#648950', leaf: '#7aa45f' }, alt: { petal: '#f5b257', petalDeep: '#d7833b' } },
+  { id: 'birdofparadise', scene: 'volcano', cost: 82, growSec: 580, sell: 195, xp: 34, head: 'birdofparadise', leaf: 'paddle', pal: { petal: '#f39837', petalDeep: '#c56820', center: '#5070b4', centerDeep: '#304b8b', stem: '#658b62', leaf: '#7b9b71' } },
+  { id: 'gazania', scene: 'volcano', cost: 18, growSec: 180, sell: 39, xp: 7, head: 'gazania', leaf: 'pinnate', pal: { petal: '#f8bf42', petalDeep: '#d4812d', center: '#9b6227', centerDeep: '#5b3627', stem: '#74895c', leaf: '#94a887' } },
+  { id: 'redhotpoker', scene: 'volcano', cost: 44, growSec: 360, sell: 100, xp: 19, head: 'redhotpoker', leaf: 'strap', pal: { petal: '#ed813d', petalDeep: '#c14b2b', center: '#f5cf58', centerDeep: '#b49b35', stem: '#82905d', leaf: '#94a76c' } },
+  { id: 'desertrose', scene: 'volcano', cost: 96, growSec: 650, sell: 232, xp: 39, head: 'desertrose', leaf: 'glossy', pal: { petal: '#ef96b8', petalDeep: '#bb527f', center: '#fff6df', centerDeep: '#d4b977', stem: '#9a9982', leaf: '#7e9f65' } },
+  { id: 'marshmarigold', scene: 'lake', cost: 18, growSec: 170, sell: 39, xp: 6, head: 'marshmarigold', leaf: 'heart', pal: { petal: '#f7d143', petalDeep: '#d5a527', center: '#edb92f', centerDeep: '#a7781d', stem: '#72965e', leaf: '#82ab6c' } },
+  { id: 'forgetmenot', scene: 'lake', cost: 22, growSec: 190, sell: 47, xp: 7, head: 'forgetmenot', leaf: 'opposite', pal: { petal: '#93c4ec', petalDeep: '#658fcb', center: '#f5d85b', centerDeep: '#b89b35', stem: '#739e71', leaf: '#8ab285' } },
+  { id: 'astilbe', scene: 'lake', cost: 46, growSec: 350, sell: 105, xp: 19, head: 'astilbe', leaf: 'pinnate', pal: { petal: '#d79bc3', petalDeep: '#a96599', center: '#f0c6de', centerDeep: '#b47b9c', stem: '#7f9066', leaf: '#90a474' } },
+  { id: 'cardinalflower', scene: 'lake', cost: 62, growSec: 460, sell: 146, xp: 27, head: 'cardinalflower', leaf: 'serrate', pal: { petal: '#e44d44', petalDeep: '#ac2f36', center: '#f79b68', centerDeep: '#c94e37', stem: '#79865a', leaf: '#8ca36b' } },
+  { id: 'arrowhead', scene: 'lake', cost: 84, growSec: 590, sell: 202, xp: 35, head: 'arrowhead', leaf: 'arrow', pal: { petal: '#fffaf0', petalDeep: '#ddd8c8', center: '#e7c24d', centerDeep: '#a18b2c', stem: '#6d965f', leaf: '#80a86c' } },
+]
+    SPECIES.push(...NEW_SPECIES)
+    for (const species of NEW_SPECIES) {
+      SCENE_BY_ID.get(species.scene).species.push(species.id)
+      SCENE_ID_OF.set(species.id, species.scene)
+      species.source = ['crocus','astilbe','arrowhead'].includes(species.id)
+        ? `https://en.wikipedia.org/wiki/${({crocus:'Crocus_vernus',astilbe:'Astilbe_chinensis',arrowhead:'Sagittaria_sagittifolia'})[species.id]}`
+        : `https://plants.ces.ncsu.edu/plants/${({cosmos:'cosmos-bipinnatus',zinnia:'zinnia-elegans',cornflower:'centaurea-cyanus',calendula:'calendula-officinalis',snapdragon:'antirrhinum-majus',daffodil:'narcissus-pseudonarcissus',primrose:'primula-vulgaris',pansy:'viola-tricolor',bleedingheart:'lamprocapnos-spectabilis',hibiscus:'hibiscus-rosa-sinensis',birdofparadise:'strelitzia-reginae',gazania:'gazania-rigens',redhotpoker:'kniphofia-uvaria',desertrose:'adenium-obesum',marshmarigold:'caltha-palustris',forgetmenot:'myosotis-scorpioides',cardinalflower:'lobelia-cardinalis'})[species.id]}/`
+    }
     const SPECIES_BY_ID = new Map(SPECIES.map(species => [species.id, species]))
+    for (const scene of SCENES) scene.species.sort((a,b) => SPECIES_BY_ID.get(a).cost - SPECIES_BY_ID.get(b).cost)
+
 
     /** Every codex entry: species × variant, including the gold hidden bloom. */
     const CODEX_ENTRIES = []
@@ -1130,6 +1615,10 @@ window.__ModuleLoader__.load({
       { id: 'robin', scenes: ['snow'], when: 'any', weight: 3, tip: 5 },
       { id: 'honeycreeper', scenes: ['volcano'], when: 'day', weight: 2, tip: 8 },
       { id: 'kingfisher', scenes: ['lake'], when: 'day', weight: 1, tip: 12 },
+      { id: 'bumblebee', scenes: ['meadow','snow','lake'], when: 'day', weight: 0.7, tip: 10, special: true },
+      { id: 'swallowtail', scenes: ['meadow','lake'], when: 'day', dry: true, weight: 0.5, tip: 14, special: true },
+      { id: 'hawkmoth', scenes: ['meadow','volcano','lake'], when: 'day', weight: 0.6, tip: 12, special: true },
+      { id: 'hoverfly', scenes: ['meadow','lake'], when: 'day', dry: true, weight: 0.6, tip: 10, special: true },
     ]
     const VISITOR_BY_ID = new Map(VISITORS.map(visitor => [visitor.id, visitor]))
 
@@ -1210,6 +1699,10 @@ window.__ModuleLoader__.load({
       { id: 'pearl', chance: 0.12, pal: { petal: '#f3eef8', petalDeep: '#c9bfe6', center: '#fff6d8', centerDeep: '#d9c48a' }, stops: [[0, '#c7b8ea'], [35, '#f6e6f1'], [70, '#dff3f1'], [100, '#ffffff']] },
       { id: 'ink', chance: 0.1, pal: { petal: '#3b2a4a', petalDeep: '#1c1426', center: '#c9a24a', centerDeep: '#7a5a1e' }, stops: [[0, '#120c1a'], [55, '#3b2a4a'], [100, '#7a4a8a']] },
       { id: 'variegated', chance: 0.14 },
+      { id: 'fasciated', chance: 0.22, source: 'https://en.wikipedia.org/wiki/Fasciation', specimen: 'sunflower' },
+      { id: 'radial', chance: 0.3, source: 'https://en.wikipedia.org/wiki/Floral_symmetry#Peloria', specimen: 'snapdragon' },
+      { id: 'double', chance: 0.2, source: 'https://en.wikipedia.org/wiki/Double-flowered', specimen: 'rose' },
+      { id: 'leafy', chance: 0.2, source: 'https://en.wikipedia.org/wiki/Phyllody', specimen: 'daisy' },
     ]
     const TRAIT_BY_ID = new Map(TRAITS.map(trait => [trait.id, trait]))
     /** The weather each ground turns into a curiosity: harvest in it for a chance. */
@@ -1285,7 +1778,7 @@ window.__ModuleLoader__.load({
     }
 
     /** The visitor at one plot right now, or null. Only open flowers attract one. */
-    function visitorAt(sceneId, index, plot, now, weather, hiveLevel) {
+    function visitorAt(sceneId, index, plot, now, weather, hiveLevel, ecologyBonus = 0, gardenState) {
       if (plot === null || plot === undefined) return null
       const species = SPECIES_BY_ID.get(plot.species)
       if (species === undefined || plot.growthMs < growMsOf(species)) return null
@@ -1294,16 +1787,19 @@ window.__ModuleLoader__.load({
       const sceneIndex = SCENES.findIndex(scene => scene.id === sceneId)
       if (sceneIndex === -1) return null
       const spot = sceneIndex * 16 + index
-      if (hashUnit(bucket, spot, 1) >= VISIT_CHANCE + FACILITY_BY_ID.get('hive').step * (hiveLevel ?? 0)) return null
+      if (hashUnit(bucket, spot, 1) >= Math.min(0.85, VISIT_CHANCE + FACILITY_BY_ID.get('hive').step * (hiveLevel ?? 0) + ecologyBonus)) return null
       const night = isNight(now)
       const pool = VISITORS.filter(visitor => visitor.scenes.includes(sceneId)
         && (visitor.when === 'any' || (visitor.when === 'night') === night)
-        && !(visitor.dry === true && weather === 'rain'))
-      const total = pool.reduce((sum, visitor) => sum + visitor.weight, 0)
+        && !(visitor.dry === true && weather === 'rain')
+        && specialVisitorEligible(visitor, plot, gardenState, weather))
+      const affinity = ecoProfile(species.id)?.visitor
+      const weight = visitor => visitor.weight * (visitor.id === affinity ? 1.6 : 1)
+      const total = pool.reduce((sum, visitor) => sum + weight(visitor), 0)
       if (total === 0) return null
       let pick = hashUnit(bucket, spot, 2) * total
       for (const visitor of pool) {
-        pick -= visitor.weight
+        pick -= weight(visitor)
         if (pick < 0) return visitor
       }
       return pool[pool.length - 1]
@@ -1391,6 +1887,8 @@ window.__ModuleLoader__.load({
         hybrids: {},
         exotics: {},
         specimens: {},
+        commissions: { period: ecologyPeriod(now), accepted: {}, completed: [] }, patronage: 0, commissionLog: [],
+        study: {}, ecology: { period: ecologyPeriod(now), grounds: ['meadow'], observed: [], visitors: [], claimed: [] }, researchSeals: 0, journal: [],
         seed: 20261116,
         orderSeq: 1,
         lastTick: now,
@@ -1419,6 +1917,16 @@ window.__ModuleLoader__.load({
         if (typeof plot.tint === 'string' && SPECIES_BY_ID.has(plot.tint) && plot.tint !== species.id) plots[index].tint = plot.tint
         if (finiteOr(plot.fed, 0) > 0) plots[index].fed = Math.floor(plot.fed)
         if (finiteOr(plot.visits, 0) > 0) plots[index].visits = Math.floor(plot.visits)
+        if (finiteOr(plot.guardianVisits,0)>0) plots[index].guardianVisits=Math.floor(plot.guardianVisits)
+        plots[index].specialVisits = Object.fromEntries(Object.entries(sanitizeVisitors(plot.specialVisits)).filter(([id])=>VISITOR_BY_ID.get(id)?.special))
+        if (plot.resident === true) {
+          plots[index].resident = true
+          plots[index].variant = ['base','alt','hidden'].includes(plot.variant) ? plot.variant : 'base'
+          if (plots[index].variant !== 'hidden' && TRAIT_BY_ID.has(plot.trait)) plots[index].trait = plot.trait
+          for (const field of ['retainedAt','observedAt','careCount','reblooms','studiedReblooms']) {
+            if (Number.isFinite(plot[field]) && plot[field] >= 0) plots[index][field] = plot[field]
+          }
+        }
         if (plot.pollinated === true) plots[index].pollinated = true
         if (typeof plot.greeted === 'number' && Number.isFinite(plot.greeted)) plots[index].greeted = plot.greeted
       }
@@ -1573,11 +2081,265 @@ window.__ModuleLoader__.load({
         hybrids: sanitizeCounts(raw.hybrids, '~', id => SPECIES_BY_ID.has(id)),
         exotics: sanitizeCounts(raw.exotics, ':', id => TRAIT_BY_ID.has(id)),
         specimens: sanitizeSpecimens(raw.specimens),
+        commissions: sanitizeCommissions(raw.commissions,now), patronage: Math.floor(finiteOr(raw.patronage,0)), commissionLog: sanitizeCommissionLog(raw.commissionLog),
+        study: sanitizeStudy(raw.study), ecology: sanitizeEcology(raw.ecology, now, scenes), researchSeals: Math.floor(finiteOr(raw.researchSeals, 0)), journal: sanitizeJournal(raw.journal),
         seed: Math.floor(finiteOr(raw.seed, 20261116)) || 20261116,
         orderSeq: Math.max(1, Math.floor(finiteOr(raw.orderSeq, 1))),
         lastTick: Math.min(finiteOr(raw.lastTick, now), now),
       })
     }
+
+/* ecology-engine.fragment.js
+ * Paste inside the flower-garden factory after the existing pure game helpers.
+ * It deliberately does not render or mutate the UI: the host owns commit(), copy,
+ * and translation. The functions below return a new state or null for invalid input.
+ */
+
+// The host supplies ECO_PROFILES from its botany data. A missing profile is harmless.
+const ECO_PERIOD_MS = 6 * 60 * 60 * 1000
+const ECO_OBSERVE_MS = 10 * 60 * 1000
+const ECO_ROLE_SET = new Set(['nectar', 'pollen', 'seed', 'shelter', 'water', 'night'])
+const ECO_VISITOR_CAP = 0.12
+
+function ecologyPlot(state, sceneId, index) {
+  const slot = state?.scenes?.[sceneId]
+  return slot === undefined ? null : slot.plots?.[index] ?? null
+}
+
+function ecologyMature(species, plot) {
+  return species !== undefined && plot !== null && plot !== undefined
+    && plot.growthMs >= growMsOf(species)
+}
+
+function ecologyEntry(state, speciesId) {
+  const current = state.study?.[speciesId]
+  return current && typeof current === 'object'
+    ? current
+    : { observations: 0, firstAt: 0, lastAt: 0 }
+}
+
+function ecologyPeriod(now) {
+  return Math.floor(Math.max(0, now) / ECO_PERIOD_MS)
+}
+
+function ecologyState(state, now) {
+  const period = ecologyPeriod(now)
+  const old = state.ecology && state.ecology.period === period ? state.ecology : null
+  const grounds = SCENES.filter(scene => (state.scenes?.[scene.id]?.unlocked ?? 0) > 0).map(scene => scene.id)
+  return old ? { ...old, grounds: old.grounds ?? grounds } : { period, grounds, observed: [], visitors: [], claimed: [] }
+}
+
+function retainAt(state, sceneId, index, now) {
+  const slot = state.scenes?.[sceneId]
+  const plot = slot?.plots?.[index]
+  const species = plot === null || plot === undefined ? undefined : SPECIES_BY_ID.get(plot.species)
+  if (slot === undefined || index < 0 || index >= slot.unlocked || species === undefined || plot.resident === true || !ecologyMature(species, plot)) return null
+  const scene = SCENE_BY_ID.get(sceneId)
+  if (scene === undefined) return null
+  const plain = plot.tint === undefined ? plotVariant(species, index) : 'base'
+  const roll = nextRandom(state.seed)
+  const hiddenBase = hiddenChance(plot, weatherAt(now), now, scene)
+  const charmBonus = state.charm === true ? CHARM_BONUS : 0
+  const chance = Math.min(state.charm === true ? 0.55 : 0.3, hiddenBase + charmBonus)
+  const hidden = roll.value < chance
+  let cursor = roll.seed
+  const dna = Number.isFinite(plot.dna) && plot.dna > 0 ? plot.dna : 1 + Math.floor(hashUnit(state.seed, index, 12345) * 2147483646)
+  const first = { species: species.id, variant: hidden ? 'hidden' : plain, dna }
+  if (plot.tint !== undefined) first.tint = plot.tint
+  let trait
+  if (!hidden) {
+    const causes = traitCauses(plot, sceneId, weatherAt(now), now)
+    for (const id of causes) {
+      const step = nextRandom(cursor)
+      cursor = step.seed
+      const greenhouse = typeof facilityLevel === 'function' ? facilityLevel(state, 'greenhouse') : 0
+      const boost = 1 + greenhouse * 0.1
+      if (step.value < Math.min(0.9, (TRAIT_BY_ID.get(id)?.chance ?? 0) * boost)) { trait = id; break }
+    }
+  }
+  if (trait !== undefined) first.trait = trait
+  const key = itemKey(first)
+  const seen = { ...(state.seen ?? {}) }
+  if (!first.tint) seen[`${species.id}:${first.variant}`] = (seen[`${species.id}:${first.variant}`] ?? 0) + 1
+  const specimens = { ...(state.specimens ?? {}) }
+  const prior = specimens[key]
+  specimens[key] = { ...(prior ?? first), count: (prior?.count ?? 0) + 1 }
+  const plots = slot.plots.slice()
+  plots[index] = { ...plot, dna, resident: true, variant: first.variant, trait, retainedAt: now }
+  const hybrids = { ...(state.hybrids ?? {}) }
+  if (first.tint !== undefined) hybrids[`${species.id}~${first.tint}`] = (hybrids[`${species.id}~${first.tint}`] ?? 0) + 1
+  const exotics = { ...(state.exotics ?? {}) }
+  if (trait !== undefined) exotics[`${species.id}:${trait}`] = (exotics[`${species.id}:${trait}`] ?? 0) + 1
+  return {
+    ...state,
+    seed: cursor,
+    charm: false,
+    seen,
+    specimens,
+    hybrids,
+    exotics,
+    scenes: { ...state.scenes, [sceneId]: { ...slot, plots } },
+  }
+}
+
+function observeAt(state, sceneId, index, now) {
+  const slot = state.scenes?.[sceneId]
+  const plot = slot?.plots?.[index]
+  const species = plot === null || plot === undefined ? undefined : SPECIES_BY_ID.get(plot.species)
+  if (slot === undefined || index < 0 || index >= slot.unlocked || species === undefined || plot.resident !== true || plot.growthMs < growMsOf(species)
+    || plot.moisture < 30 || (plot.observedAt !== undefined && now - plot.observedAt < ECO_OBSERVE_MS)) return null
+  const study = { ...(state.study ?? {}) }
+  const old = ecologyEntry(state, species.id)
+  const reblooms = plot.reblooms ?? 0
+  const extra = reblooms > (plot.studiedReblooms ?? 0) ? 2 : 1
+  study[species.id] = { ...old, observations: old.observations + extra, firstAt: old.firstAt || now, lastAt: now }
+  const ecology = ecologyState(state, now)
+  const observed = ecology.observed.includes(species.id) ? ecology.observed : [...ecology.observed, species.id]
+  const plots = slot.plots.slice()
+  plots[index] = { ...plot, observedAt: now, studiedReblooms: reblooms, careCount: (plot.careCount ?? 0) + 1 }
+  const fee = 8 + Math.ceil(species.cost * 0.25)
+  if (state.coins < fee) return null
+  return {
+    ...state,
+    coins: state.coins - fee,
+    study,
+    ecology: { ...ecology, observed },
+    scenes: { ...state.scenes, [sceneId]: { ...slot, plots } },
+  }
+}
+
+function rebloomAt(state, sceneId, index, now) {
+  const slot = state.scenes?.[sceneId]
+  const plot = slot?.plots?.[index]
+  const species = plot === null || plot === undefined ? undefined : SPECIES_BY_ID.get(plot.species)
+  if (slot === undefined || index < 0 || index >= slot.unlocked || species === undefined || plot.resident !== true || plot.growthMs < growMsOf(species)
+    || plot.observedAt === undefined) return null
+  const fee = 10 + Math.ceil(species.cost * 0.4)
+  if (state.coins < fee) return null
+  const plots = slot.plots.slice()
+  plots[index] = {
+    ...plot,
+    growthMs: Math.floor(growMsOf(species) * 0.35), moisture: 100,
+    pollinated: false, greeted: 0, visits: 0, fed: 0,
+    reblooms: (plot.reblooms ?? 0) + 1,
+  }
+  const study = { ...(state.study ?? {}) }
+  const entry = ecologyEntry(state, species.id)
+  study[species.id] = { ...entry, reblooms: (entry.reblooms ?? 0) + 1 }
+  return {
+    ...state,
+    coins: state.coins - fee,
+    study,
+    scenes: { ...state.scenes, [sceneId]: { ...slot, plots } },
+  }
+}
+
+function ecoProfile(speciesId) {
+  const profile = typeof ECO_PROFILES === 'undefined' ? undefined : ECO_PROFILES?.[speciesId]
+  if (profile === undefined || !ECO_ROLE_SET.has(profile.role) || profile.season < 0 || profile.season > 3) return null
+  return profile
+}
+
+function gardenEcology(state, now) {
+  const residents = []
+  for (const [sceneId, slot] of Object.entries(state.scenes ?? {})) {
+    for (const plot of slot.plots ?? []) {
+      if (plot?.resident === true && plot.moisture >= 30) {
+        const species = SPECIES_BY_ID.get(plot.species)
+        if (ecologyMature(species, plot)) residents.push({ sceneId, plot })
+      }
+    }
+  }
+  const roles = new Set(), species = new Set(), seasonal = new Set()
+  const season = ecologyPeriod(now) % 4
+  for (const resident of residents) {
+    species.add(resident.plot.species)
+    const profile = ecoProfile(resident.plot.species)
+    if (profile === null) continue
+    roles.add(profile.role)
+    if (profile.season === season) seasonal.add(resident.plot.species)
+  }
+  return {
+    residents: residents.length,
+    species: species.size,
+    roles: [...roles],
+    roleCoverage: roles.size,
+    seasonal: seasonal.size,
+    visitorBonus: Math.min(ECO_VISITOR_CAP, roles.size * 0.02 + Math.min(0.04, seasonal.size * 0.005)),
+  }
+}
+
+function ecoProjects(state, now) {
+  const period = ecologyPeriod(now)
+  const unlocked = []
+  for (const scene of SCENES) {
+    if (!ecologyState(state, now).grounds.includes(scene.id)) continue
+    for (const speciesId of scene.species) if (!unlocked.includes(speciesId)) unlocked.push(speciesId)
+  }
+  const projects = []
+  for (let i = 0; i < 3; i += 1) {
+    const count = 3 + i
+    const needed = []
+    let cursor = 0xEC0123 + period * 31 + i * 997
+    while (needed.length < Math.min(count, unlocked.length)) {
+      const draw = nextRandom(cursor); cursor = draw.seed
+      const id = unlocked[Math.floor(draw.value * unlocked.length)]
+      if (!needed.includes(id)) needed.push(id)
+    }
+    const hours = Array.from({length:6}, (_, hour) => period * ECO_PERIOD_MS + hour * 3600000)
+    const visitorPool = VISITORS.filter(visitor => !visitor.special && visitor.scenes.some(id => ecologyState(state, now).grounds.includes(id))
+      && hours.some(time => visitor.when === 'any' || (visitor.when === 'night') === isNight(time)))
+      .map((visitor,index) => ({visitor,rank:hashUnit(period,index,i+901)})).sort((a,b) => a.rank-b.rank)
+    const visitors = visitorPool.slice(0, Math.min(i + 1, visitorPool.length)).map(entry => entry.visitor.id)
+    projects.push({ id: `eco-${period}-${i + 1}`, period, species: needed, visitors, coins: [100, 180, 260][i], ribbons: i, seals: i + 1 })
+  }
+  return projects
+}
+
+function submitStudy(state, projectId, now) {
+  const project = ecoProjects(state, now).find(entry => entry.id === projectId)
+  const ecology = ecologyState(state, now)
+  if (project === undefined || ecology.claimed.includes(projectId) || project.species.some(id => !ecology.observed.includes(id))
+    || project.visitors.some(id => !ecology.visitors.includes(id)) || state.coins < project.coins || (state.ribbons ?? 0) < project.ribbons) return null
+  const claimed = [...ecology.claimed, projectId]
+  const journal = Array.isArray(state.journal) ? state.journal.slice(-99) : []
+  journal.push({ id: projectId, period: ecology.period, at: now, species: project.species.slice(), visitors: project.visitors.slice(), seals: project.seals })
+  return { ...state, coins: state.coins - project.coins, ribbons: (state.ribbons ?? 0) - project.ribbons,
+    researchSeals: (state.researchSeals ?? 0) + project.seals, journal, ecology: { ...ecology, claimed } }
+}
+
+function sanitizeEcology(raw, now, scenes) {
+  const period = ecologyPeriod(now)
+  const available = scenes ? SCENES.filter(scene => (scenes[scene.id]?.unlocked ?? 0) > 0).map(scene => scene.id) : ['meadow']
+  const grounds = raw?.period === period && Array.isArray(raw.grounds) ? raw.grounds.filter(id => available.includes(id)) : available
+  if (raw === null || typeof raw !== 'object' || raw.period !== period) return { period, grounds, observed: [], visitors: [], claimed: [] }
+  return { period, grounds,
+    observed: Array.isArray(raw.observed) ? raw.observed.filter(id => SPECIES_BY_ID.has(id)) : [],
+    visitors: Array.isArray(raw.visitors) ? raw.visitors.filter(id => VISITOR_BY_ID.has(id)) : [],
+    claimed: Array.isArray(raw.claimed) ? raw.claimed.filter(id => typeof id === 'string').slice(0, 3) : [] }
+}
+
+function sanitizeStudy(raw) {
+  const study = {}
+  if (raw === null || typeof raw !== 'object') return study
+  for (const [id, entry] of Object.entries(raw)) if (SPECIES_BY_ID.has(id) && entry && typeof entry === 'object') {
+    study[id] = { observations: Math.max(0, Math.floor(finiteOr(entry.observations, 0))), reblooms: Math.max(0, Math.floor(finiteOr(entry.reblooms, 0))), firstAt: finiteOr(entry.firstAt, 0), lastAt: finiteOr(entry.lastAt, 0) }
+  }
+  return study
+}
+
+function sanitizeJournal(raw) {
+  if (!Array.isArray(raw)) return []
+  return raw.filter(entry => entry && typeof entry === 'object' && typeof entry.id === 'string'
+    && Number.isFinite(entry.period) && Number.isFinite(entry.at)
+    && Array.isArray(entry.species) && Array.isArray(entry.visitors))
+    .map(entry => ({ id: entry.id.slice(0, 80), period: Math.max(0, Math.floor(entry.period)), at: Math.max(0, entry.at),
+      species: entry.species.filter(id => SPECIES_BY_ID.has(id)).slice(0, 10), visitors: entry.visitors.filter(id => VISITOR_BY_ID.has(id)).slice(0, 10), seals: Math.max(0, Math.floor(finiteOr(entry.seals, 0))) }))
+    .slice(-100)
+}
+
+// Integration exports for the host's __game object.
+const ECOLOGY_API = { ECO_PERIOD_MS, ECO_OBSERVE_MS, ecologyPeriod, ecologyState, retainAt, observeAt, rebloomAt, ecoProfile, gardenEcology, ecoProjects, submitStudy, sanitizeStudy, sanitizeEcology, sanitizeJournal }
 
     function validOrder(order) {
       if (order === null || typeof order !== 'object') return false
@@ -1597,8 +2359,9 @@ window.__ModuleLoader__.load({
       const growMs = growMsOf(species)
       const factor = (scene !== undefined ? (scene.weather[weather] ?? 1) : weather === 'clear' ? 1.15 : 1) * soilFactor(soil)
       const wet = sprinkled === true || (scene !== undefined && scene.rainWets && weather === 'rain')
-      const moisture = wet ? 100 : Math.max(0, plot.moisture - ms * decayPerMs(species))
-      const wetMs = wet ? ms : Math.min(ms, (plot.moisture / 100) * growMs * DRY_SHARE)
+      const dryDuration = plot.resident ? 45 * 60 * 1000 : growMs * DRY_SHARE
+      const moisture = wet ? 100 : Math.max(0, plot.moisture - ms * 100 / dryDuration)
+      const wetMs = wet ? ms : Math.min(ms, (plot.moisture / 100) * dryDuration)
       const growthMs = Math.min(growMs, plot.growthMs + wetMs * factor)
       const dried = plot.dried === true || (moisture <= 0 && growthMs < growMs)
       if (growthMs === plot.growthMs && moisture === plot.moisture && dried === plot.dried) return plot
@@ -1650,7 +2413,7 @@ window.__ModuleLoader__.load({
         }
         cursor = segmentEnd
       }
-      return scenesChanged ? { ...state, scenes: nextScenes, lastTick: now } : { ...state, lastTick: now }
+      return { ...state, ...(scenesChanged ? { scenes: nextScenes } : {}), lastTick: now, ecology: ecologyState(state, now) }
     }
 
     /**
@@ -1711,7 +2474,7 @@ window.__ModuleLoader__.load({
       const plots = slot.plots.map(plot => {
         if (plot === null || plot.moisture >= 99.5) return plot
         const species = SPECIES_BY_ID.get(plot.species)
-        if (species === undefined || plot.growthMs >= growMsOf(species)) return plot
+        if (species === undefined || (plot.growthMs >= growMsOf(species) && !plot.resident)) return plot
         changed = true
         return { ...plot, moisture: 100 }
       })
@@ -1725,15 +2488,22 @@ window.__ModuleLoader__.load({
     function greetVisitor(state, sceneId, index, now, weather) {
       const slot = state.scenes[sceneId]
       const plot = slot === undefined ? undefined : slot.plots[index]
-      const visitor = visitorAt(sceneId, index, plot, now, weather, facilityLevel(state, 'hive'))
+      const visitor = visitorAt(sceneId, index, plot, now, weather, facilityLevel(state, 'hive'), gardenEcology(state, now).visitorBonus, state)
       if (visitor === null) return null
       const plots = slot.plots.slice()
-      plots[index] = { ...plot, greeted: visitBucket(now), pollinated: true, visits: (plot.visits ?? 0) + 1 }
+      const role = VISITOR_INFO[visitor.id].role
+      plots[index] = { ...plot, greeted: visitBucket(now), pollinated: plot.pollinated === true || role === 'pollinator',
+        moisture: role === 'waterside' ? Math.min(100, plot.moisture + 20) : plot.moisture, visits: (plot.visits ?? 0) + 1,
+        guardianVisits: (plot.guardianVisits ?? 0) + (role === 'guardian' ? 1 : 0),
+        specialVisits: visitor.special ? { ...plot.specialVisits, [visitor.id]: (plot.specialVisits?.[visitor.id] ?? 0) + 1 } : (plot.specialVisits ?? {}) }
+      const ecology = ecologyState(state, now)
+      const visitors = ecology.visitors.includes(visitor.id) ? ecology.visitors : [...ecology.visitors, visitor.id]
       return {
         ...state,
         coins: state.coins + visitor.tip,
         visitors: { ...state.visitors, [visitor.id]: (state.visitors[visitor.id] ?? 0) + 1 },
-        scenes: { ...state.scenes, [sceneId]: { ...slot, plots } },
+        scenes: { ...state.scenes, [sceneId]: { ...slot, plots, ...(role === 'guardian' ? withSoil(slot, index, soilOf(slot,index)+6) : {}) } },
+        ecology: { ...ecology, visitors },
       }
     }
 
@@ -1763,29 +2533,29 @@ window.__ModuleLoader__.load({
       }
     }
 
-    function harvestAt(state, sceneId, index, now, weather) {
+    function harvestAt(state, sceneId, index, now, weather, endResidency = false) {
       const scene = SCENE_BY_ID.get(sceneId)
       const slot = state.scenes[sceneId]
       const plot = slot === undefined ? undefined : slot.plots[index]
-      if (scene === undefined || plot === undefined || plot === null) return null
+      if (scene === undefined || plot === undefined || plot === null || (plot.resident && !endResidency)) return null
       const species = SPECIES_BY_ID.get(plot.species)
       if (species === undefined || plot.growthMs < growMsOf(species)) return null
       if (state.basket.length >= basketCapacity(state)) return null
       const bonus = state.charm === true ? CHARM_BONUS : 0
       const chance = Math.min(state.charm === true ? 0.55 : 0.3, hiddenChance(plot, weather, now, scene) + bonus)
       const roll = nextRandom(state.seed)
-      const hidden = roll.value < chance
-      let cursor = roll.seed
+      const hidden = plot.resident ? plot.variant === 'hidden' : roll.value < chance
+      let cursor = plot.resident ? state.seed : roll.seed
       const draw = () => {
         const step = nextRandom(cursor)
         cursor = step.seed
         return step.value
       }
       const plain = plot.tint !== undefined ? 'base' : plotVariant(species, index)
-      const variant = hidden ? 'hidden' : plain
+      const variant = plot.resident ? plot.variant : hidden ? 'hidden' : plain
       // A curiosity needs a cause in the plant's life, and then some luck.
-      let trait
-      if (!hidden) {
+      let trait = plot.resident ? plot.trait : undefined
+      if (!hidden && !plot.resident) {
         const boost = 1 + FACILITY_BY_ID.get('greenhouse').step * facilityLevel(state, 'greenhouse')
         for (const id of traitCauses(plot, sceneId, weather, now)) {
           if (draw() < Math.min(0.9, TRAIT_BY_ID.get(id).chance * boost)) {
@@ -1844,7 +2614,7 @@ window.__ModuleLoader__.load({
       return {
         ...state,
         seed: cursor,
-        charm: false,
+        charm: plot.resident ? state.charm : false,
         xp: state.xp + species.xp,
         harvested: state.harvested + blooms.length,
         pollinated: (state.pollinated ?? 0) + (doubled ? 1 : 0),
@@ -1862,6 +2632,10 @@ window.__ModuleLoader__.load({
     /** What in this plant's life could have made it a curiosity, most demanding first. */
     function traitCauses(plot, sceneId, weather, now) {
       const causes = []
+      if ((plot.visits ?? 0) >= 3 && (plot.fed ?? 0) >= 2) causes.push('fasciated')
+      if (['snapdragon','cardinalflower','pansy'].includes(plot.species) && (plot.specialVisits?.bumblebee ?? 0) > 0) causes.push('radial')
+      if (plot.pollinated && (plot.fed ?? 0) >= 1) causes.push('double')
+      if ((plot.guardianVisits ?? 0) >= 2 && weather === 'rain') causes.push('leafy')
       if ((plot.visits ?? 0) >= 2) causes.push('twin')
       if ((plot.fed ?? 0) >= 2) causes.push('giant')
       const local = SCENE_TRAIT[sceneId]
@@ -3831,6 +4605,227 @@ window.__ModuleLoader__.load({
     }
 
     /** One drawing routine per `species.head`; each handles the bud and the open flower. */
+// Common drawing vocabulary; each species below has its own habit and floral geometry.
+function nfRay(ink, key, x, y, count, len, width, options = {}) {
+  return Array.from({ length: count }, (_, i) => petal(`${key}${i}`, {
+    x, y, rot: i * 360 / count + (options.offset ?? 0), len: len + jit(i, 4) * .9, w: width,
+    fill: options.fill ?? ink.petal, stroke: ink.line, vein: ink.line, veinOpacity: .25,
+    tip: options.tip ?? 'round', ...options,
+  }))
+}
+function nfCore(ink, key, x, y, r) {
+  return h('g', { key }, h('circle', { cx: x, cy: y, r, fill: ink.core, stroke: ink.pal.centerDeep, strokeWidth: .35 }),
+    dots('pollen', Array.from({ length: 13 }, (_, i) => polar(x, y, r * Math.sqrt((i + .4) / 13), i * 137.5)), .38, lighten(ink.pal.center, .4)))
+}
+function nfFern(ink, key, x, y, len, rotation) {
+  return h('g', { key, transform: place({ x, y, rot: rotation }) },
+    stemPath('axis', `M0,0Q2,${-len / 2} 0,${-len}`, ink.pal.stem, .65),
+    ...Array.from({ length: 7 }, (_, i) => h('g', { key: i },
+      leaf(ink, 'l', { x: 1, y: -i * len / 8, len: (len - i * len / 8) * .45, w: 2.7, rot: -65, veins: 0 }),
+      leaf(ink, 'r', { x: 1, y: -i * len / 8, len: (len - i * len / 8) * .45, w: 2.7, rot: 65, veins: 0 }))))
+}
+function nfHeartLeaf(ink, key, x, y, scale, rotation = 0) {
+  return h('g', { key, transform: `${place({ x, y, rot: rotation })} scale(${scale})` },
+    h('path', { d: 'M0,0C-19,-4 -23,-17 -13,-21C-6,-24 -2,-17 0,-14C2,-17 7,-24 14,-20C24,-14 15,-4 0,0Z', fill: ink.leaf, stroke: ink.leafLine, strokeWidth: .5 }),
+    h('path', { d: 'M0,0L0,-14M0,-5L-12,-16M0,-7L12,-16', fill: 'none', stroke: ink.rib, strokeWidth: .55 }))
+}
+const NEW_PLANTS = {
+  cosmos(ink, st) {
+    const y = st.top, parts = [stem(ink, y, { w: 1.5, bend: 4 }), nfFern(ink, 'left', 49, 75, 24, -61), nfFern(ink, 'right', 52, 67, 22, 57)]
+    if (!st.bloom) return [...parts, bud(ink, 'bud', 50, y + 3, { len: 11, w: 7 })]
+    parts.push(...nfRay(ink, 'ray', 50, y, 8, 21, 12, { tip: 'notch', offset: 22.5 }), nfCore(ink, 'disk', 50, y, 4.8))
+    return parts
+  },
+  zinnia(ink, st) {
+    const y = st.top + 2, parts = [stem(ink, y + 7, { w: 3 }), leaf(ink, 'l', { x: 50, y: 73, len: 24, w: 12, rot: -58, veins: 5 }), leaf(ink, 'r', { x: 51, y: 73, len: 24, w: 12, rot: 58, veins: 5 })]
+    if (!st.bloom) return [...parts, bud(ink, 'bud', 50, y + 7, { len: 13, w: 12 })]
+    for (let row = 0; row < 4; row++) parts.push(...nfRay(ink, `r${row}`, 50, y - row * 1.3, 14 - row * 2, 21 - row * 4, 7.4 - row * .8, { offset: row * 13, fill: row % 2 ? ink.petal : ink.back }))
+    parts.push(nfCore(ink, 'disk', 50, y - 3, 4), ...nfRay(ink, 'florets', 50, y - 3, 7, 5, 2.3, { fill: ink.core }))
+    return parts
+  },
+  cornflower(ink, st) {
+    const y = st.top, parts = [stem(ink, y + 8, { w: 1.7 }), leaf(ink, 'l', { x: 50, y: 77, len: 27, w: 5, rot: -24 }), leaf(ink, 'r', { x: 51, y: 65, len: 22, w: 4, rot: 40 })]
+    parts.push(h('ellipse', { key: 'involucre', cx: 50, cy: y + 6, rx: 7, ry: 9, fill: ink.leaf, stroke: ink.leafLine, strokeWidth: .5 }))
+    for (let i = 0; i < 9; i++) parts.push(h('path', { key: `scale${i}`, d: `M${45 + i % 3 * 4},${y + 1 + Math.floor(i / 3) * 4}l2,-2 2,2 -2,3Z`, fill: ink.leafBack, stroke: '#5b4f3f', strokeWidth: .4 }))
+    if (!st.bloom) return [...parts, bud(ink, 'bud', 50, y + 1, { len: 10, w: 6 })]
+    for (let i = 0; i < 10; i++) parts.push(h('path', { key: `funnel${i}`, transform: place({ x: 50, y: y - 1, rot: i * 36 }), d: 'M-1,0L-3,-10 -8,-16 -6,-19 -2,-15 0,-22 2,-15 6,-19 8,-16 3,-10 1,0Z', fill: ink.petal, stroke: ink.line, strokeWidth: .45 }))
+    parts.push(...nfRay(ink, 'corefloret', 50, y - 1, 14, 7, 2, { fill: ink.back }), nfCore(ink, 'eye', 50, y - 1, 2.6))
+    return parts
+  },
+  calendula(ink, st) {
+    const y = st.top + 3, parts = [stem(ink, y, { w: 2.7 }), leaf(ink, 'l', { x: 49, y: 82, len: 27, w: 12, rot: -55, tip: 'round', belly: .68 }), leaf(ink, 'r', { x: 51, y: 69, len: 21, w: 10, rot: 49, tip: 'round', belly: .7 })]
+    if (!st.bloom) return [...parts, bud(ink, 'bud', 50, y, { len: 12, w: 9 })]
+    parts.push(...nfRay(ink, 'outer', 50, y, 25, 21, 4.4), ...nfRay(ink, 'inner', 50, y, 19, 15, 4, { offset: 7, fill: ink.back }), nfCore(ink, 'disk', 50, y, 6.7))
+    return parts
+  },
+  snapdragon(ink, st) {
+    const top = st.top - 14, parts = [stem(ink, top + 2, { w: 2.2 })]
+    for (let i = 0; i < 4; i++) for (const side of [-1, 1]) parts.push(leaf(ink, `leaf${i}:${side}`, { x: 50, y: 83 - i * 7, len: 18 - i * 2, w: 5, rot: side * 65 }))
+    const count = st.bloom ? 8 : 4
+    for (let i = 0; i < count; i++) {
+      const side = i % 2 ? 1 : -1, x = 50 + side * (7 - i * .35), y = top + 39 - i * 5.5
+      parts.push(stemPath(`pedicel${i}`, `M50,${y + 2}L${x},${y}`, ink.pal.stem, .7))
+      if (!st.bloom || i > 5) parts.push(bud(ink, `bud${i}`, x, y, { len: 6, w: 4, rot: side * 30 }))
+      else parts.push(h('g', { key: `mouth${i}`, transform: `translate(${x} ${y}) scale(${side} 1)` },
+        h('path', { d: 'M-3,3Q-6,-2 -3,-7Q3,-12 9,-7L10,-2Q5,0 3,-2Q8,2 11,3Q11,9 5,8Q-1,9 -3,3Z', fill: ink.petal, stroke: ink.line, strokeWidth: .5 }),
+        h('path', { d: 'M1,0Q5,-2 9,1', fill: 'none', stroke: ink.pal.center, strokeWidth: 2.2 })))
+    }
+    return parts
+  },
+  crocus(ink, st) {
+    const y = st.top + 20, parts = []
+    for (let i = 0; i < 7; i++) parts.push(blade(ink, `leaf${i}`, { x: 50, y: 90, len: 34 + i % 3 * 7, w: 2.4, curve: (i - 3) * 6, rib: '#e6e8d0' }))
+    parts.push(stem(ink, y, { w: 2, by: 88 }))
+    if (!st.bloom) return [...parts, bud(ink, 'bud', 50, y + 2, { len: 19, w: 7 })]
+    for (const angle of [-28, 0, 28]) parts.push(petal(`back${angle}`, { x: 50, y: y + 8, rot: angle, len: 29, w: 14, fill: ink.back, stroke: ink.line, vein: ink.line }))
+    parts.push(strokes('anthers', [[48, y - 1, 46, y - 9], [50, y - 1, 50, y - 12], [52, y - 1, 54, y - 9]], 1.6, ink.pal.center))
+    for (const angle of [-62, 62]) parts.push(petal(`front${angle}`, { x: 50, y: y + 8, rot: angle, len: 21, w: 12, fill: ink.petal, stroke: ink.line, vein: ink.line }))
+    parts.push(petal('centre', { x: 50, y: y + 8, len: 14, w: 16, fill: ink.petal, stroke: ink.line }))
+    return parts
+  },
+  daffodil(ink, st) {
+    const y = st.top + 3, parts = [stemPath('scape', `M48,90L48,${y + 6}Q48,${y - 5} 54,${y}`, ink.pal.stem, 2)]
+    for (let i = 0; i < 5; i++) parts.push(blade(ink, `leaf${i}`, { x: 50, y: 90, len: 42 + i % 2 * 10, w: 4.2, curve: (i - 2) * 7 }))
+    if (!st.bloom) return [...parts, bud(ink, 'bud', 54, y + 5, { rot: 55, len: 16, w: 7 })]
+    parts.push(...nfRay(ink, 'tepal', 52, y, 6, 22, 13, { offset: 30, tip: 'point' }))
+    parts.push(h('path', { key: 'trumpet', d: `M47,${y - 4}L41,${y + 8}Q51,${y + 17} 63,${y + 8}L57,${y - 4}Z`, fill: ink.core, stroke: ink.pal.centerDeep, strokeWidth: .6 }),
+      h('ellipse', { key: 'rim', cx: 52, cy: y + 8, rx: 11, ry: 5.2, fill: ink.pal.centerDeep, stroke: ink.pal.center, strokeWidth: 2 }), dots('pollen', [[49,y+8],[52,y+7],[55,y+8]], .6, lighten(ink.pal.center,.4)))
+    return parts
+  },
+  primrose(ink, st) {
+    const parts = []
+    for (let i = 0; i < 8; i++) parts.push(leaf(ink, `rosette${i}`, { x: 50, y: 88, len: 27, w: 13, rot: -85 + i * 24, shape: 'serrate', veins: 7, tip: 'round' }))
+    for (const [i,x,y] of [[0,35,st.top+16],[1,53,st.top+2],[2,68,st.top+20]]) {
+      parts.push(stem(ink, y, { key: `stem${i}`, x, bx: 50, w: 1.2 }))
+      if (!st.bloom) parts.push(bud(ink, `bud${i}`, x, y + 3, { len: 8, w: 5 }))
+      else parts.push(...nfRay(ink, `p${i}`, x, y, 5, 12, 10, { tip: 'notch', offset: i * 15 }), nfCore(ink, `eye${i}`, x, y, 2.8))
+    }
+    return parts
+  },
+  pansy(ink, st) {
+    const y = st.top + 8, parts = [stem(ink, y, { w: 1.7, bend: 5 }), leaf(ink, 'left', { x: 50, y: 81, len: 22, w: 12, rot: -55, shape: 'serrate' }), leaf(ink, 'right', { x: 52, y: 70, len: 18, w: 10, rot: 52, shape: 'serrate' })]
+    if (!st.bloom) return [...parts, bud(ink, 'bud', 50, y, { len: 10, w: 7, rot: -15 })]
+    for (const [i,rot,len,w] of [[0,-27,24,19],[1,27,24,19],[2,-88,20,17],[3,88,20,17],[4,180,24,27]]) {
+      parts.push(petal(`petal${i}`, { x: 50, y, rot, len, w, fill: i < 2 ? ink.back : ink.petal, stroke: ink.line, tip: 'round' }))
+      if (i > 1) parts.push(petal(`face${i}`, { x: 50, y, rot, len: len*.6, w: w*.42, fill: ink.hidden ? ink.back : ink.pal.centerDeep, opacity: .75 }))
+    }
+    parts.push(h('path', { key: 'eye', d: `M46,${y}Q50,${y-4} 54,${y}Q50,${y+5} 46,${y}`, fill: ink.pal.center }))
+    return parts
+  },
+  bleedingheart(ink, st) {
+    const top = st.top, parts = [stemPath('arch', `M47,90C45,62 33,${top-7} 74,${top+6}`, ink.pal.stem, 1.7), nfFern(ink, 'l', 48, 82, 30, -58), nfFern(ink, 'r', 49, 76, 29, 64)]
+    for (let i = 0; i < 5; i++) {
+      const x = 35 + i * 9, y = top + 8 + (i - 1) * (i - 1) * .8
+      parts.push(stemPath(`hang${i}`, `M${x},${y-7}L${x},${y+1}`, ink.pal.stem, .65))
+      if (!st.bloom) parts.push(bud(ink, `bud${i}`, x, y + 8, { len: 9, w: 5, rot: 180 }))
+      else parts.push(h('g', { key: `heart${i}`, transform: `translate(${x} ${y}) scale(${1-i*.07})` },
+        h('path', { d: 'M0,12C-3,7 -10,3 -8,-3C-6,-8 -1,-6 0,-2C1,-6 6,-8 8,-3C10,3 3,7 0,12Z', fill: ink.petal, stroke: ink.line, strokeWidth: .5 }),
+        h('path', { d: 'M0,6C-1,10 -4,13 0,17C4,13 1,10 0,6Z', fill: ink.hidden ? ink.petal : ink.pal.center, stroke: ink.line, strokeWidth: .35 })))
+    }
+    return parts
+  },
+  hibiscus(ink, st) {
+    const y = st.top + 3, parts = [stem(ink, y + 7, { w: 3, color: '#82775b' }), leaf(ink, 'left', { x: 50, y: 78, len: 26, w: 17, rot: -60, shape: 'serrate', veins: 5 }), leaf(ink, 'right', { x: 51, y: 67, len: 22, w: 14, rot: 55, shape: 'serrate' })]
+    if (!st.bloom) return [...parts, bud(ink, 'bud', 50, y + 3, { len: 18, w: 8 })]
+    parts.push(...nfRay(ink, 'petal', 50, y, 5, 27, 25, { offset: 18, tip: 'round' }), h('circle', { key: 'throat', cx: 50, cy: y, r: 5, fill: ink.back }))
+    parts.push(stemPath('column', `M50,${y}Q54,${y-8} 66,${y-18}`, ink.pal.center, 1.6))
+    const pollen = Array.from({ length: 14 }, (_, i) => [54 + i * .7 + (i%2 ? 2 : -1), y - 6 - i * .7])
+    parts.push(dots('anthers', pollen, .85, ink.pal.center), strokes('stigmas', [[65,y-17,65,y-22],[65,y-17,69,y-20],[65,y-17,70,y-16]], .6, ink.line), dots('tips', [[65,y-22],[69,y-20],[70,y-16]], 1, ink.pal.petalDeep))
+    return parts
+  },
+  birdofparadise(ink, st) {
+    const y = st.top + 5, parts = [stem(ink, y + 5, { w: 3 }), stemPath('leafstem1','M45,90L29,64',ink.pal.stem,1.8), stemPath('leafstem2','M52,90L71,58',ink.pal.stem,1.8), leaf(ink,'leaf1',{x:29,y:64,len:34,w:17,rot:-22,veins:8,sheen:true}), leaf(ink,'leaf2',{x:71,y:58,len:38,w:18,rot:18,veins:8,sheen:true})]
+    parts.push(h('path',{key:'spathe',d:`M32,${y+7}Q48,${y+2} 78,${y+2}Q66,${y+13} 44,${y+13}Z`,fill:ink.leafBack,stroke:ink.leafLine,strokeWidth:.6}))
+    if (!st.bloom) return parts
+    for (const [i,x,rot,len] of [[0,47,-24,29],[1,53,-6,35],[2,60,17,28]]) parts.push(petal(`orange${i}`,{x,y:y+6,rot,len,w:7,tip:'point',fill:ink.petal,stroke:ink.line,vein:ink.line}))
+    parts.push(h('path',{key:'blue',d:`M48,${y+6}Q66,${y-11} 81,${y-8}L64,${y+4}L59,${y+8}Z`,fill:ink.hidden?ink.petal:ink.pal.center,stroke:ink.hidden?ink.line:ink.pal.centerDeep,strokeWidth:.5}))
+    return parts
+  },
+  gazania(ink, st) {
+    const y = st.top + 9, parts = [stem(ink,y,{w:1.8})]
+    for(let i=0;i<7;i++) parts.push(leaf(ink,`leaf${i}`,{x:50,y:89,len:30,w:7,rot:-78+i*26,shape:'pinnate',veins:2,fill:i%2?ink.leaf:ink.leafBack}))
+    if(!st.bloom) return [...parts,bud(ink,'bud',50,y+2,{len:12,w:7})]
+    parts.push(...nfRay(ink,'ray',50,y,16,23,6.4,{tip:'point'}))
+    for(let i=0;i<16;i++) parts.push(petal(`mark${i}`,{x:50,y,rot:i*22.5,len:12,w:4,fill:ink.hidden?ink.back:ink.pal.centerDeep,opacity:.85}))
+    parts.push(nfCore(ink,'disk',50,y,6.5))
+    return parts
+  },
+  redhotpoker(ink, st) {
+    const top=st.top-16, parts=[stem(ink,top+39,{w:2.5})]
+    for(let i=0;i<8;i++) parts.push(blade(ink,`leaf${i}`,{x:50,y:90,len:38+i%3*7,w:3.4,curve:(i-3.5)*7}))
+    const fill=ink.tone('torch',[[0,ink.pal.center],[45,ink.pal.petal],[100,ink.pal.petalDeep]])
+    for(let row=0;row<(st.bloom?9:5);row++) {
+      const width=3+Math.sin(row/10*Math.PI)*6, y=top+row*4
+      for(let col=-1;col<=1;col++) parts.push(h('path',{key:`tube${row}:${col}`,d:`M${50+col*width-2},${y}q-1,4 0,8q2,2 4,0q1,-4 0,-8Z`,fill:st.bloom?fill:ink.back,stroke:ink.line,strokeWidth:.35}))
+    }
+    return parts
+  },
+  desertrose(ink, st) {
+    const y=st.top+5, parts=[h('path',{key:'caudex',d:`M35,89Q42,78 43,65L40,${y+15}L47,${y+12}L51,64L59,${y+11}L64,${y+15}L56,67Q57,80 66,89Q52,95 35,89Z`,fill:ink.pal.stem,stroke:darken(ink.pal.stem,.3),strokeWidth:.7}),h('path',{key:'bark',d:'M44,70Q47,82 41,88M52,73Q51,85 57,90',fill:'none',stroke:lighten(ink.pal.stem,.2),strokeWidth:1.4})]
+    for(const [i,x,rot] of [[0,42,-55],[1,44,10],[2,60,50],[3,59,-12]]) parts.push(leaf(ink,`leaf${i}`,{x,y:y+20,len:19,w:9,rot,tip:'round',sheen:true}))
+    for(const [i,x,fy] of [[0,38,y],[1,62,y-4],[2,52,y+12]]) {
+      if(!st.bloom)parts.push(bud(ink,`bud${i}`,x,fy+7,{len:10,w:5}))
+      else {parts.push(...nfRay(ink,`flower${i}`,x,fy,5,12,10,{offset:i*16}),h('circle',{key:`throat${i}`,cx:x,cy:fy,r:3,fill:ink.hidden?ink.core:ink.pal.center}));parts.push(strokes(`veins${i}`,Array.from({length:5},(_,j)=>[x,fy,...polar(x,fy,7,j*72)]),.45,ink.line,.55))}
+    }
+    return parts
+  },
+  marshmarigold(ink, st) {
+    const y=st.top+13, parts=[stem(ink,y,{w:2.1}),stem(ink,y+13,{key:'side',x:68,bx:50,w:1.5}),nfHeartLeaf(ink,'left',42,85,.9,-40),nfHeartLeaf(ink,'right',58,77,.78,52)]
+    for(const [i,x,fy,r] of [[0,47,y,15],[1,68,y+13,10]]) {
+      if(!st.bloom)parts.push(bud(ink,`bud${i}`,x,fy+2,{len:9,w:6}))
+      else {parts.push(...nfRay(ink,`sepal${i}`,x,fy,5,r,r*.94,{offset:18,sheen:true}),nfCore(ink,`disk${i}`,x,fy,r*.32));parts.push(dots(`anthers${i}`,Array.from({length:18},(_,j)=>polar(x,fy,r*.39,j*20)),.6,ink.pal.center))}
+    }
+    return parts
+  },
+  forgetmenot(ink, st) {
+    const y=st.top+9, parts=[stemPath('curl',`M49,90Q58,67 47,${y+15}Q35,${y+2} 49,${y-8}Q62,${y-13} 65,${y-4}Q67,${y+3} 60,${y+4}`,ink.pal.stem,1.5)]
+    for(let i=0;i<4;i++)parts.push(leaf(ink,`leaf${i}`,{x:50,y:83-i*7,len:18-i*2,w:5.5,rot:i%2?58:-62}))
+    for(const [i,x,fy] of [[0,41,y+12],[1,36,y+1],[2,43,y-9],[3,56,y-12],[4,65,y-4],[5,60,y+4]]) {
+      if(!st.bloom||i>3)parts.push(bud(ink,`bud${i}`,x,fy,{len:4.6,w:3.5,rot:35}))
+      else parts.push(...nfRay(ink,`flower${i}`,x,fy,5,6.6,5.7,{offset:i*9}),nfCore(ink,`eye${i}`,x,fy,1.6))
+    }
+    return parts
+  },
+  astilbe(ink, st) {
+    const top=st.top-16, parts=[stem(ink,top,{w:1.6}),nfFern(ink,'left',50,84,28,-55),nfFern(ink,'right',51,78,26,65)]
+    for(let row=0;row<8;row++) {
+      const y=top+row*5, reach=3+row*2.1
+      for(const side of [-1,1]) {
+        parts.push(stemPath(`branch${row}:${side}`,`M50,${y+3}Q${50+side*reach*.5},${y} ${50+side*reach},${y-3}`,ink.pal.stem,.6))
+        for(let k=0;k<(st.bloom?5:2);k++) {
+          const x=50+side*reach*(k+1)/5, fy=y-3*(k+1)/5
+          parts.push(...nfRay(ink,`f${row}:${side}:${k}`,x,fy,5,st.bloom?2.3:1.4,1.6,{offset:row*9,fill:st.bloom?ink.petal:ink.back}))
+        }
+      }
+    }
+    return parts
+  },
+  cardinalflower(ink, st) {
+    const top=st.top-11, parts=[stem(ink,top+2,{w:1.8})]
+    for(let i=0;i<5;i++)parts.push(leaf(ink,`leaf${i}`,{x:50,y:85-i*7,len:22-i*2,w:6,rot:i%2?62:-62,shape:'serrate'}))
+    for(let i=0;i<7;i++){
+      const side=i%2?1:-1,x=50+side*5,y=top+32-i*5
+      if(!st.bloom||i>4){parts.push(bud(ink,`bud${i}`,x,y,{len:7,w:3,rot:side*28}));continue}
+      parts.push(h('g',{key:`flower${i}`,transform:`translate(${x} ${y}) scale(${side} 1)`},
+        h('path',{d:'M-2,4Q3,0 6,-6L9,-4Q7,4 1,8Z',fill:ink.back,stroke:ink.line,strokeWidth:.4}),
+        petal('upper1',{x:7,y:-4,rot:12,len:8,w:2.7,tip:'point',fill:ink.petal,stroke:ink.line}),petal('upper2',{x:7,y:-4,rot:48,len:8,w:2.7,tip:'point',fill:ink.petal,stroke:ink.line}),
+        ...[-35,0,35].map((a,j)=>petal(`lower${j}`,{x:8,y:0,rot:140+a,len:9,w:4.3,tip:'point',fill:ink.petal,stroke:ink.line}))))
+    }
+    return parts
+  },
+  arrowhead(ink, st) {
+    const y=st.top+2,parts=[stem(ink,y-6,{w:1.9})]
+    for(const [i,x,ly,rot] of [[0,29,69,-25],[1,69,64,20]]){
+      parts.push(stemPath(`stalk${i}`,`M50,90L${x},${ly}`,ink.pal.stem,1.5),h('g',{key:`arrow${i}`,transform:place({x,y:ly,rot})},h('path',{d:'M0,-31L14,4 2,-4 0,7 -2,-4 -14,4Z',fill:ink.leaf,stroke:ink.leafLine,strokeWidth:.55}),h('path',{d:'M0,6L0,-27M0,-5L-11,1M0,-5L11,1',fill:'none',stroke:ink.rib,strokeWidth:.5})))
+    }
+    for(const [i,x,fy] of [[0,50,y-4],[1,34,y+13],[2,66,y+13],[3,50,y+26]]){
+      parts.push(stemPath(`pedicel${i}`,`M50,${fy+5}L${x},${fy}`,ink.pal.stem,.8))
+      if(!st.bloom)parts.push(bud(ink,`bud${i}`,x,fy+2,{len:6,w:4}))
+      else parts.push(...nfRay(ink,`petal${i}`,x,fy,3,i===0?10:8,11,{offset:30}),nfCore(ink,`eye${i}`,x,fy,2.7))
+    }
+    return parts
+  },
+}
     const PLANTS = {
       dandelion: plantDandelion,
       daisy: plantDaisy,
@@ -3887,6 +4882,8 @@ window.__ModuleLoader__.load({
      * shade, petal lengths); `trait` a curiosity; `tint` a hybrid. Without
      * `dna` it is the textbook specimen the flower book shows.
      */
+    Object.assign(PLANTS, NEW_PLANTS)
+
     function FlowerArt({ speciesId, stage, variant, dna, trait, tint }) {
       const species = SPECIES_BY_ID.get(speciesId) ?? SPECIES[0]
       const look = variant ?? 'base'
@@ -3897,11 +4894,12 @@ window.__ModuleLoader__.load({
       const sceneId = SCENE_ID_OF.get(species.id) ?? 'meadow'
       const headY = headYOf(species)
       const floating = species.leaf === 'float'
-      const draw = () => (stage === 'seed'
+      const drawBase = () => (stage === 'seed'
         ? seedArt(ink, sceneId)
         : stage === 'sprout'
           ? sproutArt(ink, species)
           : PLANTS[species.head](ink, { bloom: stage === 'bloom', top: stage === 'bloom' ? HEAD_Y : 54, k: stage === 'bloom' ? 1 : 0.74 }))
+      const draw = () => { const layers = specialTraitArt(ink, traitId, headY); return [...layers.under, ...drawBase(), ...layers.over] }
       artSalt = genes === 0 ? 0 : (genes % 9973) / 97
       // Floating and pad plants do not sway on a stem.
       const sway = stage === 'seed' || floating ? undefined : 'fg-plant'
@@ -4019,7 +5017,117 @@ window.__ModuleLoader__.load({
     }
 
     /** The small creatures that visit open flowers, drawn on a 24 × 24 field. */
+// Insert inside the client factory. Depends only on h and the existing ink object.
+// SpecialVisitorArt uses the same 24x24 coordinate system as VisitorArt.
+function SpecialVisitorArt({ id }) {
+  const props = { viewBox: '0 0 24 24', 'aria-hidden': 'true', focusable: 'false', 'data-special-visitor': id }
+  const dark = '#29272b'
+  const wing = { fill: '#e8f1ee', fillOpacity: .82, stroke: '#81979e', strokeWidth: .45 }
+  if (id === 'bumblebee') {
+    return h('svg', props,
+      h('ellipse', { cx: 10, cy: 7, rx: 5, ry: 2.7, transform: 'rotate(-35 10 7)', ...wing }),
+      h('ellipse', { cx: 16, cy: 7.8, rx: 4.6, ry: 2.8, transform: 'rotate(26 16 7.8)', ...wing }),
+      h('path', { d: 'M10,7L6,5M16,8L19,7', fill: 'none', stroke: '#b2c7ca', strokeWidth: .45 }),
+      h('path', { d: 'M10,16L7,20M13,17L12,21M16,16L18,19', fill: 'none', stroke: dark, strokeWidth: .7, strokeLinecap: 'round' }),
+      h('ellipse', { cx: 13.5, cy: 13.5, rx: 7.5, ry: 5.5, fill: dark, stroke: '#524232', strokeWidth: .9, strokeDasharray: '.4 .55' }),
+      h('path', { d: 'M8.5,9.1Q10.2,7.8 11.5,8.2L11.5,18.5Q9.6,18.1 8.5,17Z', fill: '#e6b938' }),
+      h('path', { d: 'M14.4,8.2Q16.1,8.6 17.1,9.4L17.1,17.8Q16,18.4 14.4,18.8Z', fill: '#f0c747' }),
+      h('path', { d: 'M18,10.2Q23,13.5 18,17.2Q19.1,13.6 18,10.2Z', fill: '#f4f0dd', stroke: '#d6d6c9', strokeWidth: .3 }),
+      ...Array.from({ length: 12 }, (_, i) => {
+        const a = i * Math.PI / 6
+        return h('path', { key: `fur${i}`, d: `M${13.5 + Math.cos(a) * 7.1},${13.5 + Math.sin(a) * 5.1}l${Math.cos(a) * .8},${Math.sin(a) * .8}`, stroke: i % 3 ? '#ad9863' : '#f1d56e', strokeWidth: .4, strokeLinecap: 'round' })
+      }),
+      h('circle', { cx: 5.8, cy: 12.7, r: 3.1, fill: dark }),
+      h('circle', { cx: 4.7, cy: 11.9, r: .65, fill: '#f9f6e9' }),
+      h('path', { d: 'M4.7,10.1Q3.8,7.8 2.3,8M6.5,9.8Q7.1,7.7 8.2,7.4', fill: 'none', stroke: dark, strokeWidth: .65, strokeLinecap: 'round' }))
+  }
+  if (id === 'swallowtail') {
+    return h('svg', props,
+      h('path', { d: 'M11.9,11.9C9.4,5 4.8,1.1 1.5,2.4L3.1,12.2Q5.6,14.3 11.9,13ZM12.1,11.9C14.6,5 19.2,1.1 22.5,2.4L20.9,12.2Q18.4,14.3 12.1,13Z', fill: '#f6d770', stroke: dark, strokeWidth: .7, strokeLinejoin: 'round' }),
+      h('path', { d: 'M11.7,12.8Q5.2,11.2 3.7,16.2L5.3,18.4L4.6,22L7,19.2Q10.7,20.4 11.9,14ZM12.3,12.8Q18.8,11.2 20.3,16.2L18.7,18.4L19.4,22L17,19.2Q13.3,20.4 12.1,14Z', fill: '#edc65f', stroke: dark, strokeWidth: .8, strokeLinejoin: 'round' }),
+      h('path', { d: 'M2.2,3.1L10.4,11M4.3,3.9L4.8,9.4M7,6.2L7.5,11.3M3,11.2L10.4,12.6M21.8,3.1L13.6,11M19.7,3.9L19.2,9.4M17,6.2L16.5,11.3M21,11.2L13.6,12.6', fill: 'none', stroke: dark, strokeWidth: 1.1 }),
+      h('path', { d: 'M4.4,16.3Q8,18.7 10.2,15.8M19.6,16.3Q16,18.7 13.8,15.8', fill: 'none', stroke: dark, strokeWidth: 2.1 }),
+      ...[[5.6,16.9],[7.5,17.4],[9.3,16.7],[18.4,16.9],[16.5,17.4],[14.7,16.7]].map(([cx,cy], i) => h('circle', { key: `blue${i}`, cx, cy, r: .48, fill: '#7eafd0' })),
+      h('circle', { cx: 10.2, cy: 15.3, r: .9, fill: '#c76545', stroke: dark, strokeWidth: .3 }),
+      h('circle', { cx: 13.8, cy: 15.3, r: .9, fill: '#c76545', stroke: dark, strokeWidth: .3 }),
+      h('path', { d: 'M12,8.8L12,18.2', stroke: dark, strokeWidth: 1.35, strokeLinecap: 'round' }),
+      h('circle', { cx: 12, cy: 8.5, r: 1.1, fill: dark }),
+      h('path', { d: 'M11.7,7.8Q9.7,5.4 9.3,4.6M12.3,7.8Q14.3,5.4 14.7,4.6', fill: 'none', stroke: dark, strokeWidth: .5, strokeLinecap: 'round' }))
+  }
+  if (id === 'hawkmoth') {
+    return h('svg', props,
+      h('path', { d: 'M10,11.8L14.9,18.8Q18.6,20 19.2,16.9L13.6,10.5Z', fill: '#d18b3c', stroke: '#765035', strokeWidth: .5 }),
+      h('path', { d: 'M9.5,11Q5,5.4 7.4,2.3Q13.2,1.2 17.2,7.5L12.3,13.3Z', fill: '#9d8e7d', stroke: '#665d54', strokeWidth: .6 }),
+      h('path', { d: 'M8,3.6L12.5,11M9.5,3.5L15,7.7M7.4,6.4L13,10.7', fill: 'none', stroke: '#7e7062', strokeWidth: .55 }),
+      h('path', { d: 'M6.1,3.2Q4,6.2 6.1,9.5M17.9,6.5L20,8.4', fill: 'none', stroke: '#b8c3bb', strokeWidth: .55, strokeLinecap: 'round' }),
+      h('ellipse', { cx: 13.2, cy: 13, rx: 6.2, ry: 2.6, transform: 'rotate(18 13.2 13)', fill: '#7a6c5a', stroke: '#4e453f', strokeWidth: .6 }),
+      h('path', { d: 'M14.4,10.8L13.4,15.3M16.3,11.6L15.5,15.6', stroke: '#f1e9d8', strokeWidth: .95 }),
+      h('path', { d: 'M17.6,12.5L21,12.9L20.4,14.5L21.4,15.5L17.5,15.4Z', fill: '#44413d' }),
+      h('circle', { cx: 7.1, cy: 11, r: 2.6, fill: '#827969', stroke: '#4c443c', strokeWidth: .5 }),
+      h('circle', { cx: 6, cy: 10.4, r: .85, fill: '#242326' }),
+      h('circle', { cx: 5.8, cy: 10.2, r: .25, fill: '#f7f7ee' }),
+      h('path', { d: 'M5.2,11.6Q3.4,13.6 1.2,15.2M7,8.7L6.2,6.5M8.3,8.8L9.8,7.2M9.2,13.1L7.2,16.1M11.2,14.3L10.3,17', fill: 'none', stroke: '#4d4540', strokeWidth: .6, strokeLinecap: 'round' }))
+  }
+  if (id === 'hoverfly') {
+    return h('svg', props,
+      h('path', { d: 'M11,10.5Q7.1,4.7 3.3,5.3Q1.9,10.5 10.7,13.2ZM13,10.5Q16.9,4.7 20.7,5.3Q22.1,10.5 13.3,13.2Z', ...wing }),
+      h('path', { d: 'M10.5,11.7L4.1,6.5M8.3,9.4L5.1,10M13.5,11.7L19.9,6.5M15.7,9.4L18.9,10', fill: 'none', stroke: '#afc2c2', strokeWidth: .4 }),
+      h('path', { d: 'M10.2,12L7.6,15M10.3,14L7.2,18M13.8,12L16.4,15M13.7,14L16.8,18', fill: 'none', stroke: dark, strokeWidth: .55, strokeLinecap: 'round' }),
+      h('path', { d: 'M9.8,12.1Q9.2,17.8 12,21.6Q14.8,17.8 14.2,12.1Z', fill: '#e8bb3d', stroke: dark, strokeWidth: .6 }),
+      h('path', { d: 'M9.8,14.4L14.2,14.4M10.1,17.3L13.9,17.3M11,19.6L13,19.6', stroke: dark, strokeWidth: 1 }),
+      h('ellipse', { cx: 12, cy: 10.9, rx: 2.8, ry: 3.4, fill: '#504c35', stroke: dark, strokeWidth: .5 }),
+      h('path', { d: 'M11.3,8.6L11.3,12.5M12.7,8.6L12.7,12.5', stroke: '#d7bd61', strokeWidth: .45 }),
+      h('ellipse', { cx: 10.5, cy: 6.8, rx: 1.9, ry: 2.2, fill: '#9e5844', stroke: dark, strokeWidth: .4 }),
+      h('ellipse', { cx: 13.5, cy: 6.8, rx: 1.9, ry: 2.2, fill: '#9e5844', stroke: dark, strokeWidth: .4 }),
+      h('path', { d: 'M11.7,5.9L11.1,4.3M12.3,5.9L12.9,4.3', fill: 'none', stroke: dark, strokeWidth: .45, strokeLinecap: 'round' }),
+      h('circle', { cx: 10.1, cy: 6.2, r: .4, fill: '#e7b69b' }),
+      h('circle', { cx: 13.9, cy: 6.2, r: .4, fill: '#e7b69b' }))
+  }
+  return null
+}
+
+// Returns layers at flower coordinates. Put them inside the same DNA-transformed
+// plant group as the original drawing. Optional headY supports floating flowers.
+// These are stylized visual identifiers, not species-specific anatomical diagrams.
+function specialTraitArt(ink, traitId, headY = HEAD_Y) {
+  const under = [], over = []
+  const cx = 50, cy = headY
+  if (traitId === 'fasciated') {
+    const fill = ink.lin('fasciated-stem', [[0, ink.pal.stem], [45, ink.rib], [100, ink.pal.leaf]], { x1: '0', y1: '0', x2: '1', y2: '0' })
+    over.push(h('path', { key: 'fasciated-ribbon', d: `M43,89C44,73 40,${cy + 22} 36,${cy + 11}Q48,${cy + 4} 64,${cy + 11}C60,${cy + 25} 57,72 57,89Z`, fill, stroke: ink.leafLine, strokeWidth: .8 }))
+    for (let i = 0; i < 5; i++) over.push(h('path', { key: `fasciated-rib${i}`, d: `M${45 + i * 2.2},87Q${43 + i * 3.5},${cy + 36} ${39 + i * 5.4},${cy + 12}`, fill: 'none', stroke: i % 2 ? ink.rib : ink.leafLine, strokeWidth: .65, opacity: .7 }))
+    over.push(h('path', { key: 'fasciated-tip', d: `M36,${cy + 11}Q40,${cy + 5} 45,${cy + 10}Q50,${cy + 3} 55,${cy + 9}Q60,${cy + 4} 64,${cy + 11}`, fill: 'none', stroke: ink.pal.stem, strokeWidth: 2.2, strokeLinecap: 'round' }))
+  } else if (traitId === 'radial') {
+    for (let i = 0; i < 6; i++) {
+      const angle = i * 60
+      over.push(h('g', { key: `radial-lobe${i}`, transform: `translate(${cx} ${cy}) rotate(${angle})` },
+        h('path', { d: 'M-2,1C-7,-5 -13,-14 -8,-20Q0,-28 8,-20C13,-14 7,-5 2,1Z', fill: i % 2 ? ink.back : ink.petal, stroke: ink.line, strokeWidth: .55 }),
+        h('path', { d: 'M0,-2L0,-18M0,-8L-4,-14M0,-8L4,-14', fill: 'none', stroke: ink.line, strokeWidth: .45, opacity: .5 })))
+    }
+    over.push(h('circle', { key: 'radial-throat', cx, cy, r: 4.4, fill: ink.core, stroke: ink.line, strokeWidth: .5 }))
+    for (let i = 0; i < 6; i++) over.push(h('circle', { key: `radial-stamen${i}`, cx: cx + Math.cos(i * Math.PI / 3) * 3, cy: cy + Math.sin(i * Math.PI / 3) * 3, r: .65, fill: ink.pal.centerDeep }))
+  } else if (traitId === 'double') {
+    for (let row = 0; row < 3; row++) {
+      const count = 14 - row * 3, len = 22 - row * 5.5, width = 8 - row * 1.2
+      for (let i = 0; i < count; i++) over.push(h('path', { key: `double-${row}-${i}`, transform: `translate(${cx} ${cy}) rotate(${i * 360 / count + row * 13})`, d: `M-1,1C${-width},${-len * .35} ${-width},${-len * .9} -2,${-len}Q0,${-len - 2} 2,${-len}C${width},${-len * .9} ${width},${-len * .35} 1,1Z`, fill: row % 2 ? ink.back : ink.petal, stroke: ink.line, strokeWidth: .45 }))
+    }
+    over.push(h('ellipse', { key: 'double-heart', cx, cy, rx: 3.1, ry: 2.5, fill: ink.back, stroke: ink.line, strokeWidth: .5 }))
+  } else if (traitId === 'leafy') {
+    for (let row = 0; row < 2; row++) {
+      for (let i = 0; i < 5; i++) {
+        const len = row ? 15 : 25, width = row ? 5 : 8
+        over.push(h('g', { key: `leafy-${row}-${i}`, transform: `translate(${cx} ${cy}) rotate(${i * 72 + row * 36})` },
+          h('path', { d: `M0,2Q${-width},${-len * .2} ${-width},${-len * .6}Q-2,${-len * .85} 0,${-len}Q2,${-len * .85} ${width},${-len * .6}Q${width},${-len * .2} 0,2Z`, fill: row ? ink.leafBack : ink.leaf, stroke: ink.leafLine, strokeWidth: .6 }),
+          h('path', { d: `M0,0L0,${-len + 3}M0,${-len * .3}L${-width * .7},${-len * .48}M0,${-len * .3}L${width * .7},${-len * .48}M0,${-len * .55}L${-width * .52},${-len * .73}M0,${-len * .55}L${width * .52},${-len * .73}`, fill: 'none', stroke: ink.rib, strokeWidth: .65 })))
+      }
+    }
+    over.push(h('circle', { key: 'leafy-bud', cx, cy, r: 2.5, fill: ink.pal.stem, stroke: ink.leafLine, strokeWidth: .5 }))
+  }
+  return { under, over }
+}
+
     function VisitorArt({ id }) {
+      if (VISITOR_BY_ID.get(id)?.special) return h(SpecialVisitorArt, { id })
       const props = { viewBox: '0 0 24 24', 'aria-hidden': 'true', focusable: 'false' }
       const wing = { fill: '#eaf4fb', stroke: '#8fa9bd', strokeWidth: 0.5, opacity: 0.88 }
       const ink = '#32261c'
@@ -4210,7 +5318,7 @@ window.__ModuleLoader__.load({
       return name
     }
 
-    function BloomPreview({ id, speciesId, variant, dna, trait, tint, t, meta = [], worth, armed, onSell, onClose, modal = false, onPrev, onNext, individuals = [], onSellOne, quoteOne }) {
+    function BloomPreview({ id, speciesId, variant, dna, trait, tint, t, meta = [], worth, armed, onSell, onClose, modal = false, onPrev, onNext, individuals = [], onSellOne, quoteOne, observations = 0 }) {
       const species = SPECIES_BY_ID.get(speciesId) ?? SPECIES[0]
       const dialogRef = React.useRef(null)
       const [individual, setIndividual] = React.useState(0)
@@ -4240,10 +5348,13 @@ window.__ModuleLoader__.load({
             h('span', { className: 'fg-previewVariant', 'data-variant': variant }, t(`variant.${variant}`)),
           ),
           h('div', { className: 'fg-previewLatin' }, t(`latin.${species.id}`)),
+          modal ? h(SpeciesPurpose, { speciesId: species.id, t, observations }) : null,
+          modal && species.source ? h('a', { className: 'fg-source', href: species.source, target: '_blank', rel: 'noopener noreferrer' }, t('eco.source')) : null,
           h('div', { className: 'fg-previewMeaning' }, t(`codex.${species.id}`)),
           modal ? h('span', { className: 'fg-note' }, t(sample === 0 ? 'card.textbook' : sample !== null ? 'card.example' : dna ? 'card.specimen' : 'card.textbook')) : null,
           modal ? h('p', { className: 'fg-cardFact' }, t(`fact.${species.id}`)) : null,
           trait ? h('p', { className: 'fg-note' }, t(`trait.${trait}.cause`)) : null,
+          trait && TRAIT_BY_ID.get(trait)?.source ? h('div', { className: 'fg-purpose' }, h('p',null,t(`trait.${trait}.fact`)), h('a',{href:TRAIT_BY_ID.get(trait).source,target:'_blank',rel:'noopener noreferrer'},t('trait.source'))) : null,
           tint ? h('p', { className: 'fg-note' }, t('hybrid.how')) : null,
           modal ? h('div', { className: 'fg-previewStats' },
             h('span', null, `${t('card.ground')} · ${t(`scene.${SCENES.find(ground => ground.species.includes(species.id)).id}`)}`),
@@ -4437,6 +5548,7 @@ window.__ModuleLoader__.load({
       const [preview, setPreview] = React.useState(null)
       // Which flower-book entry the player opened to look at.
       const [codexPreview, setCodexPreview] = React.useState(null)
+      const [guestPreview, setGuestPreview] = React.useState(null)
       const [toast, setToast] = React.useState({ text: '', key: 0, tone: 'ok', species: null })
       const [clock, setClock] = React.useState(() => Date.now())
       const rootRef = React.useRef(null)
@@ -4587,7 +5699,7 @@ window.__ModuleLoader__.load({
         const before = getState()
         const currentSlot = before.scenes[before.scene]
         const plot = currentSlot === undefined ? null : currentSlot.plots[index]
-        const visitor = visitorAt(before.scene, index, plot, now, weatherAt(now), facilityLevel(before, 'hive'))
+        const visitor = visitorAt(before.scene, index, plot, now, weatherAt(now), facilityLevel(before, 'hive'), gardenEcology(before, now).visitorBonus, before)
         const next = greetVisitor(before, before.scene, index, now, weatherAt(now))
         if (visitor === null || next === null) return
         commit(next, true)
@@ -4597,7 +5709,7 @@ window.__ModuleLoader__.load({
           flower: t(`species.${plot.species}`),
         }
         const fresh = (before.visitors[visitor.id] ?? 0) === 0 ? ` ${t('visitor.new')}` : ''
-        announce(t(plot.pollinated === true ? 'visitor.again' : 'visitor.met', words) + fresh, 'ok')
+        announce(t('guest.greeted', { name: words.name, coins: words.coins, effect: t(`guest.effect.${VISITOR_INFO[visitor.id].role}`) }) + fresh, 'ok')
         focusPlot(index, 'harvest')
       }
 
@@ -4645,7 +5757,9 @@ window.__ModuleLoader__.load({
         announce(t('item.charmReady'), 'ok')
       }
 
-      function harvest(index) {
+      function harvest(index, endResidency = false) {
+        if (endResidency && armed !== `retire:${state.scene}:${index}`) { setArmed(`retire:${state.scene}:${index}`); return }
+        setArmed(null)
         const before = getState()
         const currentSlot = before.scenes[before.scene]
         const plot = currentSlot === undefined ? null : currentSlot.plots[index]
@@ -4656,7 +5770,7 @@ window.__ModuleLoader__.load({
           announce(t('error.basketFull'), 'warn')
           return
         }
-        const next = harvestAt(before, before.scene, index, Date.now(), weatherAt(Date.now()))
+        const next = harvestAt(before, before.scene, index, Date.now(), weatherAt(Date.now()), endResidency)
         if (next === null) return
         commit(next, true)
         const first = next.basket[before.basket.length]
@@ -4787,15 +5901,26 @@ window.__ModuleLoader__.load({
         const [speciesId, tint] = key.split('~')
         if (count > 0 && !archive.some(entry => entry.species.id === speciesId && entry.tint === tint)) archive.push({ key: `hybrid:${key}`, species: SPECIES_BY_ID.get(speciesId), variant: 'base', tint, count })
       }
-      const codexPreviewEntry = archive.find(entry => entry.key === codexPreview)
+      const codexPreviewEntry = archive.find(entry => entry.key === codexPreview) ?? (() => {
+        const [speciesId, variant] = (codexPreview ?? '').split(':')
+        const species = SPECIES_BY_ID.get(speciesId)
+        return species && variant === 'base' ? { key: codexPreview, species, variant: 'base', count: 0 } : undefined
+      })()
       function stepCodex(delta) {
-        const at = archive.findIndex(entry => entry.key === codexPreview)
-        setCodexPreview(archive[(at + delta + archive.length) % archive.length].key)
+        const guide = SPECIES.map(species => `${species.id}:base`)
+        const at = Math.max(0, guide.indexOf(`${codexPreviewEntry.species.id}:base`))
+        setCodexPreview(guide[(at + delta + guide.length) % guide.length])
       }
       function renderArchive() {
         return h('div', { className: 'fg-archive' },
           h('h3', { className: 'fg-sectionTitle' }, t('trait.title')),
           h('p', { className: 'fg-hint' }, t('trait.note')),
+          h('p', { className: 'fg-hint' }, t('trait.boundary')),
+          h('details', { className: 'fg-ecoDetails' }, h('summary', null, t('trait.guide')),
+            h('div', { className: 'fg-archiveGrid' }, TRAITS.filter(trait=>trait.source).map(trait=>h('article',{key:trait.id,className:'fg-ecoProject'},
+              h(FlowerArt,{speciesId:trait.specimen,stage:'bloom',variant:'base',trait:trait.id}),
+              h('strong',null,t(`trait.${trait.id}`)),h('p',{className:'fg-hint'},t(`trait.${trait.id}.fact`)),h('p',{className:'fg-hint'},t(`trait.${trait.id}.cause`)),
+              h('a',{href:trait.source,target:'_blank',rel:'noopener noreferrer',className:'fg-source'},t('trait.source')))))),
           h('div', { className: 'fg-basket' }, TRAITS.map(trait => h('span', { key: trait.id, className: 'fg-badge', title: t(`trait.${trait.id}.cause`) }, t(`trait.${trait.id}`), ' · ', t(`trait.${trait.id}.clue`)))),
           h('p', { className: 'fg-hint' }, t('hybrid.how')),
           h('div', { className: 'fg-archiveGrid' }, archive.filter(entry => (entry.trait || entry.tint) && scene.species.includes(entry.species.id)).map(entry =>
@@ -4803,6 +5928,30 @@ window.__ModuleLoader__.load({
               h(FlowerArt, { speciesId: entry.species.id, stage: 'bloom', variant: entry.variant, trait: entry.trait, tint: entry.tint, dna: entry.dna }),
               h('span', null, bloomName({ species: entry.species.id, trait: entry.trait, tint: entry.tint }, t)),
               h('span', { className: 'fg-note' }, t(entry.recorded ? 'card.recorded' : 'codex.harvests', { n: entry.count }))))))
+      }
+
+      function tend(action, index) {
+        tick()
+        const before = getState(), now = Date.now()
+        const transition = action === 'retain' ? retainAt : action === 'observe' ? observeAt : rebloomAt
+        const next = transition(before, state.scene, index, now)
+        if (!next) { announce(t('eco.error'), 'warn'); return }
+        commit(next, true)
+        const plot = next.scenes[state.scene].plots[index]
+        announce(t(action === 'retain' ? 'eco.retained' : action === 'observe' ? 'eco.observed' : 'eco.rebloomed', { name: t(`species.${plot.species}`), n: next.study?.[plot.species]?.observations ?? 0 }))
+      }
+
+      function renderResidentActions(plot, index, species) {
+        const mature = plot.growthMs >= growMsOf(species)
+        const wait = plot.observedAt === undefined ? 0 : Math.max(0, plot.observedAt + ECO_OBSERVE_MS - clock)
+        const fee = 8 + Math.ceil(species.cost * 0.25), prune = 10 + Math.ceil(species.cost * 0.4)
+        return h('div', { className: 'fg-residentActions' },
+          h('button', { type: 'button', className: 'fg-btn fg-btnSmall', disabled: plot.moisture >= 99.5, onClick: () => water(index) }, t('plot.water')),
+          h('button', { type: 'button', className: 'fg-btn fg-btnSmall fg-btnPrimary', disabled: !mature || plot.moisture < 30 || wait > 0 || state.coins < fee, onClick: () => tend('observe',index) }, t('eco.observe',{n:fee})),
+          mature && plot.observedAt !== undefined ? h('button', { type: 'button', className: 'fg-btn fg-btnSmall', disabled: state.coins < prune, title: t('eco.rebloomNote'), onClick: () => tend('rebloom',index) }, t('eco.rebloom',{n:prune})) : null,
+          h('span', { className: 'fg-hint' }, t('eco.observations',{n:state.study?.[species.id]?.observations??0})),
+          wait > 0 ? h('span',{className:'fg-hint'},t('eco.cooldown',{n:formatDuration(wait,t)})) : null,
+          plot.moisture < 30 ? h('span',{className:'fg-noteWarn'},t('eco.needWater')) : null)
       }
 
       function renderSoil(index) {
@@ -4841,7 +5990,7 @@ window.__ModuleLoader__.load({
               className: 'fg-seed',
               'data-action': 'seed',
               disabled: state.coins < species.cost,
-              title: `${t(`species.${species.id}`)} · ${formatDuration(growMsOf(species), t)}`,
+              title: `${t(`species.${species.id}`)} · ${t(`eco.role.${ecoProfile(species.id).role}`)} · ${t('eco.affinity',{name:t(`visitor.${ecoProfile(species.id).visitor}`)})} · ${formatDuration(growMsOf(species), t)}`,
               onClick: () => {
                 plant(index, species.id)
               },
@@ -4936,7 +6085,7 @@ window.__ModuleLoader__.load({
         const wet = sprinkled || rainWets || plot.moisture > 0.5
         const percent = Math.round(ratio * 100)
         const moisture = sprinkled || rainWets ? 100 : Math.max(0, Math.round(plot.moisture))
-        const dryInMs = (plot.moisture / 100) * growMs * DRY_SHARE
+        const dryInMs = (plot.moisture / 100) * (plot.resident ? 45 * 60 * 1000 : growMs * DRY_SHARE)
         const growLeftMs = (growMs - plot.growthMs) / (growth * soilFactor(soilOf(slot, index)))
         const driesFirst = !sprinkled && !rainWets && wet && !bloomed && dryInMs < growLeftMs
         const note = bloomed
@@ -4949,7 +6098,7 @@ window.__ModuleLoader__.load({
         const worried = !bloomed && (!wet || driesFirst)
         const wetSoil = sprinkled || rainWets || plot.moisture >= 99.5
         const canFeed = !bloomed && (state.bag.fertilizer ?? 0) > 0
-        const visitor = visitorAt(state.scene, index, plot, clock, weather, facilityLevel(state, 'hive'))
+        const visitor = visitorAt(state.scene, index, plot, clock, weather, facilityLevel(state, 'hive'), gardenEcology(state, clock).visitorBonus, state)
 
         return h('div', {
           key: index,
@@ -4962,7 +6111,7 @@ window.__ModuleLoader__.load({
           'aria-label': `${t(`species.${species.id}`)} ${t(`stage.${stage}`)}`,
         },
         h('div', { className: 'fg-art' },
-          h(FlowerArt, { speciesId: plot.species, stage, variant: plot.tint ? 'base' : plotVariant(species, index), dna: plot.dna, tint: plot.tint }),
+          h(FlowerArt, { speciesId: plot.species, stage, variant: plot.resident ? plot.variant : plot.tint ? 'base' : plotVariant(species, index), dna: plot.dna, trait: plot.trait, tint: plot.tint }),
           visitor === null ? null : h('button', {
             type: 'button',
             className: 'fg-visitor',
@@ -4980,6 +6129,8 @@ window.__ModuleLoader__.load({
           h('span', { className: 'fg-stage' }, t(`stage.${stage}`)),
         ),
         renderSoil(index),
+        plot.resident ? h('span', { className: 'fg-badge fg-badgeOk' }, t('eco.resident'), ' · ', t('eco.history', { n: plot.careCount ?? 0, cycles: plot.reblooms ?? 0 })) : null,
+        plot.resident ? renderResidentActions(plot, index, species) : bloomed ? h('button', { type: 'button', className: 'fg-btn fg-btnPrimary', onClick: () => tend('retain', index) }, t('eco.retain')) : null,
         plot.tint ? h('span', { className: 'fg-badge' }, t('hybrid.name', { form: t(`species.${plot.species}`), tint: t(`species.${plot.tint}`) })) : null,
         plot.pollinated && hybridPartner(slot, index) ? h('span', { className: 'fg-note' }, t('hybrid.hint')) : null,
         plot.dried === true && !bloomed
@@ -5018,9 +6169,9 @@ window.__ModuleLoader__.load({
               disabled: basketFull,
               title: basketFull ? t('basket.full') : undefined,
               onClick: () => {
-                harvest(index)
+                harvest(index, plot.resident === true)
               },
-            }, t('plot.harvest'))
+            }, plot.resident ? t(armed === `retire:${state.scene}:${index}` ? 'eco.retireConfirm' : 'eco.retire') : t('plot.harvest'))
             : [
               h('button', {
                 key: 'water',
@@ -5097,10 +6248,10 @@ window.__ModuleLoader__.load({
           'data-seen': known ? 'true' : 'false',
           'data-spirit': showcase === 'hidden' ? 'true' : 'false',
         },
-          known
-            ? h('button', {
+          h('button', {
               type: 'button',
               className: 'fg-codexArt fg-codexArtBtn',
+              style: known ? undefined : { filter: 'grayscale(1)', opacity: 0.55 },
               'data-codex': `${species.id}:${showcase}`,
               'aria-expanded': codexPreview === `${species.id}:${showcase}` ? 'true' : 'false',
               'aria-controls': codexPreview === `${species.id}:${showcase}` ? 'fg-codex-preview' : undefined,
@@ -5110,12 +6261,10 @@ window.__ModuleLoader__.load({
               },
             },
             h(FlowerArt, { speciesId: species.id, stage: 'bloom', variant: showcase }),
-            )
-            : h('div', { className: 'fg-codexArt', style: { filter: 'grayscale(1)', opacity: 0.35 } },
-              h(FlowerArt, { speciesId: species.id, stage: 'bloom', variant: showcase }),
             ),
           h('div', { className: 'fg-codexBody' },
             h('div', { className: 'fg-codexName' }, t(`species.${species.id}`)),
+            h('div', { className: 'fg-note' }, t(`eco.role.${ecoProfile(species.id).role}`)),
             known ? h('div', { className: 'fg-codexLatin' }, t(`latin.${species.id}`)) : null,
             h('div', { className: 'fg-codexMeaning' }, known ? t(`codex.${species.id}`) : t('codex.undiscovered')),
             h('div', { className: 'fg-codexVariants' },
@@ -5154,7 +6303,7 @@ window.__ModuleLoader__.load({
       const thirsty = sprinklerLeftMs > 0 || rainWets ? 0 : slot.plots.filter(plot => {
         if (plot === null || plot === undefined || plot.moisture >= 99.5) return false
         const species = SPECIES_BY_ID.get(plot.species)
-        return species !== undefined && plot.growthMs < growMsOf(species)
+        return species !== undefined && (plot.resident || plot.growthMs < growMsOf(species))
       }).length
 
       function renderGuest(visitor) {
@@ -5165,12 +6314,13 @@ window.__ModuleLoader__.load({
           t(`visitor.when.${visitor.when}`),
           visitor.dry === true ? t('visitor.dry') : null,
         ].filter(Boolean).join(' · ')
-        return h('div', { key: visitor.id, className: 'fg-guest', 'data-met': met ? 'true' : 'false' },
+        return h('button', { type: 'button', key: visitor.id, className: 'fg-guest', 'data-guest': visitor.id, 'data-met': met ? 'true' : 'false', 'aria-label': t('guest.book') + ' · ' + t(`visitor.${visitor.id}`), onClick: () => setGuestPreview(visitor.id) },
           h('span', { className: 'fg-guestArt' }, h(VisitorArt, { id: visitor.id })),
           h('div', { className: 'fg-guestBody' },
             h('div', { className: 'fg-guestName' },
               met ? t(`visitor.${visitor.id}`) : t('visitor.unknown'),
               met ? h('span', { className: 'fg-itemOwn' }, `×${count}`) : null,
+              visitor.special ? h('span', { className: 'fg-badge' }, t('visitor.special')) : null,
             ),
             h('div', { className: 'fg-guestWhere', title: where }, where),
           ),
@@ -5303,6 +6453,8 @@ window.__ModuleLoader__.load({
           ),
 
           h('nav', { className: 'fg-sectionHead', 'aria-label': t('view.label') },
+            h('button', { type: 'button', className: 'fg-btn fg-btnSmall', onClick: () => focusTarget('#fg-special-commissions') }, t('commission.title')),
+            h('button', { type: 'button', className: 'fg-btn fg-btnSmall', onClick: () => focusTarget('#fg-ecology') }, t('eco.title')),
             h('button', { type: 'button', className: 'fg-btn fg-btnSmall', onClick: () => { setCodexOpen(true); focusTarget('#fg-codex-toggle') } }, t('codex.title')),
             h('button', { type: 'button', className: 'fg-btn fg-btnSmall', onClick: () => focusTarget('#fg-show') }, t('show.title')),
             h('button', { type: 'button', className: 'fg-btn fg-btnSmall', onClick: () => focusSection('basket') }, t('basket.title'))),
@@ -5444,6 +6596,8 @@ window.__ModuleLoader__.load({
               ],
           ),
 
+          h(SpecialCommissionBoard, { state, t, clock, onChange: next => commit(next,true), onSpecies: id => {setCodexOpen(true);setCodexPreview(`${id}:base`)}, onVisitor: id => setGuestPreview(id) }),
+          h(GardenEcology, { state, t, clock, onChange: next => commit(next, true), onSpecies: id => { setCodexOpen(true); setCodexPreview(`${id}:base`) } }),
           h(GardenActivities, { state, t, clock, onChange: next => commit(next, true) }),
 
           h('section', { className: 'fg-section' },
@@ -5499,10 +6653,10 @@ window.__ModuleLoader__.load({
 
           h('section', { className: 'fg-section' },
             h('div', { className: 'fg-sectionHead' },
-              h('h3', { className: 'fg-sectionTitle' }, t('visitor.section')),
+              h('h3', { className: 'fg-sectionTitle' }, t('guest.book')),
               h('span', { className: 'fg-sectionMeta' }, t('ach.count', { n: metKinds, total: VISITORS.length })),
             ),
-            h('p', { className: 'fg-empty' }, t('visitor.hint')),
+            h('p', { className: 'fg-empty' }, t('guest.boundary')),
             h('div', { className: 'fg-guests' }, VISITORS.map(renderGuest)),
           ),
 
@@ -5567,6 +6721,7 @@ window.__ModuleLoader__.load({
                   speciesId: codexPreviewEntry.species.id,
                   variant: codexPreviewEntry.variant,
                   trait: codexPreviewEntry.trait, tint: codexPreviewEntry.tint, dna: codexPreviewEntry.dna,
+                  observations: state.study?.[codexPreviewEntry.species.id]?.observations ?? 0,
                   modal: true, onPrev: () => stepCodex(-1), onNext: () => stepCodex(1),
                   t,
                   meta: [
@@ -5585,6 +6740,7 @@ window.__ModuleLoader__.load({
               : null,
           ),
 
+          guestPreview ? h(VisitorPreview, { key: guestPreview, visitorId: guestPreview, state, t, onClose: () => { const id = guestPreview; setGuestPreview(null); focusTarget(`[data-guest="${id}"]`) } }) : null,
           h('footer', { className: 'fg-footer' },
             h('button', {
               type: 'button',
@@ -5601,6 +6757,30 @@ window.__ModuleLoader__.load({
     //    removes it; only `--dsw-alias-*` tokens carry furniture colors.
     // ---------------------------------------------------------------------
     const CSS = `
+.fg-ecology{padding:18px;border:1px solid var(--dsw-alias-border-l2);border-radius:20px;background:var(--dsw-alias-bg-layer-1)}
+.fg-ecoLead{margin:0;font-size:18px;line-height:1.6;font-weight:600}
+.fg-ecoDetails>summary{padding:10px 0;cursor:pointer;font-size:13px;font-weight:600}
+.fg-ecoProjects{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:12px;margin-top:12px}
+.fg-ecoProject{display:flex;flex-direction:column;gap:8px;padding:16px;border:1px solid var(--dsw-alias-border-l1);border-radius:14px;background:var(--dsw-alias-bg-base)}
+.fg-ecoProject h3{margin:0 0 4px;font-size:14px;line-height:1.6}
+.fg-ecoTargets{display:flex;gap:5px;flex-wrap:wrap}
+.fg-purpose{display:flex;flex-direction:column;gap:5px;padding:12px;border-left:3px solid var(--dsw-alias-state-success-primary);background:var(--dsw-alias-bg-layer-2);font-size:12px;line-height:1.6}
+.fg-source{font-size:12px;color:var(--dsw-alias-brand-primary);text-decoration:underline}
+.fg-residentActions{display:flex;flex-wrap:wrap;gap:6px}
+.fg-residentActions>.fg-hint{flex-basis:100%}
+.fg-notebooks{display:grid;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:8px;margin-top:12px}
+.fg-notebook{display:flex;flex-direction:column;gap:6px;align-items:stretch;text-align:left;padding:10px;border:1px solid var(--dsw-alias-border-l1);border-radius:10px;background:var(--dsw-alias-bg-base);color:inherit;font:inherit;cursor:pointer}
+.fg-notebook progress{width:100%;height:5px;accent-color:var(--dsw-alias-state-success-primary)}
+.fg-journal{display:flex;flex-direction:column;gap:8px;max-height:250px;overflow:auto}
+.fg-journalEntry{display:flex;flex-direction:column;gap:4px;padding:10px;border-bottom:1px solid var(--dsw-alias-border-l1);font-size:12px}
+.fg-guestNote strong{font-size:12px;color:var(--dsw-alias-label-secondary)}
+.fg-guestNote p{margin:3px 0 0;font-size:13px;line-height:1.7}
+.fg-guest{appearance:none;color:inherit;font:inherit;text-align:left;cursor:pointer}
+.fg-guest:hover{border-color:var(--dsw-alias-brand-primary)}
+.fg-guest:focus-visible,.fg-notebook:focus-visible{outline:2px solid var(--dsw-alias-brand-primary);outline-offset:2px}
+.fg-dialog .fg-visitorPortrait{background:radial-gradient(ellipse,#f5f2d9,#d6e6dd)}
+.fg-dialog .fg-visitorPortrait svg{width:210px;height:210px}
+
 .fg-showChoices>summary{cursor:pointer;margin-bottom:12px}
 .fg-showChoices>summary::after{content:'⌄';margin-left:8px}
 .fg-showChoices[open]>summary::after{transform:rotate(180deg)}
@@ -5861,12 +7041,14 @@ window.__ModuleLoader__.load({
         }, GardenView))
       },
       /** Static pieces exported for layout tests only; the runtime never reads them. */
-      __components: { GardenView, FlowerArt, BloomPreview, VisitorArt, GardenActivities },
+      __components: { GardenView, FlowerArt, BloomPreview, VisitorArt, GardenActivities, VisitorPreview, GardenEcology, SpeciesPurpose, SpecialCommissionBoard, SpecialVisitorArt },
       __traits: TRAITS,
       /** Dictionaries exported so tests render with the shipped copy. */
       __dicts: { zh, en },
       /** Pure game transitions and tuning, exported for unit tests only. */
       __game: {
+        ...ECOLOGY_API, ECO_PROFILES, VISITOR_INFO, studyLevel,
+        specialCommissions, commissionState, acceptCommission, commissionProgress, completeCommission, sanitizeCommissions, specialVisitorEligible,
         SCENES, SPECIES, CODEX_ENTRIES, HIDDEN_PAL, UNLOCK_COSTS, XP_PER_LEVEL, PLOT_COUNT,
         START_COINS, DRY_SHARE, BASKET_CAPACITY, ORDER_SLOTS, WEATHER_MS, ITEMS, SPRINKLER_MS, CHARM_BONUS,
         freshState, sanitize, advancePlot, advanceState, plantAt, waterAt, harvestAt, unlockAt,

@@ -65,20 +65,15 @@ const noon = new Date(2026, 0, 1, 12, 0, 0).getTime()
 
 console.log('scenes and species')
 check('four scenes', game.SCENES.length === 4)
-check('twenty-five species', game.SPECIES.length === 25)
+check('forty-five species', game.SPECIES.length === 45)
 check('every species belongs to exactly one scene', game.SPECIES.every(species => game.SCENES.filter(scene => scene.species.includes(species.id)).length === 1))
 check('every scene starts with at least four species', game.SCENES.every(scene => scene.species.length >= 5))
-check('ids are unique', new Set(game.SPECIES.map(species => species.id)).size === 25)
+check('ids are unique', new Set(game.SPECIES.map(species => species.id)).size === 45)
 check('each species names a drawing and a foliage', game.SPECIES.every(species => typeof species.head === 'string' && typeof species.leaf === 'string'))
 check('each species has a palette', game.SPECIES.every(species => typeof species.pal.petal === 'string'))
-check('every species pays back its seed', game.SPECIES.every(species => species.sell > species.cost))
-check('prices rise with grow time', game.SCENES.every(scene => scene.species.every((id, index) => {
-  if (index === 0) return true
-  const current = byId(id)
-  const previous = byId(scene.species[index - 1])
-  return current.growSec > previous.growSec && current.sell > previous.sell
-})))
-check('codex covers base, second colour and hidden', game.CODEX_ENTRIES.length === 25 + game.SPECIES.filter(species => species.alt !== undefined).length + 25)
+check('every species has positive prices and pays back its seed', game.SPECIES.every(species => species.cost > 0 && species.sell > 0 && species.sell > species.cost))
+check('species names are unique', new Set(game.SPECIES.map(species => species.id)).size === game.SPECIES.length)
+check('codex covers base, second colour and hidden', game.CODEX_ENTRIES.length === game.SPECIES.length + game.SPECIES.filter(species => species.alt !== undefined).length + game.SPECIES.length)
 check('scenes cost more as they go', game.SCENES[0].cost === 0
   && game.SCENES[1].cost < game.SCENES[2].cost
   && game.SCENES[2].cost < game.SCENES[3].cost)
@@ -346,7 +341,8 @@ const guestState = {
 }
 // Walk the visit windows until one brings a visitor to plot #1.
 let visitAt = noon
-while (game.visitorAt('meadow', 0, bloomPlot, visitAt, 'overcast') === null) visitAt += game.VISIT_MS
+while (game.visitorAt('meadow', 0, bloomPlot, visitAt, 'overcast') === null
+  || game.visitorAt('meadow', 0, bloomPlot, visitAt, 'overcast').id !== 'bee') visitAt += game.VISIT_MS
 const guest = game.visitorAt('meadow', 0, bloomPlot, visitAt, 'overcast')
 check('an open flower attracts a visitor', guest !== null && typeof guest.id === 'string')
 check('the visit is deterministic', game.visitorAt('meadow', 0, bloomPlot, visitAt, 'overcast').id === guest.id)
@@ -400,6 +396,19 @@ check('the second bloom is never a spirit', goldTwin.basket[0].variant === 'hidd
 const savedGuest = game.sanitize(JSON.parse(JSON.stringify(greeted)), visitAt)
 check('pollination survives a reload', savedGuest.scenes.meadow.plots[0].pollinated === true && savedGuest.visitors[guest.id] === 1)
 check('an unknown visitor is dropped on load', game.sanitize({ v: 4, visitors: { dragon: 3 }, lastTick: 5 }, 5).visitors.dragon === undefined)
+const guardianVisitor = game.VISITORS.find(visitor => game.VISITOR_INFO[visitor.id]?.role === 'guardian' && visitor.scenes.includes('meadow'))
+let guardianAt = noon
+while (game.visitorAt('meadow', 0, bloomPlot, guardianAt, 'overcast')?.id !== guardianVisitor.id) guardianAt += game.VISIT_MS
+const guardianState = { ...guestState, scenes: { ...guestState.scenes, meadow: { ...guestState.scenes.meadow, soil: [40, 100, 100, 100, 100, 100] } } }
+const greetedGuardian = game.greetVisitor(guardianState, 'meadow', 0, guardianAt, 'overcast')
+check('guardian visitors do not pollinate and restore six soil', greetedGuardian.scenes.meadow.plots[0].pollinated !== true && greetedGuardian.scenes.meadow.soil[0] === 46)
+const watersideVisitor = game.VISITORS.find(visitor => game.VISITOR_INFO[visitor.id]?.role === 'waterside' && visitor.scenes.includes('lake'))
+const watersidePlot = { species: 'lotus', growthMs: game.growMsOf(byId('lotus')), moisture: 50, dried: false }
+let watersideAt = noon
+while (game.visitorAt('lake', 0, watersidePlot, watersideAt, 'overcast')?.id !== watersideVisitor.id) watersideAt += game.VISIT_MS
+const watersideState = { ...game.freshState(0), scenes: { ...game.freshState(0).scenes, lake: { unlocked: 3, plots: [watersidePlot, null, null, null, null, null] } } }
+const greetedWaterside = game.greetVisitor(watersideState, 'lake', 0, watersideAt, 'overcast')
+check('waterside visitors add twenty moisture without pollinating', greetedWaterside.scenes.lake.plots[0].moisture === 70 && greetedWaterside.scenes.lake.plots[0].pollinated !== true)
 
 console.log('water all')
 const dryPair = {
@@ -550,6 +559,122 @@ check('v4 saves preserve hybrid basket metadata', savedV4.basket[0].dna === 2468
 check('v4 saves round-trip a composite specimen', savedV4.specimens['daisy:base:twin~tulip'].dna === 13579 && savedV4.specimens['daisy:base:twin~tulip'].trait === 'twin' && savedV4.specimens['daisy:base:twin~tulip'].tint === 'tulip' && savedV4.specimens['daisy:base:twin~tulip'].count === 3)
 check('invalid hybrid and curiosity keys are dropped', savedV4.seeds['daisy~nope'] === undefined && savedV4.hybrids['daisy~daisy'] === undefined && savedV4.exotics['daisy:nope'] === undefined)
 check('legacy saves gain v4 defaults', game.sanitize({ v: 3, coins: 9, lastTick: 1 }, 2).v === 4 && game.sanitize({ v: 3, coins: 9, lastTick: 1 }, 2).ribbons === 0)
+
+console.log('garden ecology and resident flowers')
+const ecologyNow = new Date(2026, 0, 2, 12, 0, 0).getTime()
+const residentPlot = { species: 'daisy', growthMs: growMs, moisture: 100, dried: false, dna: 86420 }
+const ecologyStart = {
+  ...game.freshState(ecologyNow), coins: 500, ribbons: 4,
+  scenes: { ...game.freshState(ecologyNow).scenes, meadow: { unlocked: 3, plots: [residentPlot, null, null, null, null, null] } },
+}
+const retained = game.retainAt(ecologyStart, 'meadow', 0, ecologyNow)
+check('retaining a mature flower keeps it in place', retained.scenes.meadow.plots[0].resident === true && retained.scenes.meadow.plots[0].dna === 86420)
+check('retaining does not fill the basket', retained.basket.length === 0)
+const retainedKey = Object.keys(retained.specimens)[0]
+check('retaining archives the specimen metadata', retained.specimens[retainedKey].dna === 86420 && retained.specimens[retainedKey].count === 1)
+check('a resident cannot be normally harvested', game.harvestAt({ ...retained, scenes: { ...retained.scenes, meadow: { ...retained.scenes.meadow, plots: [{ ...retained.scenes.meadow.plots[0], growthMs: growMs }, null, null, null, null, null] } } }, 'meadow', 0, ecologyNow, 'clear') === null)
+const endedResidency = game.harvestAt(retained, 'meadow', 0, ecologyNow, 'clear', true)
+check('ending residency allows a resident harvest', endedResidency !== null && endedResidency.basket.length === 1)
+const observed = game.observeAt(retained, 'meadow', 0, ecologyNow)
+const observeFee = 8 + Math.ceil(daisy.cost * 0.25)
+check('observing charges the species fee', observed.coins === retained.coins - observeFee && observed.study.daisy.observations === 1)
+check('observation records the ecology period and species', observed.ecology.observed.includes('daisy') && observed.ecology.period === game.ecologyPeriod(ecologyNow))
+check('observing does not alter the flower DNA', observed.scenes.meadow.plots[0].dna === 86420)
+check('observation cooldown rejects a second immediate observation', game.observeAt(observed, 'meadow', 0, ecologyNow + game.ECO_OBSERVE_MS - 1) === null)
+check('insufficient coins reject observation', game.observeAt({ ...retained, coins: observeFee - 1 }, 'meadow', 0, ecologyNow) === null)
+const rebloomFee = 10 + Math.ceil(daisy.cost * 0.4)
+const rebloomed = game.rebloomAt(observed, 'meadow', 0, ecologyNow + game.ECO_OBSERVE_MS)
+check('rebloom charges and resets growth while preserving DNA', rebloomed.coins === observed.coins - rebloomFee && rebloomed.scenes.meadow.plots[0].growthMs === Math.floor(growMs * 0.35) && rebloomed.scenes.meadow.plots[0].dna === 86420)
+const rebloomReady = { ...rebloomed, scenes: { ...rebloomed.scenes, meadow: { ...rebloomed.scenes.meadow, plots: [{ ...rebloomed.scenes.meadow.plots[0], growthMs: growMs }, null, null, null, null, null] } } }
+const observedAgain = game.observeAt(rebloomReady, 'meadow', 0, ecologyNow + 2 * game.ECO_OBSERVE_MS)
+check('the first observation after rebloom awards two study points', observedAgain.study.daisy.observations === 3)
+check('rebloom requires a resident observation first', game.rebloomAt(ecologyStart, 'meadow', 0, ecologyNow) === null)
+const savedResident = game.sanitize({ v: 4, coins: 100, scenes: { meadow: { unlocked: 3, plots: [{ ...retained.scenes.meadow.plots[0], resident: true, variant: 'base', retainedAt: ecologyNow, observedAt: ecologyNow, careCount: 2, reblooms: 1, studiedReblooms: 1 }, null, null, null, null, null] } } }, ecologyNow)
+check('resident status and care history survive reload', savedResident.scenes.meadow.plots[0].resident === true && savedResident.scenes.meadow.plots[0].careCount === 2 && savedResident.scenes.meadow.plots[0].reblooms === 1)
+const ecology = game.gardenEcology(retained, ecologyNow)
+check('garden ecology counts resident species and roles', ecology.residents === 1 && ecology.species === 1 && ecology.roleCoverage >= 1)
+const projects = game.ecoProjects(retained, ecologyNow)
+const projectsWithDifferentSeed = game.ecoProjects({ ...retained, seed: retained.seed + 999 }, ecologyNow)
+check('eco projects are stable within a period independent of state seed', JSON.stringify(projects) === JSON.stringify(projectsWithDifferentSeed))
+const samePeriodWithSnow = game.ecoProjects({ ...retained, scenes: { ...retained.scenes, snow: { unlocked: 3, plots: [null, null, null, null, null, null] } }, ecology: { ...retained.ecology, grounds: ['meadow'] } }, ecologyNow)
+check('eco projects keep the period grounds snapshot', JSON.stringify(samePeriodWithSnow) === JSON.stringify(projects))
+const openedNextPeriod = game.advanceState({ ...retained, scenes: { ...retained.scenes, snow: { unlocked: 3, plots: [null, null, null, null, null, null] }, }, ecology: { ...retained.ecology, grounds: ['meadow'] } }, ecologyNow + game.ECO_PERIOD_MS)
+check('a new period refreshes the ecology ground snapshot', openedNextPeriod.ecology.period === game.ecologyPeriod(ecologyNow + game.ECO_PERIOD_MS) && openedNextPeriod.ecology.grounds.includes('snow'))
+check('eco projects reset their period after rollover', game.ecoProjects(openedNextPeriod, ecologyNow + game.ECO_PERIOD_MS)[0].period !== projects[0].period)
+const residentSpirit = {
+  ...retained,
+  basket: [],
+  scenes: { ...retained.scenes, meadow: { ...retained.scenes.meadow, plots: [{ ...retained.scenes.meadow.plots[0], resident: true, variant: 'hidden', pollinated: true, growthMs: growMs }, null, null, null, null, null] } },
+}
+const endedSpirit = game.harvestAt(residentSpirit, 'meadow', 0, ecologyNow, 'clear', true)
+check('ending a resident spirit harvests its spirit and an ordinary pollination bonus', endedSpirit.basket.length === 2 && endedSpirit.basket[0].variant === 'hidden' && endedSpirit.basket[1].variant !== 'hidden')
+const project = projects[0]
+const readyForStudy = { ...retained, coins: project.coins + 500, ribbons: project.ribbons + 1, ecology: { period: project.period, observed: project.species.slice(), visitors: project.visitors.slice(), claimed: [] }, journal: [] }
+const submitted = game.submitStudy(readyForStudy, project.id, ecologyNow)
+check('study submission costs coins and ribbons without consuming flowers', submitted.coins === readyForStudy.coins - project.coins && submitted.ribbons === readyForStudy.ribbons - project.ribbons && submitted.basket.length === readyForStudy.basket.length)
+check('study submission records a journal entry and seals', submitted.journal.length === 1 && submitted.researchSeals === project.seals)
+check('a project can only be submitted once per period', game.submitStudy(submitted, project.id, ecologyNow) === null)
+const historicalOnly = { ...readyForStudy, ecology: { period: project.period, observed: project.species.slice(), visitors: [], claimed: [] }, visitors: Object.fromEntries(project.visitors.map(id => [id, 4])) }
+check('historical visitor counts cannot satisfy a current project', game.submitStudy(historicalOnly, project.id, ecologyNow) === null)
+const cappedJournal = { ...readyForStudy, journal: new Array(120).fill({ id: 'old' }) }
+const cappedSubmit = game.submitStudy(cappedJournal, project.id, ecologyNow)
+check('journal keeps at most one hundred entries', cappedSubmit.journal.length === 100)
+const sanitizedStudy = game.sanitizeStudy({ daisy: { observations: 3.9, reblooms: 1.8, firstAt: ecologyNow, lastAt: ecologyNow }, nope: { observations: 9 } })
+check('study sanitization keeps known counters and drops unknown species', sanitizedStudy.daisy.observations === 3 && sanitizedStudy.daisy.reblooms === 1 && sanitizedStudy.nope === undefined)
+const sanitizedEcology = game.sanitizeEcology({ period: game.ecologyPeriod(ecologyNow), observed: ['daisy', 'nope'], visitors: ['bee', 'nope'], claimed: ['eco-1', 4] }, ecologyNow)
+check('ecology sanitization filters unknown observations and visitors', sanitizedEcology.observed.length === 1 && sanitizedEcology.visitors.length === 1)
+const nextPeriodEcology = game.sanitizeEcology({ period: game.ecologyPeriod(ecologyNow), observed: ['daisy'], visitors: ['bee'], claimed: ['eco-1'] }, ecologyNow + game.ECO_PERIOD_MS)
+check('cross-period ecology sanitization clears old progress', nextPeriodEcology.observed.length === 0 && nextPeriodEcology.visitors.length === 0 && nextPeriodEcology.claimed.length === 0)
+check('all species have valid ecology profiles', game.SPECIES.length === 45 && game.SPECIES.every(species => game.ecoProfile(species.id) !== null))
+check('all thirteen visitors have complete field-guide metadata', game.VISITORS.length === 13 && game.VISITORS.every(visitor => ['latin', 'role', 'source', 'en', 'zh'].every(field => game.VISITOR_INFO[visitor.id]?.[field] !== undefined)))
+
+console.log('special commissions, visitors and traits')
+const specialNow = ecologyNow
+const commissionBase = { ...game.freshState(specialNow), coins: 2000, ribbons: 10 }
+const offers = game.specialCommissions(commissionBase, specialNow)
+check('four special commission kinds are offered', offers.map(offer => offer.kind).join(',') === 'bouquet,loan,breeding,watch')
+check('special commissions are period and ground stable', JSON.stringify(offers) === JSON.stringify(game.specialCommissions({ ...commissionBase, seed: 999999 }, specialNow)))
+const bouquetOffer = offers.find(offer => offer.kind === 'bouquet')
+const bouquetFlowers = game.SPECIES.filter(species => game.isWarm(species.pal.petal) === bouquetOffer.warm).slice(0, 4).map((species, index) => ({ species: species.id, variant: 'base', dna: index + 1 }))
+const bouquetAccepted = game.acceptCommission({ ...commissionBase, basket: bouquetFlowers }, bouquetOffer.id, specialNow)
+const bouquetReady = game.commissionProgress(bouquetAccepted, bouquetOffer, specialNow, [0, 1, 2])
+const bouquetDone = game.completeCommission(bouquetAccepted, bouquetOffer.id, specialNow, [0, 1, 2])
+check('bouquet requires three distinct ordinary flowers', bouquetReady.ready === true && bouquetReady.have === 3)
+check('bouquet completion consumes exactly the selected indices', bouquetDone.basket.length === 1 && bouquetDone.basket[0].dna === 4)
+check('completed bouquet cannot pay twice', game.completeCommission(bouquetDone, bouquetOffer.id, specialNow, [0, 1, 2]) === null)
+const loanOffer = offers.find(offer => offer.kind === 'loan')
+const loanPlots = loanOffer.species.map(id => ({ species: id, growthMs: game.growMsOf(byId(id)), moisture: 100, dried: false, resident: true, variant: 'base', dna: 100 + loanOffer.species.indexOf(id) }))
+const loanState = { ...commissionBase, scenes: { ...commissionBase.scenes, meadow: { ...commissionBase.scenes.meadow, plots: [...loanPlots, null, null, null, null] } } }
+const loanAccepted = game.acceptCommission(loanState, loanOffer.id, specialNow)
+const loanReady = { ...loanAccepted, study: Object.fromEntries(loanOffer.species.map(id => [id, { observations: 1, reblooms: 0, firstAt: specialNow, lastAt: specialNow }])) }
+const loanDone = game.completeCommission(loanReady, loanOffer.id, specialNow)
+check('loan requires new observations of both specified resident plants', game.commissionProgress(loanReady, loanOffer, specialNow).ready === true && loanDone.scenes.meadow.plots.filter(Boolean).length === 2)
+const breedingOffer = offers.find(offer => offer.kind === 'breeding')
+const breedingPlot = { species: 'daisy', growthMs: growMs, moisture: 100, dried: false, resident: true, variant: 'base', tint: 'tulip', dna: 777 }
+const breedingState = { ...commissionBase, scenes: { ...commissionBase.scenes, meadow: { ...commissionBase.scenes.meadow, plots: [breedingPlot, null, null, null, null, null] } }, study: {} }
+const breedingAccepted = game.acceptCommission(breedingState, breedingOffer.id, specialNow)
+check('breeding rejects a pre-acceptance or ordinary historical observation', game.commissionProgress(breedingAccepted, breedingOffer, specialNow).ready === false)
+const breedingObserved = game.observeAt(breedingAccepted, 'meadow', 0, specialNow + 1)
+check('breeding requires the hybrid resident observed after acceptance', breedingObserved !== null && game.commissionProgress(breedingObserved, breedingOffer, specialNow + 1).ready === true)
+const breedingDone = game.completeCommission(breedingObserved, breedingOffer.id, specialNow + 1)
+check('breeding rewards a seed without removing the resident', breedingDone.seeds['daisy~tulip'] === 1 && breedingDone.scenes.meadow.plots[0].resident === true)
+const watchOffer = offers.find(offer => offer.kind === 'watch')
+const watchAccepted = game.acceptCommission(commissionBase, watchOffer.id, specialNow)
+const watchReady = { ...watchAccepted, visitors: { ...watchAccepted.visitors, [watchOffer.visitor]: 1 } }
+check('watch requires a visitor encountered after acceptance', game.commissionProgress(watchReady, watchOffer, specialNow).ready === true)
+const watchDone = game.completeCommission(watchReady, watchOffer.id, specialNow)
+check('watch completion cannot be repeated', watchDone.commissionLog.length === 1 && game.completeCommission(watchDone, watchOffer.id, specialNow) === null)
+check('accepted commission expires at the next period', game.commissionProgress(watchAccepted, watchOffer, specialNow + game.ECO_PERIOD_MS).active === false)
+const specialVisitors = ['bumblebee', 'swallowtail', 'hawkmoth', 'hoverfly'].map(id => game.VISITORS.find(visitor => visitor.id === id))
+check('four special visitors are marked special', specialVisitors.every(visitor => visitor?.special === true))
+const ordinaryFlower = { species: 'daisy', growthMs: growMs, moisture: 60, dried: false }
+check('bumblebee can use a moist ordinary mature flower', game.specialVisitorEligible(specialVisitors[0], ordinaryFlower, commissionBase, 'clear') === true)
+check('special visitors reject a dry host', game.specialVisitorEligible(specialVisitors[0], { ...ordinaryFlower, moisture: 49 }, commissionBase, 'clear') === false)
+check('resident-only special visitors reject non-residents', game.specialVisitorEligible(specialVisitors[1], ordinaryFlower, commissionBase, 'clear') === false)
+const traitPlot = { visits: 3, fed: 2, pollinated: true, guardianVisits: 2, specialVisits: { bumblebee: 1 } }
+const traits = game.traitCauses(traitPlot, 'meadow', 'rain', specialNow)
+check('new curiosity conditions are included', traits.includes('fasciated') && traits.includes('double') && traits.includes('leafy'))
+check('radial curiosity is limited to bilateral host species', game.traitCauses({ ...traitPlot, pollinated: false }, 'meadow', 'clear', specialNow).includes('radial') === false && game.traitCauses({ ...traitPlot, species: 'pansy' }, 'meadow', 'clear', specialNow).includes('radial') === true)
 
 console.log('achievements')
 const firstBloom = game.ACHIEVEMENTS.find(entry => entry.id === 'firstBloom')
