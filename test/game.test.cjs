@@ -270,7 +270,7 @@ check('an unknown scene falls back to the meadow', game.sanitize({ v: 3, scene: 
 check('a future lastTick is clamped', game.sanitize({ v: 3, lastTick: 1e18 }, 900).lastTick === 900)
 
 console.log('items: buying')
-const shop = { ...game.freshState(0), coins: 400 }
+const shop = { ...game.freshState(0), coins: 1000 }
 const bought = game.buyItem(shop, 'fertilizer')
 check('a fertiliser leaves the bag with one', bought.bag.fertilizer === 1)
 check('buying spends the price', bought.coins === shop.coins - 35)
@@ -278,10 +278,17 @@ check('an unaffordable item is refused', game.buyItem({ ...shop, coins: 10 }, 's
 check('an unknown item is refused', game.buyItem(shop, 'rocket') === null)
 const lv1 = game.buyItem(shop, 'basket')
 check('the basket upgrade levels up', lv1.basketLevel === 1)
-check('the upgraded basket holds more', game.basketCapacity(lv1) === 18)
+check('the first upgraded basket holds thirty flowers', game.basketCapacity(lv1) === 30)
 const lv2 = game.buyItem(lv1, 'basket')
-check('the upgrade caps at level 2', lv2.basketLevel === 2 && game.basketCapacity(lv2) === 24)
-check('a maxed upgrade is refused', game.buyItem(lv2, 'basket') === null)
+check('the second upgrade holds fifty flowers', lv2.basketLevel === 2 && game.basketCapacity(lv2) === 50)
+const lv3 = game.buyItem(lv2, 'basket'), lv4 = game.buyItem(lv3, 'basket')
+check('the basket expands to seventy-five then one hundred slots', game.basketCapacity(lv3) === 75 && game.basketCapacity(lv4) === 100)
+check('a maxed upgrade is refused even with enough coins', game.buyItem({...lv4,coins:10000}, 'basket') === null)
+const largeBasketSave=game.sanitize({...lv4,basket:Array.from({length:100},(_,i)=>({species:'daisy',variant:'base',dna:i+1}))},1)
+check('one hundred saved flowers survive reload with their identities', largeBasketSave.basket.length===100 && largeBasketSave.basket[99].dna===100 && largeBasketSave.basketLevel===4)
+check('capacity cannot exceed one hundred through invalid levels', game.basketCapacity({basketLevel:999})===100)
+check('old upgrades retain or gain capacity on reload', game.basketCapacity(game.sanitize({...lv2,basketLevel:2},1))===50)
+check('a one hundred flower basket rejects additional harvests', game.harvestAt({...ripeMeadow,basketLevel:4,basket:largeBasketSave.basket},'meadow',0,noon,'overcast')===null)
 
 console.log('items: the sprinkler waters a ground')
 const dryPlot = { species: 'daisy', growthMs: 0, moisture: 5, dried: false }
@@ -699,6 +706,46 @@ const traitPlot = { visits: 3, fed: 2, pollinated: true, guardianVisits: 2, spec
 const traits = game.traitCauses(traitPlot, 'meadow', 'rain', specialNow)
 check('new curiosity conditions are included', traits.includes('fasciated') && traits.includes('double') && traits.includes('leafy'))
 check('radial curiosity is limited to bilateral host species', game.traitCauses({ ...traitPlot, pollinated: false }, 'meadow', 'clear', specialNow).includes('radial') === false && game.traitCauses({ ...traitPlot, species: 'pansy' }, 'meadow', 'clear', specialNow).includes('radial') === true)
+
+console.log('floating garden geometry')
+const miniRect={open:true,minimized:false,x:9999,y:9999,width:390,height:520}
+const miniBounded=game.miniGeometry(miniRect,1280,800)
+check('floating window stays within a desktop viewport', miniBounded.x+miniBounded.width<=1272 && miniBounded.y+miniBounded.height<=792 && miniBounded.y>=64)
+const miniNarrow=game.miniGeometry(miniRect,320,600)
+check('floating window fits a narrow viewport', miniNarrow.width<=304 && miniNarrow.height<=520 && miniNarrow.x>=8)
+const miniRestored=game.miniGeometry({...miniRect,minimized:false,y:730},1280,800)
+check('restoring a minimized window repositions it onscreen', miniRestored.y+miniRestored.height<=792)
+check('floating window geometry leaves its input object unchanged', miniRect.x===9999 && miniRect.height===520)
+
+console.log('living bloom appearances')
+const liveBase = {...game.freshState(noon), seed:1, scenes:{...game.freshState(noon).scenes,meadow:{...game.freshState(noon).scenes.meadow,plots:[{species:'daisy',growthMs:growMs,moisture:90,dried:false,dna:4567},null,null,null,null,null]}}}
+let specialLive
+for(let seed=1;seed<10000;seed++){
+  const candidate=game.revealBloom({...liveBase,seed},'meadow',0,noon,'overcast')
+  if(candidate.scenes.meadow.plots[0].variant==='hidden'){specialLive=candidate;break}
+}
+check('a special bloom is identified while still planted', specialLive?.scenes.meadow.plots[0].identified===true && specialLive.basket.length===0)
+const liveLook=specialLive.scenes.meadow.plots[0]
+check('identified bloom does not reroll each tick', game.revealBloom(specialLive,'meadow',0,noon,'rain')===specialLive)
+const liveHarvest=game.harvestAt(specialLive,'meadow',0,noon,'overcast')
+check('harvest keeps the appearance shown in the plot', liveHarvest.basket[0].variant===liveLook.variant && liveHarvest.basket[0].dna===liveLook.dna)
+const liveRetain=game.retainAt(specialLive,'meadow',0,noon)
+check('retaining keeps the appearance shown in the plot', liveRetain.scenes.meadow.plots[0].variant===liveLook.variant && liveRetain.seed===specialLive.seed)
+const liveSaved=game.sanitize(JSON.parse(JSON.stringify(specialLive)),noon)
+check('non-resident identification survives save reload', liveSaved.scenes.meadow.plots[0].identified===true && liveSaved.scenes.meadow.plots[0].variant==='hidden')
+const ordinaryLive={...liveBase,scenes:{...liveBase.scenes,meadow:{...liveBase.scenes.meadow,plots:[{...liveBase.scenes.meadow.plots[0],identified:true,variant:'base',traitChecks:[]},null,null,null,null,null]}}}
+let curiousLive
+for(let seed=1;seed<10000;seed++){
+  const candidate=game.revealBloom({...ordinaryLive,seed,scenes:{...ordinaryLive.scenes,meadow:{...ordinaryLive.scenes.meadow,plots:[{...ordinaryLive.scenes.meadow.plots[0],visits:2},null,null,null,null,null]}}},'meadow',0,noon,'overcast')
+  if(candidate.scenes.meadow.plots[0].trait==='twin'){curiousLive=candidate;break}
+}
+check('later visitor experience can reveal a curiosity on the living bloom', curiousLive?.scenes.meadow.plots[0].trait==='twin')
+check('a revealed curiosity remains unchanged on harvest', game.harvestAt(curiousLive,'meadow',0,noon,'clear').basket[0].trait==='twin')
+check('curiosity checks and appearance survive reload', game.sanitize(JSON.parse(JSON.stringify(curiousLive)),noon).scenes.meadow.plots[0].traitChecks.includes('twin'))
+const failedCheck={...ordinaryLive,scenes:{...ordinaryLive.scenes,meadow:{...ordinaryLive.scenes.meadow,plots:[{...ordinaryLive.scenes.meadow.plots[0],visits:2,traitChecks:['twin']},null,null,null,null,null]}}}
+check('failed curiosity conditions are not rerolled every second', game.revealBloom(failedCheck,'meadow',0,noon,'overcast')===failedCheck)
+check('growth advancement reveals mature plants automatically', game.advanceState(liveBase,noon+1).scenes.meadow.plots[0].identified===true)
+check('a charm armed after identification is kept for another flower', game.harvestAt({...specialLive,charm:true},'meadow',0,noon,'overcast').charm===true)
 
 console.log('research seals and permanent branches')
 const researchBase = { ...start, researchSeals: 3 }

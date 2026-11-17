@@ -94,9 +94,9 @@ window.__ModuleLoader__.load({
       'item.sprinkler': '洒水器',
       'item.sprinkler.note': '当前花地 30 分钟自动浇水',
       'item.charm': '幸运符',
-      'item.charm.note': '下一次收获的仙品概率 +25%',
+      'item.charm.note': '全花园下一株开花鉴定的仙品概率 +25%；已鉴定植株不重抽',
       'item.basket': '花篮扩容',
-      'item.basket.note': '花篮 +6 格，最多 3 级',
+      'item.basket.note': '容量依次提升至 30 / 50 / 75 / 100 格，最高 100 格',
       'item.price': '{n} 金币',
       'item.buy': '购买',
       'item.owned': '×{n}',
@@ -527,9 +527,9 @@ window.__ModuleLoader__.load({
       'item.sprinkler': 'Sprinkler',
       'item.sprinkler.note': 'Waters this ground for 30 minutes',
       'item.charm': 'Lucky charm',
-      'item.charm.note': '+25% spirit chance on the next harvest',
+      'item.charm.note': '+25% spirit chance on the next bloom identification across all grounds; existing blooms do not reroll',
       'item.basket': 'Basket upgrade',
-      'item.basket.note': '+6 basket slots, up to level 3',
+      'item.basket.note': 'Expand to 30 / 50 / 75 / 100 slots; maximum 100',
       'item.price': '{n} coins',
       'item.buy': 'Buy',
       'item.owned': '×{n}',
@@ -1752,12 +1752,12 @@ const REGION_SPECIES = [
       { id: 'compost', price: 25, kind: 'consumable' },
       { id: 'sprinkler', price: 90, kind: 'consumable' },
       { id: 'charm', price: 120, kind: 'consumable' },
-      { id: 'basket', price: 150, kind: 'upgrade', maxLevel: 2 },
+      { id: 'basket', price: 150, kind: 'upgrade', maxLevel: 4 },
     ]
     const ITEM_BY_ID = new Map(ITEMS.map(item => [item.id, item]))
 
     function basketCapacity(state) {
-      return BASKET_CAPACITY + 6 * (state.basketLevel ?? 0)
+      return [BASKET_CAPACITY, 30, 50, 75, 100][Math.max(0,Math.min(4,Math.floor(finiteOr(state.basketLevel,0))))]
     }
     const ORDER_SLOTS = 2
 
@@ -2127,6 +2127,11 @@ const REGION_SPECIES = [
         if (finiteOr(plot.visits, 0) > 0) plots[index].visits = Math.floor(plot.visits)
         if (finiteOr(plot.guardianVisits,0)>0) plots[index].guardianVisits=Math.floor(plot.guardianVisits)
         plots[index].specialVisits = Object.fromEntries(Object.entries(sanitizeVisitors(plot.specialVisits)).filter(([id])=>VISITOR_BY_ID.get(id)?.special))
+        if(plot.identified===true && ['base','alt','hidden'].includes(plot.variant)){
+          plots[index].identified=true;plots[index].variant=plot.variant
+          if(plot.variant!=='hidden' && TRAIT_BY_ID.has(plot.trait))plots[index].trait=plot.trait
+          plots[index].traitChecks=Array.isArray(plot.traitChecks)?[...new Set(plot.traitChecks.filter(id=>TRAIT_BY_ID.has(id)))]:[]
+        }
         if (plot.resident === true) {
           plots[index].resident = true
           plots[index].variant = ['base','alt','hidden'].includes(plot.variant) ? plot.variant : 'base'
@@ -2246,10 +2251,10 @@ const REGION_SPECIES = [
         }
       }
       // An upgraded basket holds more, so the cap depends on the saved level.
-      const basketLevel = Math.max(0, Math.min(2, Math.floor(finiteOr(raw.basketLevel, 0))))
+      const basketLevel = Math.max(0, Math.min(4, Math.floor(finiteOr(raw.basketLevel, 0))))
       const basket = []
       if (Array.isArray(raw.basket)) {
-        for (const item of raw.basket.slice(0, BASKET_CAPACITY + 6 * basketLevel)) {
+        for (const item of raw.basket.slice(0, basketCapacity({basketLevel}))) {
           const species = item === null || typeof item !== 'object' ? undefined : SPECIES_BY_ID.get(item.species)
           if (species === undefined) continue
           const variant = item.variant === 'alt' || item.variant === 'hidden' ? item.variant : 'base'
@@ -2382,6 +2387,38 @@ function ecologyState(state, now) {
   return old ? { ...old, grounds: old.grounds ?? grounds } : { period, grounds, observed: [], visitors: [], claimed: [] }
 }
 
+// A living bloom keeps its identification; each new curiosity cause is tried once.
+function revealBloom(state, sceneId, index, now, weather = weatherAt(now)) {
+  const plot=state.scenes?.[sceneId]?.plots?.[index], species=SPECIES_BY_ID.get(plot?.species)
+  if(!species || plot.resident || plot.growthMs<growMsOf(species))return state
+  let cursor=state.seed, charm=state.charm, nextPlot={...plot}, changed=false
+  const draw=()=>{const step=nextRandom(cursor);cursor=step.seed;return step.value}
+  if(plot.identified!==true){
+    const chance=Math.min(charm===true?0.55:0.3,hiddenChance(plot,weather,now,SCENE_BY_ID.get(sceneId))+(charm===true?CHARM_BONUS:0))
+    nextPlot.variant=draw()<chance?'hidden':plot.tint?'base':plotVariant(species,index)
+    nextPlot.identified=true;nextPlot.traitChecks=[];charm=false;changed=true
+  }
+  if(nextPlot.variant!=='hidden' && !nextPlot.trait){
+    const checked=new Set(nextPlot.traitChecks??[])
+    const boost=1+FACILITY_BY_ID.get('greenhouse').step*facilityLevel(state,'greenhouse')
+    for(const id of traitCauses(nextPlot,sceneId,weather,now)){
+      if(checked.has(id))continue
+      checked.add(id);changed=true
+      if(draw()<Math.min(0.9,TRAIT_BY_ID.get(id).chance*boost)){nextPlot.trait=id;break}
+    }
+    nextPlot.traitChecks=[...checked]
+  }
+  if(!changed)return state
+  const slot=state.scenes[sceneId],plots=slot.plots.slice();plots[index]=nextPlot
+  return {...state,seed:cursor,charm,scenes:{...state.scenes,[sceneId]:{...slot,plots}}}
+}
+function revealGarden(state, now) {
+  let next=state
+  for(const scene of SCENES){const slot=next.scenes?.[scene.id];if(!slot)continue
+    for(let index=0;index<slot.unlocked;index++)next=revealBloom(next,scene.id,index,now)
+  }
+  return next
+}
 function retainAt(state, sceneId, index, now) {
   const slot = state.scenes?.[sceneId]
   const plot = slot?.plots?.[index]
@@ -2394,13 +2431,13 @@ function retainAt(state, sceneId, index, now) {
   const hiddenBase = hiddenChance(plot, weatherAt(now), now, scene)
   const charmBonus = state.charm === true ? CHARM_BONUS : 0
   const chance = Math.min(state.charm === true ? 0.55 : 0.3, hiddenBase + charmBonus)
-  const hidden = roll.value < chance
-  let cursor = roll.seed
+  const hidden = plot.identified ? plot.variant === 'hidden' : roll.value < chance
+  let cursor = plot.identified ? state.seed : roll.seed
   const dna = Number.isFinite(plot.dna) && plot.dna > 0 ? plot.dna : 1 + Math.floor(hashUnit(state.seed, index, 12345) * 2147483646)
-  const first = { species: species.id, variant: hidden ? 'hidden' : plain, dna }
+  const first = { species: species.id, variant: plot.identified ? plot.variant : hidden ? 'hidden' : plain, dna }
   if (plot.tint !== undefined) first.tint = plot.tint
-  let trait
-  if (!hidden) {
+  let trait = plot.identified ? plot.trait : undefined
+  if (!hidden && !plot.identified) {
     const causes = traitCauses(plot, sceneId, weatherAt(now), now)
     for (const id of causes) {
       const step = nextRandom(cursor)
@@ -2426,7 +2463,7 @@ function retainAt(state, sceneId, index, now) {
   return {
     ...state,
     seed: cursor,
-    charm: false,
+    charm: plot.identified ? state.charm : false,
     seen,
     specimens,
     hybrids,
@@ -2624,7 +2661,7 @@ const ECOLOGY_API = { ECO_PERIOD_MS, ECO_OBSERVE_MS, ecologyPeriod, ecologyState
     /** Advance every plot in every scene, one weather segment at a time. */
     function advanceState(state, now) {
       let cursor = Math.max(state.lastTick, now - MAX_OFFLINE_MS)
-      if (now <= cursor) return state
+      if (now <= cursor) return revealGarden(state, now)
       const nextScenes = { ...state.scenes }
       let scenesChanged = false
       while (cursor < now) {
@@ -2666,7 +2703,7 @@ const ECOLOGY_API = { ECO_PERIOD_MS, ECO_OBSERVE_MS, ecologyPeriod, ecologyState
         }
         cursor = segmentEnd
       }
-      return { ...state, ...(scenesChanged ? { scenes: nextScenes } : {}), lastTick: now, ecology: ecologyState(state, now) }
+      return revealGarden({ ...state, ...(scenesChanged ? { scenes: nextScenes } : {}), lastTick: now, ecology: ecologyState(state, now) }, now)
     }
 
     /**
@@ -2797,18 +2834,18 @@ const ECOLOGY_API = { ECO_PERIOD_MS, ECO_OBSERVE_MS, ecologyPeriod, ecologyState
       const bonus = state.charm === true ? CHARM_BONUS : 0
       const chance = Math.min(state.charm === true ? 0.55 : 0.3, hiddenChance(plot, weather, now, scene) + bonus)
       const roll = nextRandom(state.seed)
-      const hidden = plot.resident ? plot.variant === 'hidden' : roll.value < chance
-      let cursor = plot.resident ? state.seed : roll.seed
+      const hidden = (plot.resident || plot.identified) ? plot.variant === 'hidden' : roll.value < chance
+      let cursor = (plot.resident || plot.identified) ? state.seed : roll.seed
       const draw = () => {
         const step = nextRandom(cursor)
         cursor = step.seed
         return step.value
       }
       const plain = plot.tint !== undefined ? 'base' : plotVariant(species, index)
-      const variant = plot.resident ? plot.variant : hidden ? 'hidden' : plain
+      const variant = (plot.resident || plot.identified) ? plot.variant : hidden ? 'hidden' : plain
       // A curiosity needs a cause in the plant's life, and then some luck.
-      let trait = plot.resident ? plot.trait : undefined
-      if (!hidden && !plot.resident) {
+      let trait = (plot.resident || plot.identified) ? plot.trait : undefined
+      if (!hidden && !plot.resident && !plot.identified) {
         const boost = 1 + FACILITY_BY_ID.get('greenhouse').step * facilityLevel(state, 'greenhouse')
         for (const id of traitCauses(plot, sceneId, weather, now)) {
           if (draw() < Math.min(0.9, TRAIT_BY_ID.get(id).chance * boost)) {
@@ -2867,7 +2904,7 @@ const ECOLOGY_API = { ECO_PERIOD_MS, ECO_OBSERVE_MS, ecologyPeriod, ecologyState
       return {
         ...state,
         seed: cursor,
-        charm: plot.resident ? state.charm : false,
+        charm: (plot.resident || plot.identified) ? state.charm : false,
         xp: state.xp + species.xp,
         harvested: state.harvested + blooms.length,
         pollinated: (state.pollinated ?? 0) + (doubled ? 1 : 0),
@@ -3379,6 +3416,7 @@ const ECOLOGY_API = { ECO_PERIOD_MS, ECO_OBSERVE_MS, ecologyPeriod, ecologyState
     function initStore() {
       if (garden !== null) return garden
       garden = advanceState(sanitize(readStored(), Date.now()), Date.now())
+      persist() // Initial bloom identifications must survive an immediate reload.
       return garden
     }
 
@@ -3388,9 +3426,15 @@ const ECOLOGY_API = { ECO_PERIOD_MS, ECO_OBSERVE_MS, ecologyPeriod, ecologyState
 
     function commit(next, immediate) {
       if (next === null || next === garden) return
-      garden = next
+      const previous = garden
+      garden = revealGarden(next, Date.now())
+      const revealed = SCENES.some(scene => (garden.scenes[scene.id]?.plots??[]).some((plot,index)=>{
+        if(!plot?.identified)return false
+        const old=previous?.scenes?.[scene.id]?.plots?.[index]
+        return !old?.identified || old.variant!==plot.variant || old.trait!==plot.trait || (old.traitChecks??[]).join()!==(plot.traitChecks??[]).join()
+      }))
       for (const listener of listeners) listener()
-      if (immediate) persist()
+      if (immediate || revealed) persist()
       else schedulePersist()
     }
 
@@ -3496,6 +3540,7 @@ const ECOLOGY_API = { ECO_PERIOD_MS, ECO_OBSERVE_MS, ecologyPeriod, ecologyState
         + (look?.tint !== undefined ? `-x${look.tint}` : '')
         + (trait !== undefined ? `-${trait.id}` : '')
         + (dna !== 0 ? `-${dna.toString(36)}` : '')
+        + (look?.paintId ? `-${look.paintId}` : '')
       const defs = []
       const made = new Map()
       const add = (tag, name, props, stops) => {
@@ -3504,7 +3549,7 @@ const ECOLOGY_API = { ECO_PERIOD_MS, ECO_OBSERVE_MS, ecologyPeriod, ecologyState
             ...stops.map(([offset, color, alpha], index) => h('stop', {
               key: index, offset: `${offset}%`, stopColor: color, stopOpacity: alpha,
             }))))
-          made.set(name, `url(#${prefix}-${name})`)
+          made.set(name, `url(#${prefix}-${name}) ${stops[Math.floor(stops.length / 2)]?.[1] ?? pal.petal}`)
         }
         return made.get(name)
       }
@@ -5161,13 +5206,19 @@ const REGION_PLANTS = {
     Object.assign(PLANTS, NEW_PLANTS)
     Object.assign(PLANTS, REGION_PLANTS)
 
-    function FlowerArt({ speciesId, stage, variant, dna, trait, tint }) {
+    function FlowerArt({ speciesId, stage, variant, dna, trait, tint, presentation = 'living' }) {
+      // Every mounted SVG owns its paint: hidden tabs, dialogs and the mini window
+      // must never resolve their gradients through another copy of this plant.
+      const paintId = typeof React.useId === 'function' ? `svg${React.useId().replace(/[^a-zA-Z0-9_-]/g, '_')}` : 'svg-static'
       const species = SPECIES_BY_ID.get(speciesId) ?? SPECIES[0]
       const look = variant ?? 'base'
       const hidden = look === 'hidden'
-      const genes = typeof dna === 'number' && dna > 0 ? Math.floor(dna) : 0
+      const recordedGenes = typeof dna === 'number' && dna > 0 ? Math.floor(dna) : 0
+      // Old count-only entries get a stable live posture without inventing saved DNA.
+      const displayGenes = 1 + [...species.id].reduce((seed,char)=>(seed*31+char.charCodeAt(0))%2147483646,17)
+      const genes = recordedGenes || (presentation==='living'?displayGenes:0)
       const traitId = hidden || stage !== 'bloom' ? undefined : trait
-      const ink = makeInk(species, look, { dna: genes, trait: traitId, tint })
+      const ink = makeInk(species, look, { dna: recordedGenes, trait: traitId, tint, paintId })
       const sceneId = SCENE_ID_OF.get(species.id) ?? 'meadow'
       const headY = headYOf(species)
       const floating = species.leaf === 'float'
@@ -5205,9 +5256,9 @@ const REGION_PLANTS = {
         artSalt = 0
       }
       const extras = traitExtras(traitId, headY)
-      return h('svg', SVG_PROPS,
-        h('defs', null, ...ink.defs, hidden ? hiddenAuraDef(species.id) : null),
-        ...(hidden ? hiddenAura(species.id, headY) : []),
+      return h('svg', {...SVG_PROPS,className:presentation==='specimen'?'fg-flowerSpecimen':'fg-flowerLiving','data-presentation':presentation},
+        h('defs', null, ...ink.defs, hidden ? hiddenAuraDef(`${species.id}-${paintId}`) : null),
+        ...(hidden ? hiddenAura(`${species.id}-${paintId}`, headY) : []),
         ...extras.under,
         ground(sceneId),
         h('g', { className: sway }, ...bodies),
@@ -5595,7 +5646,7 @@ function specialTraitArt(ink, traitId, headY = HEAD_Y) {
       return name
     }
 
-    function BloomPreview({ id, speciesId, variant, dna, trait, tint, t, meta = [], worth, armed, onSell, onClose, modal = false, onPrev, onNext, individuals = [], onSellOne, quoteOne, observations = 0 }) {
+    function BloomPreview({ id, speciesId, variant, dna, trait, tint, t, meta = [], worth, armed, onSell, onClose, modal = false, onPrev, onNext, individuals = [], onSellOne, quoteOne, observations = 0, allowSpecimen = false }) {
       const species = SPECIES_BY_ID.get(speciesId) ?? SPECIES[0]
       const dialogRef = React.useRef(null)
       const [individual, setIndividual] = React.useState(0)
@@ -5607,8 +5658,8 @@ function specialTraitArt(ink, traitId, headY = HEAD_Y) {
         const timer = window.setTimeout(() => setOneArmed(false), 4000)
         return () => window.clearTimeout(timer)
       }, [oneArmed])
-      const [sample, setSample] = React.useState(null)
-      React.useEffect(() => setSample(null), [speciesId, variant, trait, tint, dna])
+      const [sample, setSample] = React.useState(null), [specimenMode,setSpecimenMode] = React.useState(false)
+      React.useEffect(() => {setSample(null);setSpecimenMode(false)}, [speciesId, variant, trait, tint, dna])
       React.useEffect(() => {
         if (!modal) return undefined
         const dialog = dialogRef.current
@@ -5617,7 +5668,7 @@ function specialTraitArt(ink, traitId, headY = HEAD_Y) {
       }, [modal])
       const card = h('div', { className: 'fg-preview', id, tabIndex: -1, role: 'group', 'aria-label': t(`species.${species.id}`) },
         h('div', { className: 'fg-previewArt' },
-          h(FlowerArt, { speciesId: species.id, stage: 'bloom', variant, dna: sample ?? chosen?.dna ?? dna, trait, tint }),
+          h(FlowerArt, { speciesId: species.id, stage: 'bloom', variant, dna: sample ?? chosen?.dna ?? dna, trait, tint, presentation:specimenMode?'specimen':'living' }),
         ),
         h('div', { className: 'fg-previewBody' },
           h('div', { className: 'fg-previewHead' },
@@ -5628,7 +5679,7 @@ function specialTraitArt(ink, traitId, headY = HEAD_Y) {
           modal ? h(SpeciesPurpose, { speciesId: species.id, t, observations }) : null,
           modal && species.source ? h('a', { className: 'fg-source', href: species.source, target: '_blank', rel: 'noopener noreferrer' }, t('eco.source')) : null,
           h('div', { className: 'fg-previewMeaning' }, t(`codex.${species.id}`)),
-          modal ? h('span', { className: 'fg-note' }, t(sample === 0 ? 'card.textbook' : sample !== null ? 'card.example' : dna ? 'card.specimen' : 'card.textbook')) : null,
+          modal ? h('span', { className: 'fg-note' }, t(specimenMode?'card.specimenTitle':sample!==null?'card.example':'card.living')) : null,
           modal ? h('p', { className: 'fg-cardFact' }, t(`fact.${species.id}`)) : null,
           trait ? h('p', { className: 'fg-note' }, t(`trait.${trait}.cause`)) : null,
           trait && TRAIT_BY_ID.get(trait)?.source ? h('div', { className: 'fg-purpose' }, h('p',null,t(`trait.${trait}.fact`)), h('a',{href:TRAIT_BY_ID.get(trait).source,target:'_blank',rel:'noopener noreferrer'},t('trait.source'))) : null,
@@ -5657,9 +5708,9 @@ function specialTraitArt(ink, traitId, headY = HEAD_Y) {
               className: armed ? 'fg-btn fg-btnDanger' : 'fg-btn fg-btnPrimary',
               onClick: onSell,
             }, armed ? t('basket.confirm', { n: worth }) : t('basket.sellAll', { n: worth })),
-          modal ? h('button', { type: 'button', className: 'fg-btn', onClick: () => setSample(value => (value ?? dna ?? 0) + 7919), title: t('card.individual') }, t('card.another')) : null,
-          modal && sample !== null ? h('button', { type: 'button', className: 'fg-btn fg-btnGhost', onClick: () => setSample(0) }, t('card.textbook')) : null,
-          modal && dna ? h('button', { type: 'button', className: 'fg-btn fg-btnGhost', onClick: () => setSample(null) }, t('card.specimen')) : null,
+          modal ? h('button', { type: 'button', className: 'fg-btn', onClick: () => {setSpecimenMode(false);setSample(value => (value ?? dna ?? 0) + 7919)}, title: t('card.individual') }, t('card.another')) : null,
+          modal && (sample!==null || specimenMode) ? h('button', { type: 'button', className: 'fg-btn fg-btnGhost', onClick: () => {setSample(null);setSpecimenMode(false)} }, t('card.returnLiving')) : null,
+          modal && allowSpecimen && dna ? h('button', { type: 'button', className: 'fg-btn fg-btnGhost', 'aria-pressed':specimenMode, onClick: () => {setSample(null);setSpecimenMode(true)} }, t('card.specimen')) : null,
           onPrev ? h('button', { type: 'button', className: 'fg-btn fg-btnGhost', onClick: onPrev }, t('card.prev')) : null,
           onNext ? h('button', { type: 'button', className: 'fg-btn fg-btnGhost', onClick: onNext }, t('card.next')) : null,
           h('button', { type: 'button', className: 'fg-btn fg-btnGhost', onClick: onClose }, t('preview.close')),
@@ -5958,13 +6009,13 @@ function DiscoveryCard({entry,t,onClose,onOpen}) {
 Object.assign(zh, {
   'inventory.title':'道具背包', 'inventory.open':'道具背包 · {n}', 'inventory.note':'这里展示现有道具，兑换或购买后立即更新。花朵保存在花篮，杂交种子在下方单独展示。',
   'inventory.count':'持有 ×{n}', 'inventory.seeds':'杂交种子', 'inventory.noSeeds':'暂无杂交种子；授粉花收获或育种委托可获得。', 'inventory.grow':'前往花园使用', 'inventory.close':'收起背包',
-  'inventory.fertilizer':'在花园选择未开花植株，点击施肥。', 'inventory.compost':'在花园的低地力花圃点击堆肥。', 'inventory.sprinkler':'在道具商店使用，为当前花地自动浇水。', 'inventory.charm':'在道具商店启用，为下一次收获或留园鉴定增加仙品机会。',
+  'inventory.fertilizer':'在花园选择未开花植株，点击施肥。', 'inventory.compost':'在花园的低地力花圃点击堆肥。', 'inventory.sprinkler':'在道具商店使用，为当前花地自动浇水。', 'inventory.charm':'在道具商店启用，为下一株开花鉴定增加仙品机会；已鉴定植株不会重抽。',
   'reward.xp':'经验', 'reward.reputation':'委托声望', 'reward.seals':'研究印记', 'reward.title':'收获已到账', 'reward.research':'永久研究已解锁', 'reward.bag':'查看道具背包', 'reward.close':'收好奖励', 'reward.balance':'剩余研究印记 {n} 枚', 'reward.spent':'本次花费 {n} 枚研究印记', 'reward.owned':'入包后持有 ×{n}', 'reward.permanent':'永久生效 · {level}/2', 'reward.saved':'进度已保存，关闭后可继续养花。',
 })
 Object.assign(en, {
   'inventory.title':'Supply bag', 'inventory.open':'Supply bag · {n}', 'inventory.note':'Your current supplies update immediately after purchases and exchanges. Flowers stay in the flower basket; hybrid seeds are listed separately below.',
   'inventory.count':'Owned ×{n}', 'inventory.seeds':'Hybrid seeds', 'inventory.noSeeds':'No hybrid seeds yet. Find them through pollinated harvests or breeding letters.', 'inventory.grow':'Go to garden to use', 'inventory.close':'Close bag',
-  'inventory.fertilizer':'Choose a growing plant in the garden and feed it.', 'inventory.compost':'Apply compost to a garden plot with low fertility.', 'inventory.sprinkler':'Use from the shop to automatically water the current ground.', 'inventory.charm':'Activate from the shop to boost the next spirit identification on harvest or residency.',
+  'inventory.fertilizer':'Choose a growing plant in the garden and feed it.', 'inventory.compost':'Apply compost to a garden plot with low fertility.', 'inventory.sprinkler':'Use from the shop to automatically water the current ground.', 'inventory.charm':'Activate from the shop to boost the next bloom identification; identified plants keep their appearance.',
   'reward.xp':'Experience', 'reward.reputation':'Patron reputation', 'reward.seals':'Research seals', 'reward.title':'Rewards received', 'reward.research':'Permanent research unlocked', 'reward.bag':'View supply bag', 'reward.close':'Keep rewards', 'reward.balance':'Research seals remaining: {n}', 'reward.spent':'Spent {n} research seals', 'reward.owned':'Now in bag ×{n}', 'reward.permanent':'Permanent effect · {level}/2', 'reward.saved':'Progress saved. Close to continue gardening.',
 })
 function inventoryCount(state) {
@@ -6021,6 +6072,131 @@ function RewardDialog({reward,state,t,onClose,onBag}) {
     h('p',{className:'fg-rewardBalance'},reward.spent?t('reward.spent',{n:reward.spent})+' · ':'',t('reward.balance',{n:state.researchSeals??0})),
     h('footer',{className:'fg-rewardActions'},h('button',{type:'button',className:'fg-btn',onClick:onBag},t('reward.bag')),h('button',{type:'button',className:'fg-btn fg-rewardConfirm',autoFocus:true,onClick:onClose},t('reward.close'))))
 }
+
+Object.assign(zh, {
+  'card.living':'活株外观', 'card.specimenTitle':'收藏标本', 'card.returnLiving':'返回活株', 'card.specimen':'查看标本',
+  'mini.open':'花园小窗', 'mini.title':'随身花园', 'mini.note':'小窗会留在对话上方；拖动标题栏移动，右下角调整大小。',
+  'mini.close':'关闭花园小窗', 'mini.minimize':'收起花园小窗', 'mini.restore':'展开花园小窗', 'mini.move':'移动花园小窗（方向键）', 'mini.resize':'调整小窗大小（方向键）',
+  'mini.water':'全部浇水', 'mini.empty':'空花圃', 'mini.seed':'选择种子', 'mini.plant':'播种', 'mini.moisture':'湿度 {n}%', 'mini.saved':'已保存，主花园会同步更新。', 'mini.error':'暂时无法操作，请检查金币、背包空间和花卉状态。', 'mini.basket':'花篮 {n}/{max}',
+})
+Object.assign(en, {
+  'card.living':'Living plant', 'card.specimenTitle':'Collected specimen', 'card.returnLiving':'Return to living plant', 'card.specimen':'View specimen',
+  'mini.open':'Garden window', 'mini.title':'Pocket garden', 'mini.note':'Stays above your conversation. Drag the title bar to move; resize from the lower-right corner.',
+  'mini.close':'Close garden window', 'mini.minimize':'Minimize garden window', 'mini.restore':'Expand garden window', 'mini.move':'Move garden window (arrow keys)', 'mini.resize':'Resize garden window (arrow keys)',
+  'mini.water':'Water all', 'mini.empty':'Empty plot', 'mini.seed':'Choose seed', 'mini.plant':'Plant', 'mini.moisture':'Moisture {n}%', 'mini.saved':'Saved and synchronized with the main garden.', 'mini.error':'Not ready: check coins, basket space and flower status.', 'mini.basket':'Basket {n}/{max}',
+})
+let miniWindow = { open:false, minimized:false, x:0, y:64, width:390, height:520 }
+const miniListeners = new Set()
+function subscribeMini(listener) { miniListeners.add(listener); return ()=>miniListeners.delete(listener) }
+function getMini() { return miniWindow }
+function miniGeometry(rect, viewportWidth, viewportHeight) {
+  const top=Math.min(64,Math.max(0,viewportHeight-1))
+  const width=Math.min(Math.max(280,rect.width),Math.max(1,viewportWidth-16))
+  const height=Math.min(Math.max(300,rect.height),Math.max(1,viewportHeight-top-16))
+  return {...rect,width,height,x:Math.max(Math.min(8,Math.max(0,viewportWidth-width)),Math.min(rect.x,viewportWidth-width-8)),y:Math.max(top,Math.min(rect.y,viewportHeight-(rect.minimized?52:height)-8))}
+}
+function updateMini(patch) {
+  const width=typeof window==='undefined'?1000:window.innerWidth??1000, height=typeof window==='undefined'?800:window.innerHeight??800
+  miniWindow=miniGeometry({...miniWindow,...patch},width,height)
+  for(const listener of miniListeners)listener()
+}
+function openMini() {
+  updateMini({open:true,minimized:false,x:Math.max(8,(window.innerWidth??1000)-miniWindow.width-24),y:Math.max(64,(window.innerHeight??800)-miniWindow.height-130)})
+}
+function MiniGarden({t}) {
+  const state=useSyncExternalStore(subscribeGarden,getState,getState)
+  const [clock,setClock]=React.useState(()=>Date.now()), [notice,setNotice]=React.useState(''), [discovery,setDiscovery]=React.useState(null)
+  const [selection,setSelection]=React.useState({}), [preview,setPreview]=React.useState(null)
+  const miniRoot=React.useRef(null), opener=React.useRef(null)
+  function restoreMiniFocus(){window.setTimeout(()=>{const target=opener.current?.isConnected?opener.current:miniRoot.current?.querySelector('select,button');target?.focus()},0)}
+  React.useEffect(()=>{const id=window.setInterval(()=>{tick();setClock(Date.now())},1000);return()=>window.clearInterval(id)},[])
+  const scene=sceneOf(state.scene), slot=state.scenes[state.scene], weather=weatherAt(clock), period=gardenClock(clock).period
+  React.useEffect(()=>{setSelection({})},[scene.id])
+  function act(transition,kind,index) {
+    const actionOpener=typeof document==='undefined'?null:document.activeElement
+    tick()
+    const before=getState(), next=transition(before)
+    if(!next){setNotice(t('mini.error'));return}
+    const items=kind?discoveryItems(before,next,kind,before.scene,index):[]
+    const recorded=recordDiscoveries(next,items,Date.now())
+    commit(recorded,true);setNotice(t('mini.saved'))
+    if(items.length){opener.current=actionOpener;setDiscovery(recorded.discoveries[recorded.discoveries.length-1])}
+  }
+  return h('div',{ref:miniRoot,className:'fg-view fg-miniView'},
+    h('div',{className:'fg-miniTools'},
+      h('select',{'aria-label':t('plot.section'),value:scene.id,onChange:event=>{commit({...getState(),scene:event.target.value},true);setSelection({})}},SCENES.filter(entry=>(state.scenes[entry.id]?.unlocked??0)>0).map(entry=>h('option',{key:entry.id,value:entry.id},t(`scene.${entry.id}`)))),
+      h('button',{type:'button',className:'fg-btn',onClick:()=>act(before=>waterAll(before,before.scene))},t('mini.water'))),
+    h('p',{className:'fg-miniSummary'},t('mini.basket',{n:state.basket.length,max:basketCapacity(state)}),' · ',state.coins,' ',t('stat.coins')),
+    h('div',{className:'fg-miniLandscape',style:{backgroundColor:PANORAMA_GROUND[scene.id]}},
+      h('div',{className:'fg-miniBackdrop'},h(ScenePanorama,{sceneId:scene.id,period,weather,garden:true})),
+      h('div',{className:'fg-miniPlots'},slot.plots.slice(0,slot.unlocked).map((plot,index)=>{
+        const species=plot?SPECIES_BY_ID.get(plot.species):null, stage=plot?stageOf(plot):null
+        const seed=scene.species.includes(selection[index])?selection[index]:scene.species[0]
+        const seedSpecies=SPECIES_BY_ID.get(seed)
+        const visitor=plot?visitorAt(scene.id,index,plot,clock,weather,facilityLevel(state,'hive'),gardenEcology(state,clock).visitorBonus,state):null
+        return h('article',{key:index,className:'fg-miniPlot','data-mini-plot':index},
+          h('div',{className:'fg-miniPlant'},plot?h(FlowerArt,{speciesId:plot.species,stage,variant:plot.variant??(plot.tint?'base':plotVariant(species,index)),trait:plot.trait,tint:plot.tint,dna:plot.dna}):EmptyArt(),
+            visitor?h('button',{type:'button',className:'fg-miniVisitor','data-mini-visitor':visitor.id,title:t('visitor.greet',{name:t(`visitor.${visitor.id}`)}),'aria-label':t('visitor.greet',{name:t(`visitor.${visitor.id}`)}),onClick:()=>act(before=>greetVisitor(before,scene.id,index,Date.now(),weatherAt(Date.now())),'visitor',index)},h(VisitorArt,{id:visitor.id})):null),
+          h('strong',null,plot?bloomName({...plot,variant:plot.variant??'base'},t):t('mini.empty')),
+          plot?h('span',{className:'fg-note'},t(`stage.${stage}`),' · ',t('mini.moisture',{n:Math.round(plot.moisture)})):null,
+          plot?.trait?h('span',{className:'fg-badge fg-badgeWarn'},t(`trait.${plot.trait}`)):null,
+          plot?h('div',{className:'fg-miniActions'},
+            h('button',{type:'button',className:'fg-btn',disabled:plot.moisture>=99.5,onClick:()=>act(before=>waterAt(before,scene.id,index))},t('plot.water')),
+            stage==='bloom'?h('button',{type:'button',className:'fg-btn',disabled:state.basket.length>=basketCapacity(state),onClick:()=>{
+              if(plot.resident&&selection.retire!==`${scene.id}:${index}`){setSelection(current=>({...current,retire:`${scene.id}:${index}`}));return}
+              setSelection(current=>({...current,retire:undefined}))
+              act(before=>harvestAt(before,scene.id,index,Date.now(),weatherAt(Date.now()),plot.resident===true),'harvest',index)
+            }},plot.resident?t(selection.retire===`${scene.id}:${index}`?'eco.retireConfirm':'eco.retire'):t('plot.harvest')):
+              h('button',{type:'button',className:'fg-btn',disabled:(state.bag.fertilizer??0)<=0,onClick:()=>act(before=>fertilizeAt(before,scene.id,index))},t('item.fertilizer')),
+            stage==='bloom'&&!plot.resident?h('button',{type:'button',className:'fg-btn',onClick:()=>act(before=>retainAt(before,scene.id,index,Date.now()),'retain',index)},t('eco.retain')):null,
+            visitor?h('span',{className:'fg-note'},t(`visitor.${visitor.id}`)):null):
+          h('div',{className:'fg-miniActions'},
+            h('select',{'aria-label':`${t('mini.seed')} ${index+1}`,value:seed,onChange:event=>{const value=event.target.value;setSelection(current=>({...current,[index]:value}))}},scene.species.map(id=>h('option',{key:id,value:id},`${t(`species.${id}`)} · ${SPECIES_BY_ID.get(id).cost}`))),
+            h('button',{type:'button',className:'fg-btn',disabled:state.coins<seedSpecies.cost,onClick:()=>act(before=>plantAt(before,scene.id,index,seed))},t('mini.plant'))))
+      }))),
+    h('p',{className:'fg-miniNotice',role:'status','aria-live':'polite'},notice),
+    discovery?h(DiscoveryCard,{entry:discovery,t,onClose:()=>{setDiscovery(null);restoreMiniFocus()},onOpen:item=>{setDiscovery(null);setPreview(item)}}):null,
+    preview?(preview.type==='visitor'?h(VisitorPreview,{visitorId:preview.visitor,state,t,onClose:()=>{setPreview(null);restoreMiniFocus()}}):h(BloomPreview,{id:'fg-mini-preview',speciesId:preview.species,variant:preview.variant??'base',trait:preview.trait,tint:preview.tint,dna:preview.dna,t,modal:true,onClose:()=>{setPreview(null);restoreMiniFocus()}})):null)
+}
+function FloatingGarden() {
+  const mini=useSyncExternalStore(subscribeMini,getMini,getMini), drag=React.useRef(null)
+  const t=boundT
+  const [,refreshLocale]=React.useReducer(n=>n+1,0)
+  React.useEffect(()=>{const locale=pluginCtx?.locale;return typeof locale?.subscribe==='function'?locale.subscribe(()=>refreshLocale()):undefined},[])
+  React.useEffect(()=>{const resize=()=>updateMini({});window.addEventListener('resize',resize);return()=>window.removeEventListener('resize',resize)},[])
+  if(!mini.open)return null
+  function start(event,resize=false){
+    if(event.button!==0 || (!resize && event.target.closest('button,select,input')))return
+    event.preventDefault();drag.current={pointer:event.pointerId,x:event.clientX,y:event.clientY,rect:mini,resize};event.currentTarget.setPointerCapture(event.pointerId)
+  }
+  function move(event){const action=drag.current;if(!action||action.pointer!==event.pointerId)return
+    const dx=event.clientX-action.x,dy=event.clientY-action.y
+    updateMini(action.resize?{width:action.rect.width+dx,height:action.rect.height+dy}:{x:action.rect.x+dx,y:action.rect.y+dy})
+  }
+  function end(){drag.current=null}
+  function keys(event,resize=false){const steps={ArrowLeft:[-20,0],ArrowRight:[20,0],ArrowUp:[0,-20],ArrowDown:[0,20]};const step=steps[event.key];if(!step)return;event.preventDefault();event.stopPropagation();updateMini(resize?{width:mini.width+step[0],height:mini.height+step[1]}:{x:mini.x+step[0],y:mini.y+step[1]})}
+  return h('aside',{className:'fg-floating',role:'region','aria-label':t('mini.title'),style:{left:mini.x,top:mini.y,width:mini.width,height:mini.minimized?'auto':mini.height},'data-minimized':mini.minimized},
+    h('style',null,CSS,MINI_CSS),
+    h('header',{className:'fg-floatingBar',onPointerDown:start,onPointerMove:move,onPointerUp:end,onPointerCancel:end,onLostPointerCapture:end},
+      h('span',{className:'fg-floatingMove',tabIndex:0,role:'button','aria-label':t('mini.move'),onKeyDown:event=>keys(event)},'✿ ',t('mini.title')),
+      h('button',{type:'button',title:t(mini.minimized?'mini.restore':'mini.minimize'),'aria-label':t(mini.minimized?'mini.restore':'mini.minimize'),onClick:()=>updateMini({minimized:!mini.minimized})},mini.minimized?'▢':'−'),
+      h('button',{type:'button',title:t('mini.close'),'aria-label':t('mini.close'),onClick:()=>updateMini({open:false})},'×')),
+    !mini.minimized?h('div',{className:'fg-floatingBody'},h(MiniGarden,{t})):null,
+    !mini.minimized?h('span',{className:'fg-floatingResize',tabIndex:0,role:'button','aria-label':t('mini.resize'),onKeyDown:event=>keys(event,true),onPointerDown:event=>start(event,true),onPointerMove:move,onPointerUp:end,onPointerCancel:end,onLostPointerCapture:end},'◢'):null)
+}
+const MINI_CSS=`
+.fg-floating{position:absolute;box-sizing:border-box;display:flex;flex-direction:column;overflow:hidden;border:1px solid var(--dsw-alias-border-l2);border-radius:18px;background:var(--dsw-alias-bg-layer-1);color:var(--dsw-alias-label-primary);box-shadow:0 12px 40px #0003;font:14px/1.5 system-ui;pointer-events:auto}
+.fg-floatingBar{display:flex;align-items:center;gap:8px;min-height:46px;padding:0 12px;border-bottom:1px solid var(--dsw-alias-border-l1);cursor:grab;touch-action:none;user-select:none;background:var(--dsw-alias-bg-layer-2)}
+.fg-floatingBar:active{cursor:grabbing}.fg-floatingMove{flex:1;font-weight:650}.fg-floatingBar button{border:0;background:transparent;color:inherit;cursor:pointer;font:inherit;min-width:30px;height:30px;border-radius:8px}.fg-floatingBar button:hover{background:var(--dsw-alias-bg-layer-1)}
+.fg-floatingBody{min-height:0;flex:1;overflow:auto}.fg-floatingResize{position:absolute;bottom:0;right:0;width:26px;height:26px;text-align:right;cursor:nwse-resize;touch-action:none;color:var(--dsw-alias-label-secondary)}
+.fg-floating button:focus-visible,.fg-floatingMove:focus-visible,.fg-floatingResize:focus-visible{outline:2px solid var(--dsw-alias-brand-primary);outline-offset:-2px}
+.fg-miniView{height:auto;min-height:100%;font-size:13px;--fg-font-size:13px}.fg-miniTools{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 12px}.fg-miniView select{max-width:100%;min-width:0;padding:5px;border:1px solid var(--dsw-alias-border-l2);border-radius:8px;background:var(--dsw-alias-bg-layer-1);color:inherit;font:inherit}
+.fg-miniSummary{margin:0;padding:0 12px 10px;color:var(--dsw-alias-label-secondary)}
+.fg-miniLandscape{position:relative;isolation:isolate;padding:14px 10px 24px}.fg-miniBackdrop{position:absolute;inset:0;z-index:-1;pointer-events:none;overflow:hidden}.fg-miniBackdrop .fg-panorama{height:480px;mask-image:linear-gradient(#000 80%,transparent)}
+.fg-miniPlots{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.fg-miniPlot{min-width:0;display:flex;flex-direction:column;gap:6px;padding:9px;border:1px solid var(--dsw-alias-border-l2);border-radius:12px;background:color-mix(in srgb,var(--dsw-alias-bg-layer-1) 88%,transparent)}
+.fg-miniPlant{position:relative;height:96px;display:flex;align-items:center;justify-content:center}
+.fg-miniVisitor{position:absolute;top:0;right:0;width:38px;height:38px;padding:3px;border:1px solid var(--dsw-alias-state-success-primary);border-radius:50%;background:var(--dsw-alias-bg-layer-1);cursor:pointer;box-shadow:0 2px 8px #0002;animation:fg-bob 1.7s ease-in-out infinite alternate}.fg-miniPlant .fg-miniVisitor svg{width:30px;height:30px}.fg-miniVisitor:hover{background:var(--dsw-alias-bg-layer-2)}.fg-miniPlant svg{height:96px;width:96px}.fg-miniPlot strong{font-size:13px;overflow-wrap:anywhere;line-height:1.5}.fg-miniPlot .fg-note{white-space:normal}.fg-miniActions{display:flex;flex-wrap:wrap;gap:4px}.fg-miniActions select{width:100%}.fg-miniView .fg-btn{font-size:12px;min-height:28px;padding:4px 7px}.fg-miniNotice{margin:0;padding:8px 14px 22px;color:var(--dsw-alias-label-secondary)}
+`
 
     function GardenView(props) {
       const t = (props !== null && props !== undefined && typeof props.t === 'function') ? props.t : boundT
@@ -6725,14 +6901,16 @@ function RewardDialog({reward,state,t,onClose,onBag}) {
           key: index,
           className: 'fg-plot',
           'data-state': stage,
+          'data-variant':plot.variant,
+          'data-trait':plot.trait,
           'data-plot': index,
           'data-paused': wet ? 'false' : 'true',
           role: 'group',
           tabIndex: -1,
-          'aria-label': `${t(`species.${species.id}`)} ${t(`stage.${stage}`)}`,
+          'aria-label': `${bloomName({...plot,variant:plot.variant??'base'},t)} ${t(`stage.${stage}`)}`,
         },
         h('div', { className: 'fg-art' },
-          h(FlowerArt, { speciesId: plot.species, stage, variant: plot.resident ? plot.variant : plot.tint ? 'base' : plotVariant(species, index), dna: plot.dna, trait: plot.trait, tint: plot.tint }),
+          h(FlowerArt, { speciesId: plot.species, stage, variant: (plot.resident || plot.identified) ? plot.variant : plot.tint ? 'base' : plotVariant(species, index), dna: plot.dna, trait: plot.trait, tint: plot.tint }),
           visitor === null ? null : h('button', {
             type: 'button',
             className: 'fg-visitor',
@@ -6749,6 +6927,7 @@ function RewardDialog({reward,state,t,onClose,onBag}) {
           h('span', { className: 'fg-species' }, t(`species.${species.id}`)),
           h('span', { className: 'fg-stage' }, t(`stage.${stage}`)),
         ),
+        plot.trait ? h('span',{className:'fg-badge fg-badgeWarn'},'✦ ',t(`trait.${plot.trait}`)) : plot.variant==='hidden' ? h('span',{className:'fg-badge fg-badgeWarn'},'✦ ',t('variant.hidden')) : null,
         renderSoil(index),
         plot.resident ? h('span', { className: 'fg-badge fg-badgeOk' }, t('eco.resident'), ' · ', t('eco.history', { n: plot.careCount ?? 0, cycles: plot.reblooms ?? 0 })) : null,
         plot.resident ? renderResidentActions(plot, index, species) : bloomed ? h('button', { type: 'button', className: 'fg-btn fg-btnPrimary', onClick: () => tend('retain', index) }, t('eco.retain')) : null,
@@ -6766,7 +6945,7 @@ function RewardDialog({reward,state,t,onClose,onBag}) {
           'aria-valuemin': 0,
           'aria-valuemax': 100,
           'aria-valuenow': percent,
-          'aria-label': `${t(`species.${species.id}`)} ${t(`stage.${stage}`)}`,
+          'aria-label': `${bloomName({...plot,variant:plot.variant??'base'},t)} ${t(`stage.${stage}`)}`,
         }, h('div', { className: 'fg-meterFill', style: { width: `${percent}%` } })),
         h('div', { className: 'fg-row' },
           h('span', { className: worried ? 'fg-note fg-noteWarn' : 'fg-note', title: note }, note),
@@ -6863,6 +7042,7 @@ function RewardDialog({reward,state,t,onClose,onBag}) {
           ? 'hidden'
           : discoveredVariants[0] ?? 'base'
         const known = discoveredVariants.length > 0
+        const representative=state.specimens?.[`${species.id}:${showcase}`]
         return h('div', {
           key: species.id,
           className: 'fg-codexCard',
@@ -6881,7 +7061,7 @@ function RewardDialog({reward,state,t,onClose,onBag}) {
                 showCodexEntry(species.id, showcase)
               },
             },
-            h(FlowerArt, { speciesId: species.id, stage: 'bloom', variant: showcase }),
+            h(FlowerArt, { speciesId: species.id, stage: 'bloom', variant: showcase, dna:representative?.dna, trait:representative?.trait, tint:representative?.tint }),
             ),
           h('div', { className: 'fg-codexBody' },
             h('div', { className: 'fg-codexName' }, t(`species.${species.id}`)),
@@ -7046,6 +7226,7 @@ function RewardDialog({reward,state,t,onClose,onBag}) {
             h('div',{className:'fg-tabs',role:'tablist','aria-label':t('tabs.label')},GARDEN_TABS.map(id=>h('button',{
               key:id,id:`fg-tab-${id}`,type:'button',role:'tab','aria-selected':activeTab===id,'aria-controls':`fg-panel-${id}`,tabIndex:activeTab===id?0:-1,
               className:'fg-tab',onClick:()=>selectTab(id),onKeyDown:event=>tabKeys(event,id)},t(`tabs.${id}`),id==='basket'?` ${state.basket.length}/${capacity}`:id==='orders'&&state.orders.some(order=>orderReady(state,order))?' •':null))),
+            h('button',{type:'button',className:'fg-btn fg-btnSmall',title:t('mini.note'),onClick:openMini},t('mini.open')),
             h('button',{type:'button',className:'fg-btn fg-btnSmall fg-bagButton',onClick:()=>{rememberOpener();setInventoryOpen(true)}},t('inventory.open',{n:inventoryCount(state)})),
             (state.discoveries??[]).length?h('button',{type:'button',className:'fg-btn fg-btnSmall fg-latestDiscovery',onClick:()=>{rememberOpener();setDiscovery(state.discoveries[state.discoveries.length-1])}},t('discovery.return')):null,
             h('label',{className:'fg-quickSize'},t('settings.size'),h('select',{'aria-label':t('settings.size'),value:ui.fontSize,onChange:event=>updateUi({fontSize:Number(event.target.value)})},[13,15,17,19].map(size=>h('option',{key:size,value:size},`${size}px`)))))),
@@ -7408,7 +7589,7 @@ h('footer', { className: 'fg-footer' },
                   variant: codexPreviewEntry.variant,
                   trait: codexPreviewEntry.trait, tint: codexPreviewEntry.tint, dna: codexPreviewEntry.dna,
                   observations: state.study?.[codexPreviewEntry.species.id]?.observations ?? 0,
-                  modal: true, onPrev: () => stepCodex(-1), onNext: () => stepCodex(1),
+                  modal: true, allowSpecimen:true, onPrev: () => stepCodex(-1), onNext: () => stepCodex(1),
                   t,
                   meta: [
                     t(`variant.${codexPreviewEntry.variant}`),
@@ -7437,6 +7618,9 @@ h('footer', { className: 'fg-footer' },
     //    removes it; only `--dsw-alias-*` tokens carry furniture colors.
     // ---------------------------------------------------------------------
     const CSS = `
+.fg-flowerLiving>.fg-plant{filter:saturate(1.16) drop-shadow(0 1px 1px #203b2326)}
+.fg-flowerSpecimen{filter:saturate(.72);opacity:.9}
+
 .fg-dialog.fg-rewardDialog{--fg-reward-gold:#c89b2b;width:min(620px,calc(100vw - 28px));border:2px solid var(--fg-reward-gold);background:var(--dsw-alias-bg-layer-1);box-shadow:0 0 60px #d4af3733,0 24px 100px #0006}
 .fg-dialog.fg-rewardDialog::backdrop{background:#151008b8;backdrop-filter:blur(7px)}
 .fg-rewardHead{text-align:center;padding:28px 24px 20px;background:linear-gradient(145deg,#d4af372b,transparent);border-bottom:1px solid var(--fg-reward-gold)}
@@ -7777,7 +7961,7 @@ h('footer', { className: 'fg-footer' },
 .fg-fileInput{display:none}
 .fg-savePending{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 12px;border:1px solid var(--dsw-alias-border-l2);border-radius:10px;background:var(--dsw-alias-bg-layer-1)}
 .fg-saveAsking{font-size:calc(var(--fg-font-size,15px) * 0.9231);color:var(--dsw-alias-label-secondary)}
-@media (prefers-reduced-motion:reduce){.fg-plant,.fg-sparkle,.fg-mote,.fg-haloRing,.fg-visitor,.fg-glow{animation:none}.fg-sparkle{opacity:.85}.fg-meterFill{transition:none}.fg-caret{transition:none}}
+@media (prefers-reduced-motion:reduce){.fg-plant,.fg-sparkle,.fg-mote,.fg-haloRing,.fg-visitor,.fg-miniVisitor,.fg-glow{animation:none}.fg-sparkle{opacity:.85}.fg-meterFill{transition:none}.fg-caret{transition:none}}
 `
 
     // ---------------------------------------------------------------------
@@ -7807,6 +7991,8 @@ h('footer', { className: 'fg-footer' },
           }
         }, 'flower-garden: saved garden')
 
+        ctx.slots.inject('shell.overlay', () => ctx.slots.register({name:'shell.overlay',id:'flower-garden-mini',order:30},FloatingGarden))
+
         ctx.slots.inject('conversation.view', () => ctx.slots.register({
           name: 'conversation.view',
           id: 'garden',
@@ -7816,13 +8002,13 @@ h('footer', { className: 'fg-footer' },
         }, GardenView))
       },
       /** Static pieces exported for layout tests only; the runtime never reads them. */
-      __components: { RewardDialog, InventoryDialog, InventoryContents, GardenView, FlowerArt, BloomPreview, VisitorArt, GardenActivities, VisitorPreview, GardenEcology, SpeciesPurpose, SpecialCommissionBoard, SpecialVisitorArt, ScenePanorama, DiscoveryCard },
+      __components: { FloatingGarden, MiniGarden, RewardDialog, InventoryDialog, InventoryContents, GardenView, FlowerArt, BloomPreview, VisitorArt, GardenActivities, VisitorPreview, GardenEcology, SpeciesPurpose, SpecialCommissionBoard, SpecialVisitorArt, ScenePanorama, DiscoveryCard },
       __traits: TRAITS,
       /** Dictionaries exported so tests render with the shipped copy. */
       __dicts: { zh, en },
       /** Pure game transitions and tuning, exported for unit tests only. */
       __game: {
-        ...ECOLOGY_API, inventoryCount, rewardForChange, RESEARCH_BRANCHES, RESEARCH_OFFERS, sanitizeResearch, researchLevel, researchFee, researchCost, upgradeResearch, exchangeResearch, hybridChance, ECO_PROFILES, VISITOR_INFO, studyLevel, GARDEN_TABS, sanitizeUi, dayPeriod, gardenClock,
+        ...ECOLOGY_API, miniGeometry, revealBloom, revealGarden, inventoryCount, rewardForChange, RESEARCH_BRANCHES, RESEARCH_OFFERS, sanitizeResearch, researchLevel, researchFee, researchCost, upgradeResearch, exchangeResearch, hybridChance, ECO_PROFILES, VISITOR_INFO, studyLevel, GARDEN_TABS, sanitizeUi, dayPeriod, gardenClock,
         discoveryItems, recordDiscoveries, sanitizeDiscoveries, specialCommissions, commissionState, acceptCommission, commissionProgress, completeCommission, sanitizeCommissions, specialVisitorEligible,
         SCENES, SPECIES, CODEX_ENTRIES, HIDDEN_PAL, UNLOCK_COSTS, XP_PER_LEVEL, PLOT_COUNT,
         START_COINS, DRY_SHARE, BASKET_CAPACITY, ORDER_SLOTS, WEATHER_MS, ITEMS, SPRINKLER_MS, CHARM_BONUS,

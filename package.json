@@ -1,6 +1,6 @@
 {
   "name": "dsh-flower-garden",
-  "version": "2.8.2",
+  "version": "2.9.0",
   "description": "A living flower garden with six regions, 53 flowers, persistent discovery cards, special visitors and commissions, and a regional flower guide.",
   "repository": {
     "type": "git",
@@ -38,6 +38,7 @@
       "platform": "web",
       "immediately": true,
       "inject": [
+        "@deepseek-ai/dsh-client-ui-layout",
         "@deepseek-ai/dsh-client-ui-conversation"
       ]
     }
