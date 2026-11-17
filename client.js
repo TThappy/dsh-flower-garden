@@ -1280,9 +1280,45 @@ function SpeciesPurpose({ speciesId, t, observations = 0 }) {
     h('span', null, `${t(`eco.level.${studyLevel(observations)}`)} · ${t('eco.observations', { n: observations })}`))
 }
 
+// Entering the top layer makes Chromium scroll the nearest scrollable ancestor to
+// "reveal" the dialog. In the session view that ancestor is the pane hosting this
+// tab, so a visitor click used to yank the whole garden back to the top. Pin every
+// scrollable ancestor across showModal() and the two frames that follow it.
+function scrollAncestorsOf(node) {
+  const found = []
+  const measurable = typeof window !== 'undefined' && typeof window.getComputedStyle === 'function'
+  if (!measurable) {
+    const known = typeof node.closest === 'function' ? node.closest('.fg-scroll') : null
+    return known === null ? found : [known]
+  }
+  let element = node.parentElement ?? null
+  while (element !== null && element !== document.body && element !== document.documentElement) {
+    const style = window.getComputedStyle(element)
+    if (/(auto|scroll)/.test(style.overflowY) && element.scrollHeight > element.clientHeight + 1) found.push(element)
+    element = element.parentElement
+  }
+  return found
+}
+
+function showModalPinned(dialog) {
+  if (dialog === null || dialog === undefined || dialog.open === true) return
+  const scrollers = scrollAncestorsOf(dialog)
+  const tops = scrollers.map(element => element.scrollTop)
+  const restore = () => {
+    for (let i = 0; i < scrollers.length; i += 1) {
+      if (scrollers[i].scrollTop !== tops[i]) scrollers[i].scrollTop = tops[i]
+    }
+  }
+  dialog.showModal()
+  restore()
+  if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
+    window.requestAnimationFrame(() => { restore(); window.requestAnimationFrame(restore) })
+  }
+}
+
 function VisitorPreview({ visitorId, state, t, onClose }) {
   const ref = React.useRef(null)
-  React.useEffect(() => { const dialog=ref.current; if(dialog && !dialog.open) dialog.showModal(); return () => { if(dialog?.open) dialog.close() } }, [])
+  React.useEffect(() => { const dialog=ref.current; showModalPinned(dialog); return () => { if(dialog?.open) dialog.close() } }, [])
   const visitor=VISITOR_BY_ID.get(visitorId), info=VISITOR_INFO[visitorId]
   if(!visitor || !info) return null
   return h('dialog', { ref, className:'fg-dialog', 'aria-label':t(`visitor.${visitorId}`), onCancel:event=>{event.preventDefault();onClose()}, onClick:event=>{if(event.target===event.currentTarget)onClose()} },
@@ -5576,7 +5612,7 @@ function specialTraitArt(ink, traitId, headY = HEAD_Y) {
       React.useEffect(() => {
         if (!modal) return undefined
         const dialog = dialogRef.current
-        if (dialog && !dialog.open) dialog.showModal()
+        showModalPinned(dialog)
         return () => { if (dialog?.open) dialog.close() }
       }, [modal])
       const card = h('div', { className: 'fg-preview', id, tabIndex: -1, role: 'group', 'aria-label': t(`species.${species.id}`) },
@@ -5906,7 +5942,7 @@ Object.assign(en,{
 })
 function DiscoveryCard({entry,t,onClose,onOpen}) {
  const ref=React.useRef(null)
- React.useEffect(()=>{const dialog=ref.current;if(dialog&&!dialog.open)dialog.showModal();return()=>{if(dialog?.open)dialog.close()}},[])
+ React.useEffect(()=>{const dialog=ref.current;showModalPinned(dialog);return()=>{if(dialog?.open)dialog.close()}},[])
  return h('dialog',{ref,className:'fg-dialog fg-discoveryDialog','aria-label':t('discovery.title'),onCancel:event=>{event.preventDefault();onClose()}},
   h('header',{className:'fg-discoveryHead'},h('span',{className:'fg-badge'},t('discovery.count',{n:entry.items.length})),h('h2',null,t('discovery.title')),h('time',{dateTime:new Date(entry.at).toISOString()},new Date(entry.at).toLocaleString())),
   h('div',{className:'fg-discoveryList'},entry.items.map((item,index)=>h('article',{key:index,className:'fg-discoveryItem'},
@@ -5966,7 +6002,7 @@ function InventoryContents({state,t}) {
     seeds.length?h('div',{className:'fg-inventoryGrid'},seeds.map(([key,count])=>{const [species,tint]=key.split('~');return h('article',{key,className:'fg-inventoryItem'},h('span',{className:'fg-inventoryIcon'},'🌱'),h('div',null,h('h3',null,bloomName({species,tint},t)),h('strong',{className:'fg-inventoryCount'},t('inventory.count',{n:count})),h('p',{className:'fg-hint'},t('discovery.seedWhere'))))})):h('p',{className:'fg-hint'},t('inventory.noSeeds')))
 }
 function useGardenDialog(ref) {
-  React.useEffect(()=>{const dialog=ref.current;if(dialog&&!dialog.open)dialog.showModal();return()=>{if(dialog?.open)dialog.close()}},[])
+  React.useEffect(()=>{const dialog=ref.current;showModalPinned(dialog);return()=>{if(dialog?.open)dialog.close()}},[])
 }
 function InventoryDialog({state,t,onClose,onGarden,onShop}) {
   const ref=React.useRef(null);useGardenDialog(ref)
@@ -6010,13 +6046,18 @@ function RewardDialog({reward,state,t,onClose,onBag}) {
       const [clock, setClock] = React.useState(() => Date.now())
       const rootRef = React.useRef(null)
       const scrollRef = React.useRef(null)
+      // The element a dialog took focus from, so closing it can hand focus back
+      // without scrolling the session pane to the top.
       const modalOpener = React.useRef(null)
       function rememberOpener() { modalOpener.current = typeof document === 'undefined' ? null : document.activeElement }
       function restoreOpener() {
+        const previous = modalOpener.current
+        modalOpener.current = null
         window.setTimeout(() => {
-          const previous = modalOpener.current
-          if (previous?.isConnected && !previous.closest('[hidden]')) previous.focus()
-          else rootRef.current?.querySelector('[role="tab"][aria-selected="true"]')?.focus()
+          const target = previous?.isConnected && !previous.closest('[hidden]')
+            ? previous
+            : rootRef.current?.querySelector('[role="tab"][aria-selected="true"]')
+          if (target !== null && target !== undefined && typeof target.focus === 'function') target.focus({ preventScroll: true })
         }, 0)
       }
       function openGuide(id) { rememberOpener(); setGuideRegion(SCENE_ID_OF.get(id)); setCodexOpen(true); setCodexPreview(`${id}:base`) }
@@ -6033,7 +6074,7 @@ function RewardDialog({reward,state,t,onClose,onBag}) {
         updateUi({tab:id})
         setArmed(null);setPicker(null);setConfirmReset(false)
         if(id==='flowers')setCodexOpen(true)
-        window.setTimeout(()=>{if(scrollRef.current)scrollRef.current.scrollTop=scrollPositions.current[id]??0;if(keyboard)rootRef.current?.querySelector(`#fg-tab-${id}`)?.focus()},0)
+        window.setTimeout(()=>{if(scrollRef.current)scrollRef.current.scrollTop=scrollPositions.current[id]??0;if(keyboard)rootRef.current?.querySelector(`#fg-tab-${id}`)?.focus({preventScroll:true})},0)
       }
       function tabKeys(event,id) {
         const index=GARDEN_TABS.indexOf(id)
@@ -6117,8 +6158,12 @@ function RewardDialog({reward,state,t,onClose,onBag}) {
           const root = rootRef.current
           if (root === null) return
           const candidate = root.querySelector(selector) ?? (selector.startsWith('[data-codex=') ? root.querySelector('#fg-codex-toggle') : null)
-          const target = candidate && !candidate.closest('[hidden]') ? candidate : root.querySelector('[role="tab"][aria-selected="true"]')
-          if (target !== null && typeof target.focus === 'function') target.focus()
+          const target = candidate && !candidate.closest('[hidden]') ? candidate : null
+          // Falling back to the tab bar used to scroll the whole view to the top when
+          // the wanted control had just disappeared. Leave focus where it is instead.
+          if (target === null || typeof target.focus !== 'function') return
+          target.focus({ preventScroll: true })
+          if (typeof target.scrollIntoView === 'function') target.scrollIntoView({ block: 'nearest', inline: 'nearest' })
         }, 0)
       }
 
@@ -7797,6 +7842,7 @@ h('footer', { className: 'fg-footer' },
         visitorAt, greetVisitor, visitBucket, isNight, waterAll, featuredSpecies, salePrice,
         achievementValue, achievementReady, claimAchievement,
         exportSave, importSave, SAVE_FORMAT, SAVE_VERSION,
+        showModalPinned,
       },
       __css: CSS,
     }

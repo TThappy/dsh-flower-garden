@@ -783,3 +783,15 @@ check('every goal is reachable', game.ACHIEVEMENTS.every(entry => entry.target >
 
 console.log(failures === 0 ? '\nall checks passed' : `\n${failures} check(s) failed`)
 process.exit(failures === 0 ? 0 : 1)
+
+console.log('dialogs keep the garden scroll position')
+const scroller = { scrollTop: 420 }
+const fakeDialog = { open: false, closest: () => scroller, showModal() { this.open = true; scroller.scrollTop = 0 } }
+game.showModalPinned(fakeDialog)
+check('showing a dialog restores the garden scroll offset', fakeDialog.open === true && scroller.scrollTop === 420)
+const stillOpen = { open: true, closest: () => scroller, showModal() { throw new Error('should not reopen') } }
+game.showModalPinned(stillOpen)
+check('an open dialog is not shown twice', stillOpen.open === true)
+game.showModalPinned(null)
+game.showModalPinned({ open: false, closest: () => null, showModal() { this.open = true } })
+check('a dialog outside a scroller opens normally', game.showModalPinned !== undefined)
