@@ -5,7 +5,7 @@
  * as a tab beside Chat and Trajectory, and paints the flower-growing game inside
  * the session body.
  *
- * Ten scenes (meadow, snowfield, crater, lakeside, woodland, desert, alpine, rainforest, coast, eastern garden) hold seventy
+ * Ten scenes (meadow, snowfield, crater, lakeside, woodland, desert, alpine, rainforest, coast, eastern garden) hold one hundred and five
  * species, each drawn from its real morphology (see the `head` field and the
  * per-species art section). Every species has a codex entry per colour variant:
  * a plain bloom, a natural second colour on odd-numbered plots, and a rare gold
@@ -34,7 +34,7 @@ window.__ModuleLoader__.load({
     const zh = {
       'view.label': '花园',
       'view.title': '我的花园',
-      'header.subtitle': '十块花地，七十种花，各有各的天气和访客。',
+      'header.subtitle': '十块花地，一百零五种花，各有各的天气和访客。',
       'stat.coins': '金币',
       'stat.level': '等级',
       'stat.levelValue': '等级 {n}',
@@ -466,7 +466,7 @@ window.__ModuleLoader__.load({
     const en = {
       'view.label': 'Garden',
       'view.title': 'My garden',
-      'header.subtitle': 'Ten grounds and seventy flowers, each with its own sky and visitors.',
+      'header.subtitle': 'Ten grounds and 105 flowers, each with its own sky and visitors.',
       'stat.coins': 'Coins',
       'stat.level': 'Level',
       'stat.levelValue': 'Lv.{n}',

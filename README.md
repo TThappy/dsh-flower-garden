@@ -72,7 +72,7 @@ first message (or pick a workspace) to see it.
 - **今日花束订单**：插花台顶部每天一张订单，要求星级、花朵数和主题色；当天第一束达标的花束额外得 60 金币和 1 条绶带。
 - **花语贺卡**：收藏册里的花束卡点信封按钮，填上收件人，用花束里前两种花的花语拼成贺卡并存成图片。
 - **每朵花都有用**：背包里选一朵花可以直接用掉，效果由它的生态角色决定：蜜源花让偏爱它的访客好感 +2，花粉花给当前花地一株花授粉，种实花换一份肥料，庇护花让当前花地每个花圃地力 +20，水岸花把当前花地浇透，夜花让仙品率五分钟内 +10%。杂交、奇珍和仙品效果加倍；用不上时不会消耗。
-- **今日征花**：在「花篮」标签顶部。每天点名三种花，按顺序把已解锁花地的每一种花都轮一遍，全部 53 种约 18 天轮完。交一朵得两倍卖价加 10 金币，三种交齐再得 1 条绶带。
+- **今日征花**：在「花篮」标签顶部。每天点名三种花，按顺序把已解锁花地的每一种花都轮一遍，全部 105 种约 35 天轮完。交一朵得两倍卖价加 10 金币，三种交齐再得 1 条绶带。
 - **小窗的今日条**：悬浮小窗顶部多了一排快捷按钮，能直接签到、开礼盒、接奇遇、领心愿、交付征花、迎回远行小队、取花坊成品；另有「全部收获」和洒水器按钮。操作后小窗底部直接显示得到了什么，小窗配色也跟随当前花地。
 - **花园基金**：在「道具商店」标签顶部，是没有上限的金币去处。首级 2000 金币，每级贵 15%；每升一级得 1 条绶带，每逢第五级再得一枚幸运符，每五级换一个头衔。不返还金币，传承后保留。
 - **玩法说明收进问号**：地力、杂交、售价、生态考察的规则不再整段铺在页面上，点区块旁的「?」展开。
@@ -185,7 +185,7 @@ first message (or pick a workspace) to see it.
 每块地 6 个花圃，初始开 3 个，另外 3 个按 40 / 90 / 160 金币依次解锁。天气每 5 分钟
 换一次，按时间种子确定，所以同一时刻永远是同一种天气；离线补算也按天气分段精确积分。
 
-## Seventy species / 七十种花
+## 105 species / 一百零五种花
 
 | 花地 | 花（学名） | 种子 | 生长 | 卖价 | 经验 |
 | --- | --- | --- | --- | --- | --- |
@@ -238,27 +238,62 @@ first message (or pick a workspace) to see it.
 | 林地 | 蓝铃花 *Hyacinthoides non-scripta* | 18 | 150 秒 | 38 | 7 |
 | 林地 | 毛地黄 *Digitalis purpurea* | 28 | 260 秒 | 68 | 12 |
 | 林地 | 常春叶仙客来 *Cyclamen hederifolium* | 46 | 380 秒 | 112 | 21 |
+| 林地 | 白花酢浆草 *Oxalis acetosella* | 8 | 80 秒 | 16 | 3 |
+| 林地 | 熊葱 *Allium ursinum* | 15 | 130 秒 | 31 | 5 |
+| 林地 | 香堇菜 *Viola odorata* | 22 | 185 秒 | 50 | 9 |
+| 林地 | 铃兰 *Convallaria majalis* | 34 | 300 秒 | 82 | 15 |
+| 林地 | 多花黄精 *Polygonatum multiflorum* | 40 | 340 秒 | 96 | 18 |
+| 林地 | 大花延龄草 *Trillium grandiflorum* | 58 | 480 秒 | 150 | 27 |
 | 荒漠 | 花菱草 *Eschscholzia californica* | 22 | 175 秒 | 44 | 8 |
 | 荒漠 | 沙漠金盏菊 *Baileya multiradiata* | 34 | 290 秒 | 78 | 14 |
 | 荒漠 | 钓钟柳 *Penstemon barbatus* | 52 | 420 秒 | 126 | 23 |
 | 荒漠 | 月见草 *Oenothera biennis* | 64 | 610 秒 | 170 | 31 |
+| 荒漠 | 沙马鞭 *Abronia villosa* | 16 | 135 秒 | 34 | 6 |
+| 荒漠 | 沙漠球葵 *Sphaeralcea ambigua* | 28 | 235 秒 | 62 | 11 |
+| 荒漠 | 脆菊木 *Encelia farinosa* | 40 | 330 秒 | 94 | 17 |
+| 荒漠 | 沙漠百合 *Hesperocallis undulata* | 58 | 470 秒 | 146 | 26 |
+| 荒漠 | 蜡烛木 *Fouquieria splendens* | 72 | 580 秒 | 188 | 34 |
+| 荒漠 | 巨人柱 *Carnegiea gigantea* | 90 | 700 秒 | 244 | 43 |
 | 高山草甸 | 高山紫菀 *Aster alpinus* | 16 | 140 秒 | 34 | 6 |
 | 高山草甸 | 高山白头翁 *Pulsatilla alpina* | 26 | 230 秒 | 60 | 11 |
 | 高山草甸 | 无茎龙胆 *Gentiana acaulis* | 44 | 360 秒 | 108 | 20 |
 | 高山草甸 | 高山耧斗菜 *Aquilegia alpina* | 66 | 560 秒 | 176 | 32 |
+| 高山草甸 | 无茎蝇子草 *Silene acaulis* | 10 | 95 秒 | 20 | 4 |
+| 高山草甸 | 仙女木 *Dryas octopetala* | 20 | 170 秒 | 44 | 8 |
+| 高山草甸 | 高山雪铃花 *Soldanella alpina* | 32 | 270 秒 | 76 | 14 |
+| 高山草甸 | 耳叶报春 *Primula auricula* | 38 | 320 秒 | 90 | 16 |
+| 高山草甸 | 山金车 *Arnica montana* | 52 | 430 秒 | 132 | 24 |
+| 高山草甸 | 高山玫瑰杜鹃 *Rhododendron ferrugineum* | 60 | 500 秒 | 154 | 28 |
 | 雨林 | 红掌 *Anthurium andraeanum* | 30 | 250 秒 | 72 | 13 |
 | 雨林 | 垂花蝎尾蕉 *Heliconia rostrata* | 48 | 400 秒 | 122 | 22 |
 | 雨林 | 西番莲 *Passiflora caerulea* | 62 | 520 秒 | 160 | 29 |
 | 雨林 | 蝴蝶兰 *Phalaenopsis amabilis* | 88 | 680 秒 | 236 | 42 |
+| 雨林 | 果子蔓 *Guzmania lingulata* | 22 | 190 秒 | 50 | 9 |
+| 雨林 | 红姜花 *Alpinia purpurata* | 36 | 300 秒 | 88 | 16 |
+| 雨林 | 宝莲灯 *Medinilla magnifica* | 54 | 450 秒 | 138 | 25 |
+| 雨林 | 火炬姜 *Etlingera elatior* | 70 | 580 秒 | 184 | 33 |
+| 雨林 | 卡特兰 *Cattleya labiata* | 80 | 640 秒 | 212 | 38 |
+| 雨林 | 大王花 *Rafflesia arnoldii* | 110 | 800 秒 | 300 | 52 |
 | 海岸 | 海石竹 *Armeria maritima* | 14 | 125 秒 | 30 | 5 |
 | 海岸 | 西班牙薰衣草 *Lavandula stoechas* | 24 | 200 秒 | 54 | 10 |
 | 海岸 | 岩蔷薇 *Cistus creticus* | 38 | 310 秒 | 92 | 17 |
 | 海岸 | 夹竹桃 *Nerium oleander* | 56 | 450 秒 | 140 | 26 |
 | 海岸 | 光叶子花 *Bougainvillea glabra* | 74 | 600 秒 | 192 | 35 |
+| 海岸 | 肾叶打碗花 *Calystegia soldanella* | 10 | 100 秒 | 21 | 4 |
+| 海岸 | 海滨刺芹 *Eryngium maritimum* | 30 | 250 秒 | 70 | 13 |
+| 海岸 | 黄花海罂粟 *Glaucium flavum* | 44 | 360 秒 | 108 | 20 |
+| 海岸 | 百子莲 *Agapanthus praecox* | 50 | 410 秒 | 124 | 22 |
+| 海岸 | 海水仙 *Pancratium maritimum* | 64 | 520 秒 | 166 | 30 |
 | 东方庭园 | 杜鹃 *Rhododendron simsii* | 28 | 240 秒 | 66 | 12 |
 | 东方庭园 | 菊花 *Chrysanthemum × morifolium* | 42 | 340 秒 | 102 | 19 |
 | 东方庭园 | 紫藤 *Wisteria sinensis* | 64 | 540 秒 | 168 | 30 |
 | 东方庭园 | 牡丹 *Paeonia × suffruticosa* | 96 | 720 秒 | 260 | 46 |
+| 东方庭园 | 桔梗 *Platycodon grandiflorus* | 18 | 160 秒 | 40 | 7 |
+| 东方庭园 | 贴梗海棠 *Chaenomeles speciosa* | 34 | 280 秒 | 80 | 14 |
+| 东方庭园 | 桂花 *Osmanthus fragrans* | 50 | 400 秒 | 124 | 22 |
+| 东方庭园 | 花菖蒲 *Iris ensata* | 56 | 460 秒 | 142 | 26 |
+| 东方庭园 | 石蒜 *Lycoris radiata* | 72 | 580 秒 | 190 | 34 |
+| 东方庭园 | 玉兰 *Magnolia denudata* | 84 | 650 秒 | 222 | 40 |
 
 每种花有自己的绘制函数（`client.js` §5 的 `PLANTS`），按整株形态而不是只画花头：花瓣从基部到
 尖端有明暗渐变和中脉，叶片有叶脉，茎有受光面，每块地各有自己的地面。

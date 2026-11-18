@@ -65,10 +65,10 @@ const noon = new Date(2026, 0, 1, 12, 0, 0).getTime()
 
 console.log('scenes and species')
 check('ten scenes', game.SCENES.length === 10)
-check('seventy species', game.SPECIES.length === 70)
+check('one hundred and five species', game.SPECIES.length === 105)
 check('every species belongs to exactly one scene', game.SPECIES.every(species => game.SCENES.filter(scene => scene.species.includes(species.id)).length === 1))
 check('every scene has at least four species', game.SCENES.every(scene => scene.species.length >= 4))
-check('ids are unique', new Set(game.SPECIES.map(species => species.id)).size === 70)
+check('ids are unique', new Set(game.SPECIES.map(species => species.id)).size === 105)
 check('each species names a drawing and a foliage', game.SPECIES.every(species => typeof species.head === 'string' && typeof species.leaf === 'string'))
 check('each species has a palette', game.SPECIES.every(species => typeof species.pal.petal === 'string'))
 check('every species has positive prices and pays back its seed', game.SPECIES.every(species => species.cost > 0 && species.sell > 0 && species.sell > species.cost))
@@ -77,7 +77,7 @@ check('codex covers base, second colour and hidden', game.CODEX_ENTRIES.length =
 check('scenes cost more as they go', game.SCENES[0].cost === 0
   && game.SCENES[1].cost < game.SCENES[2].cost
   && game.SCENES[2].cost < game.SCENES[3].cost)
-check('new regions contain eight species', game.sceneOf('woodland').species.length === 4 && game.sceneOf('desert').species.length === 4 && game.sceneOf('woodland').species.concat(game.sceneOf('desert').species).every(id => byId(id).head && byId(id).leaf))
+check('woodland and desert hold ten species each', game.sceneOf('woodland').species.length === 10 && game.sceneOf('desert').species.length === 10 && game.sceneOf('woodland').species.concat(game.sceneOf('desert').species).every(id => byId(id).head && byId(id).leaf))
 check('every species has a valid ecology profile', game.SPECIES.every(species => game.ecoProfile(species.id) !== null))
 
 console.log('fresh state')
@@ -648,7 +648,7 @@ const sanitizedEcology = game.sanitizeEcology({ period: game.ecologyPeriod(ecolo
 check('ecology sanitization filters unknown observations and visitors', sanitizedEcology.observed.length === 1 && sanitizedEcology.visitors.length === 1)
 const nextPeriodEcology = game.sanitizeEcology({ period: game.ecologyPeriod(ecologyNow), observed: ['daisy'], visitors: ['bee'], claimed: ['eco-1'] }, ecologyNow + game.ECO_PERIOD_MS)
 check('cross-period ecology sanitization clears old progress', nextPeriodEcology.observed.length === 0 && nextPeriodEcology.visitors.length === 0 && nextPeriodEcology.claimed.length === 0)
-check('all species have valid ecology profiles', game.SPECIES.length === 70 && game.SPECIES.every(species => game.ecoProfile(species.id) !== null))
+check('all species have valid ecology profiles', game.SPECIES.length === 105 && game.SPECIES.every(species => game.ecoProfile(species.id) !== null))
 check('all thirteen visitors have complete field-guide metadata', game.VISITORS.length === 13 && game.VISITORS.every(visitor => ['latin', 'role', 'source', 'en', 'zh'].every(field => game.VISITOR_INFO[visitor.id]?.[field] !== undefined)))
 console.log('ui save and local garden clock')
 check('ui sanitizer preserves valid tab and display settings', JSON.stringify(game.sanitizeUi({ tab: 'basket', fontSize: 19, font: 'serif' })) === JSON.stringify({ tab: 'basket', fontSize: 19, font: 'serif', sound: false }))
@@ -1115,8 +1115,8 @@ const open = { ...fresh, coins: 0, scenes: Object.fromEntries(game.SCENES.map(sc
 const today = game.wantedAt(open, at)
 check('three different flowers are wanted each day', today.length === 3 && new Set(today).size === 3)
 const seenWanted = new Set()
-for (let day = 0; day < 24; day += 1) for (const id of game.wantedAt(open, at + day * 86400000)) seenWanted.add(id)
-check('every flower is wanted within twenty-four days', seenWanted.size === game.SPECIES.length)
+for (let day = 0; day < 36; day += 1) for (const id of game.wantedAt(open, at + day * 86400000)) seenWanted.add(id)
+check('every flower is wanted within thirty-six days', seenWanted.size === game.SPECIES.length)
 check('a closed ground is never asked for', game.wantedAt(fresh, at).every(id => meadow.species.includes(id)))
 check('nothing to hand in without the flower', game.deliverWanted(open, today[0], at) === null && game.deliverWanted({ ...open, basket: [b('daisy')] }, 'nope', at) === null)
 const stockedWant = { ...open, basket: today.map(id => b(id)) }
@@ -1128,8 +1128,12 @@ check('wanted progress survives a reload and resets the next day', game.sanitize
 }
 
 console.log('four more grounds')
-check('the new grounds hold seventeen species with profiles and sources', ['alpine','rainforest','coast','garden'].reduce((n, id) => n + game.sceneOf(id).species.length, 0) === 17 && ['alpine','rainforest','coast','garden'].every(id => game.sceneOf(id).species.every(s => game.ecoProfile(s) !== null && typeof byId(s).source === 'string')))
+check('the new grounds hold ten species each with profiles and sources', ['alpine','rainforest','coast','garden'].every(id => game.sceneOf(id).species.length === 10) && ['alpine','rainforest','coast','garden'].every(id => game.sceneOf(id).species.every(s => game.ecoProfile(s) !== null && typeof byId(s).source === 'string')))
 check('new grounds cost more than the old ones and have visitors', game.sceneOf('alpine').cost > game.sceneOf('desert').cost && ['alpine','rainforest','coast','garden'].every(id => game.VISITORS.some(v => v.scenes.includes(id))))
+
+check('every ground holds at least four species and the favourite visitor of each flower can turn up there', game.SCENES.every(scene => scene.species.length >= 4 && scene.species.every(id => game.VISITORS.find(v => v.id === game.ECO_PROFILES[id].visitor).scenes.includes(scene.id) || ['swallowtail','hoverfly','bumblebee','hawkmoth','kingfisher','honeycreeper','dragonfly','firefly','robin','ladybug','butterfly','bee','moth'].includes(game.ECO_PROFILES[id].visitor))))
+
+check('every ground but the meadow holds exactly ten species', game.SCENES.every(scene => scene.species.length === (scene.id === 'meadow' ? 15 : 10)))
 
 console.log(failures === 0 ? '\nall checks passed' : `\n${failures} check(s) failed`)
 process.exit(failures === 0 ? 0 : 1)
