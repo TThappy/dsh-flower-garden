@@ -7,8 +7,8 @@ Object.assign(zh, {
   'pal.do.pollinator':'每小时给一株花授粉', 'pal.do.waterside':'每小时把最干的一株浇透', 'pal.do.guardian':'每小时给最瘦的花圃 +15 地力',
   'pal.rules':'好感满四级的访客可以花金币邀请住下，最多三位。传粉的每小时给一株花授粉，水岸的每小时把最干的一株浇透，护园的每小时给地力最低的花圃 +15。关掉页面再回来，只补最近一小时的那一次。',
   'event.rainbow':'雨后彩虹', 'event.swarm':'蜂群过境', 'event.dew':'晨露降临', 'event.meteor':'流星划过',
-  'event.rainbow.do':'追彩虹 · 十分钟仙品率 +10%', 'event.swarm.do':'迎蜂群 · 这块地全部授粉', 'event.dew.do':'接晨露 · 所有花浇透', 'event.meteor.do':'许个愿 · 幸运符生效',
-  'event.left':'{n}后消失', 'event.boost':'彩虹还在 · 仙品率 +10% · {n}', 'event.done':'{name}！',
+  'event.rainbow.do':'追彩虹 · 十分钟仙品率 +2%', 'event.swarm.do':'迎蜂群 · 这块地全部授粉', 'event.dew.do':'接晨露 · 所有花浇透', 'event.meteor.do':'许个愿 · 幸运符生效',
+  'event.left':'{n}后消失', 'event.boost':'彩虹还在 · 仙品率 +2% · {n}', 'event.done':'{name}！',
   'brief.title':'今日花束订单', 'brief.need':'{stars}★ 以上 · 至少 {count} 朵 · {theme}主题', 'brief.reward':'奖 {reward}', 'brief.done':'今日已交',
   'greet.open':'做成花语贺卡', 'greet.toPh':'写给谁', 'greet.to':'致 {name}', 'greet.title':'送你一束花语', 'greet.save':'存成贺卡',
 })
@@ -19,8 +19,8 @@ Object.assign(en, {
   'pal.do.pollinator':'Pollinates one plant an hour', 'pal.do.waterside':'Waters the driest plant every hour', 'pal.do.guardian':'Adds 15 soil to the poorest plot every hour',
   'pal.rules':'A visitor at bond level four can be invited to stay for coins, up to three. Pollinators pollinate one plant an hour, waterside visitors water the driest plant, guardians add 15 soil to the poorest plot. After time away only the latest hour is made up.',
   'event.rainbow':'A rainbow', 'event.swarm':'A passing swarm', 'event.dew':'Morning dew', 'event.meteor':'A shooting star',
-  'event.rainbow.do':'Chase it · spirit chance +10% for ten minutes', 'event.swarm.do':'Welcome it · pollinates this whole ground', 'event.dew.do':'Catch it · waters every plant', 'event.meteor.do':'Make a wish · arms a lucky charm',
-  'event.left':'gone in {n}', 'event.boost':'Rainbow still up · spirit chance +10% · {n}', 'event.done':'{name}!',
+  'event.rainbow.do':'Chase it · spirit chance +2% for ten minutes', 'event.swarm.do':'Welcome it · pollinates this whole ground', 'event.dew.do':'Catch it · waters every plant', 'event.meteor.do':'Make a wish · arms a lucky charm',
+  'event.left':'gone in {n}', 'event.boost':'Rainbow still up · spirit chance +2% · {n}', 'event.done':'{name}!',
   'brief.title':'Today’s bouquet brief', 'brief.need':'{stars}★ or better · {count}+ flowers · {theme} theme', 'brief.reward':'Pays {reward}', 'brief.done':'Delivered today',
   'greet.open':'Make a flower-language card', 'greet.toPh':'Who is it for', 'greet.to':'For {name}', 'greet.title':'A bouquet of meanings', 'greet.save':'Save the card',
 })

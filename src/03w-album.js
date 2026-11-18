@@ -2,8 +2,8 @@
     // ---------------------------------------------------------------------
     // §3w Real seasons, night blooms, seed expeditions, vases and keepsake cards.
     // ---------------------------------------------------------------------
-    const SEASON_BONUS = 0.05
-    const NIGHT_BONUS = 0.08
+    const SEASON_BONUS = 0.01
+    const NIGHT_BONUS = 0.01
     const VASES = [
       { id: 'classic', need: 0 }, { id: 'round', need: 2 }, { id: 'tall', need: 5 },
       { id: 'basket', need: 10 }, { id: 'moon', need: 20 }, { id: 'gold', stars: 5 },
@@ -56,7 +56,7 @@
     /** Every finished bouquet leaves a card behind; the oldest cards make room. */
     function bouquetCardPatch(state, items, score, vase, now) {
       const id = (state.cardSeq ?? 0) + 1
-      const card = { id, at: now, stars: score.stars, theme: score.theme, coins: score.coins, vase: vaseOwned(state, vase) ? vase : 'classic', match: score.match === true, items: items.map(cleanBloom).filter(Boolean) }
+      const card = { id, at: now, stars: score.stars, theme: score.theme, coins: score.coins, vase: vaseOwned(state, vase) ? vase : 'classic', match: score.match === true, ...(vaseTint(state, vase) ? { tint: vaseTint(state, vase) } : {}), items: items.map(cleanBloom).filter(Boolean) }
       return { cardSeq: id, bouquets: [...(state.bouquets ?? []), card].slice(-BOUQUET_CARD_CAP) }
     }
 
@@ -121,7 +121,7 @@
       const bouquets = (Array.isArray(raw.bouquets) ? raw.bouquets : []).filter(card => card && Number.isFinite(card.id) && Array.isArray(card.items)).map(card => ({
         id: Math.floor(card.id), at: stamp(card.at), stars: Math.max(1, Math.min(5, Math.floor(finiteOr(card.stars, 1)))),
         theme: BOUQUET_THEMES.includes(card.theme) ? card.theme : BOUQUET_THEMES[0], coins: Math.floor(finiteOr(card.coins, 0)),
-        vase: VASE_BY_ID.has(card.vase) ? card.vase : 'classic', match: card.match === true, title: cleanText(card.title, 20), note: cleanText(card.note, 60), items: card.items.slice(0, BOUQUET_MAX).map(cleanBloom).filter(Boolean),
+        vase: VASE_BY_ID.has(card.vase) ? card.vase : 'classic', match: card.match === true, ...(cleanTint(card.tint) ? { tint: cleanTint(card.tint) } : {}), title: cleanText(card.title, 20), note: cleanText(card.note, 60), items: card.items.slice(0, BOUQUET_MAX).map(cleanBloom).filter(Boolean),
       })).filter(card => card.items.length > 0).slice(-BOUQUET_CARD_CAP)
       const cards = (Array.isArray(raw.cards) ? raw.cards : []).filter(card => card && Number.isFinite(card.id) && cleanBloom(card.item) !== null)
         .map(card => ({ id: Math.floor(card.id), at: stamp(card.at), item: cleanBloom(card.item) })).slice(-FLOWER_CARD_CAP)

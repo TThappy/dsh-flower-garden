@@ -14,9 +14,5 @@ Object.assign(en, {
   'ach.fund10.name':'Garden patron', 'ach.fund10.desc':'Raise the garden fund to level 10', 'ach.bonds3.name':'Close friends', 'ach.bonds3.desc':'Complete the bond with 3 visitors',
   'ach.breeder7.name':'Master breeder', 'ach.breeder7.desc':'Finish all 7 breeding goals', 'ach.cards30.name':'Collector', 'ach.cards30.desc':'Keep 30 flower cards in the album',
 })
-zh['trip.rules'] += '委托声望每满 10 点，小队多带回一样东西，最多三样。赶时间可以用 1 条绶带让小队立刻回来。'
-en['trip.rules'] += ' Every 10 points of commission reputation adds one more find, up to three. In a hurry, 1 ribbon brings the party back at once.'
-zh['work.rules'] += '等不及可以用 1 条绶带让一件成品立刻完成。'
-en['work.rules'] += ' One ribbon finishes a job at once.'
 zh['eco.milestones'] = (zh['eco.milestones'] ?? '') + ' 研究等级每升一级，这个品种的仙品率 +1%。'
 en['eco.milestones'] = (en['eco.milestones'] ?? '') + ' Each study level adds 1% spirit chance for that species.'

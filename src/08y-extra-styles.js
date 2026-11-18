@@ -173,4 +173,30 @@
 .fg-miniToday .fg-questChip{font-size:.85em}
 .fg-miniNotice{position:sticky;bottom:0;margin:0;padding:6px 12px;background:var(--dsw-alias-bg-layer-1);font-weight:600;color:var(--fg-accent)}
 .fg-miniNotice:empty{display:none}
+.fg-cardWarn{position:absolute;inset:0;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:14px;border-radius:14px;background:#fffdf6f2;color:#2a2a22;text-align:center;line-height:1.5}
+.fg-cardWarn strong{color:var(--dsw-alias-state-error-primary);font-size:1.05em}
+.fg-cardWarn span{font-size:.88em}
+.fg-cardWarnActions{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.fg-cardDel[data-armed="true"]{z-index:3}
+.fg-vaseShelf{display:flex;flex-direction:column;gap:6px;width:100%}
+.fg-vasePicker{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;padding-bottom:0}
+.fg-vaseChoice{width:auto;height:auto;flex-direction:column;gap:2px;padding:6px 2px 5px;color:var(--dsw-alias-label-primary);font:inherit;min-width:0}
+.fg-vaseChoice svg{width:46px;height:44px}
+.fg-vaseChoice:disabled{opacity:1;filter:none}
+.fg-vaseChoice:disabled svg{filter:grayscale(1);opacity:.45}
+.fg-vaseName{font-size:.74em;font-weight:600;line-height:1.2}
+.fg-vaseState{display:inline-flex;align-items:center;justify-content:center;gap:3px;flex-wrap:wrap;font-size:.64em;line-height:1.25;color:var(--dsw-alias-label-secondary);text-align:center}
+.fg-vaseChoice[data-owned="true"] .fg-vaseState{color:var(--fg-accent);font-weight:600}
+.fg-vasePrice{position:static;transform:none;padding:0;background:none;color:#a67c12;font-size:1.1em;font-weight:700}
+.fg-vaseHint{margin:0;font-size:.8em;line-height:1.5;text-align:center;color:var(--dsw-alias-label-secondary)}
+.fg-vasePot{filter:drop-shadow(0 4px 5px #0002)}
+.fg-goods{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr));gap:10px}
+.fg-good{display:flex;flex-direction:column;align-items:flex-start;gap:4px;padding:12px;border-radius:14px;border:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-base)}
+.fg-good[data-have="false"]{opacity:.6}
+.fg-goodsIcon{font-size:1.7em;line-height:1}
+.fg-slotArt .fg-goodsIcon{font-size:2em}
+.fg-vaseTints{display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap}
+.fg-vaseTint{appearance:none;width:22px;height:22px;padding:0;border-radius:50%;border:2px solid var(--dsw-alias-border-l2);cursor:pointer}
+.fg-vaseTint[aria-pressed="true"]{outline:2px solid var(--fg-accent);outline-offset:2px}
+.fg-vaseTintPick{appearance:none;width:30px;height:26px;padding:0;border:1px solid var(--dsw-alias-border-l2);border-radius:8px;background:none;cursor:pointer}
 `

@@ -94,7 +94,7 @@ window.__ModuleLoader__.load({
       'item.sprinkler': '洒水器',
       'item.sprinkler.note': '当前花地 30 分钟自动浇水',
       'item.charm': '幸运符',
-      'item.charm.note': '全花园下一株开花鉴定的仙品概率 +25%；已鉴定植株不重抽',
+      'item.charm.note': '全花园下一株开花鉴定的仙品概率 +3%；已鉴定植株不重抽',
       'item.basket': '花篮扩容',
       'item.basket.note': '容量依次提升至 30 / 50 / 75 / 100 格，最高 100 格',
       'item.price': '{n} 金币',
@@ -198,7 +198,7 @@ window.__ModuleLoader__.load({
       'codex.undiscovered': '还没有收获过',
       'codex.harvests': '收获 {n} 次',
       'codex.meaning': '花语',
-      'codex.hint': '仙品：基础 3%；从未缺水 +7%、偏爱天气 +5%、刚浇过水 +8%、夜里 22:00–05:00 收获 +7%，最高 30%。仙品自带光晕，卖价 3 倍，不用于交付花束。',
+      'codex.hint': '仙品：基础 1%；从未缺水、偏爱天气、刚浇过水、夜里 22:00–05:00 收获各 +1%，最高 10%。仙品自带光晕，卖价 3 倍，不用于交付花束。',
       'codex.hiddenUnknown': '？？？',
       'codex.teaser': '仙品 ×3 · 触发条件见图鉴',
       'codex.otherGround': '切换地块可以看其它花地的图鉴',
@@ -237,10 +237,10 @@ window.__ModuleLoader__.load({
       'order.empty': '暂时没有委托，交付一束后会出现新的。',
       'order.goldOnly': '委托只用原色/别色交付，金花留给卖出。',
       'hint.title': '小贴士',
-      'hint.body': '所有花地同时生长，离线最多补算 12 小时。花开以后，可以留园长养，观察同一株的变化、搭配生态角色、完成周期考察；也可以收获、育种或送展。种植指南和访客图鉴都能点击查看，每一株都可以有自己的位置。',
+      'hint.body': '花开后可以留园观察，也可以收进花篮。所有花地都会继续生长，离线最多计入 12 小时。',
       'market.title': '今日花市',
       'market.bonus': '卖价 +{n}%',
-      'market.note': '今日花市：{flower}卖价 +{n}%。每天零点换一种，只在已解锁花地的花里选；花束委托的报酬不受影响。',
+      'market.note': '今日出售{flower}可多得 {n}% 金币。每天零点从已解锁花地中换一种花。花束委托按原报酬结算。',
       'market.tag': '行情',
       'plot.waterAll': '全部浇水 · {n}',
       'plot.pollinated': '已授粉 · 收获 ×2',
@@ -526,7 +526,7 @@ window.__ModuleLoader__.load({
       'item.sprinkler': 'Sprinkler',
       'item.sprinkler.note': 'Waters this ground for 30 minutes',
       'item.charm': 'Lucky charm',
-      'item.charm.note': '+25% spirit chance on the next bloom identification across all grounds; existing blooms do not reroll',
+      'item.charm.note': '+3% spirit chance on the next bloom identification across all grounds; existing blooms do not reroll',
       'item.basket': 'Basket upgrade',
       'item.basket.note': 'Expand to 30 / 50 / 75 / 100 slots; maximum 100',
       'item.price': '{n} coins',
@@ -630,7 +630,7 @@ window.__ModuleLoader__.load({
       'codex.undiscovered': 'Not harvested yet',
       'codex.harvests': 'Harvested {n}×',
       'codex.meaning': 'Meaning',
-      'codex.hint': 'Spirit blooms: 3% base; +7% if the plant never dried, +5% in this ground’s favoured weather, +8% right after watering, +7% for a night harvest (22:00–05:00), capped at 30%. They glow, sell for 3×, and never pay for a bouquet.',
+      'codex.hint': 'Spirit blooms: 1% base; +1% each if the plant never dried, in this ground\'s favoured weather, right after watering, and for a night harvest (22:00–05:00), capped at 10%. They glow, sell for 3×, and never pay for a bouquet.',
       'codex.hiddenUnknown': '???',
       'codex.teaser': 'Spirit bloom ×3 — how to find one, in the book',
       'codex.otherGround': 'Switch grounds to see their entries',
@@ -669,10 +669,10 @@ window.__ModuleLoader__.load({
       'order.empty': 'No order right now; a new one appears after each delivery.',
       'order.goldOnly': 'Bouquets take plain or second-colour blooms; keep the gold for selling.',
       'hint.title': 'Tip',
-      'hint.body': 'All the grounds grow together, with up to 12 hours of offline progress. Keep a bloomed plant alive, observe its changes, build a diverse border and complete recurring field studies; or harvest, breed and exhibit it. Open the flower and visitor guides to find a place for every plant.',
+      'hint.body': 'Once a flower blooms, leave it in the garden to observe it or harvest it for your basket. All grounds keep growing, with up to 12 hours of offline progress.',
       'market.title': 'Market today',
       'market.bonus': 'sells +{n}%',
-      'market.note': 'Market today: {flower} sells for +{n}%. It changes at midnight and is always a flower from a ground you have opened; bouquet rewards are not affected.',
+      'market.note': 'Sell {flower} today for {n}% more coins. At midnight the market picks a flower from an unlocked ground. Bouquet orders pay their usual rewards.',
       'market.tag': 'in demand',
       'plot.waterAll': 'Water all · {n}',
       'plot.pollinated': 'Pollinated · harvest ×2',
@@ -1969,7 +1969,10 @@ const REGION_SPECIES = [
     const XP_PER_LEVEL = 60
     const BASKET_CAPACITY = 12
     const SPRINKLER_MS = 30 * 60 * 1000
-    const CHARM_BONUS = 0.25
+    const CHARM_BONUS = 0.03
+    /** Ceiling of the spirit chance, without and with a lucky charm. */
+    const HIDDEN_CAP = 0.1
+    const CHARM_CAP = 0.15
 
     /** Shop goods: consumables sit in the bag, the basket upgrade has levels. */
     const ITEMS = [
@@ -2143,7 +2146,45 @@ const REGION_SPECIES = [
       { id: 'double', chance: 0.2, source: 'https://en.wikipedia.org/wiki/Double-flowered', specimen: 'rose' },
       { id: 'leafy', chance: 0.2, source: 'https://en.wikipedia.org/wiki/Phyllody', specimen: 'daisy' },
     ]
-    const TRAIT_BY_ID = new Map(TRAITS.map(trait => [trait.id, trait]))
+    const TRAIT_MAX = 4
+    /** Odds of a further curiosity on a flower that already has 0, 1, 2 or 3. */
+    const TRAIT_EXTRA = [1, 0.25, 0.15, 0.08]
+    const TRAIT_BASE = new Map(TRAITS.map(trait => [trait.id, trait]))
+    function traitParts(id) { return typeof id === 'string' && id !== '' ? id.split('+') : [] }
+    /** One curiosity id for several: known ones only, no repeats, in the book's order, four at most. */
+    function joinTraits(parts) {
+      const order = TRAITS.map(trait => trait.id)
+      return [...new Set(parts)].filter(id => TRAIT_BASE.has(id)).sort((a, b) => order.indexOf(a) - order.indexOf(b)).slice(0, TRAIT_MAX).join('+') || undefined
+    }
+    /** Several colour curiosities on one flower: each takes a band of the petal, and the base colours are mixed. */
+    function blendPaints(painted) {
+      const n = painted.length
+      const stops = painted.flatMap((part, k) => part.stops.map(([offset, color]) => [Math.round(((k + offset / 100) / n) * 100), color]))
+      const pal = {}
+      for (const key of ['petal', 'petalDeep', 'center', 'centerDeep']) {
+        const colors = painted.map(part => part.pal[key]).filter(Boolean)
+        if (colors.length > 0) pal[key] = colors.reduce((acc, color, i) => mix(acc, color, 1 / (i + 1)))
+      }
+      return { stops, pal }
+    }
+    /** Looks up one curiosity or a combination such as "twin+frost". */
+    const TRAIT_BY_ID = {
+      has(id) { const parts = traitParts(id); return parts.length > 0 && parts.length <= TRAIT_MAX && new Set(parts).size === parts.length && parts.every(part => TRAIT_BASE.has(part)) },
+      get(id) {
+        if (TRAIT_BASE.has(id)) return TRAIT_BASE.get(id)
+        if (!this.has(id)) return undefined
+        const parts = traitParts(id).map(part => TRAIT_BASE.get(part))
+        const painted = parts.filter(part => part.stops !== undefined), cited = parts.find(part => part.source !== undefined)
+        const paint = painted.length > 1 ? blendPaints(painted) : painted[0]
+        return { ...(paint ?? {}), id: traitParts(id).join('_'), parts: traitParts(id), chance: Math.min(...parts.map(part => part.chance)), source: cited?.source, specimen: cited?.specimen, factId: cited?.id }
+      },
+    }
+    function traitPrice(trait) { const n = traitParts(trait).length; return n === 0 ? 1 : TRAIT_PRICE + n - 1 }
+    function traitCountKeys(trait) { const parts = traitParts(trait); return parts.length > 1 ? [...parts, trait] : parts }
+    function traitLabel(trait, t) { return traitParts(trait).map(part => t(`trait.${part}`)).join('·') }
+    function traitCauseText(trait, t) { return traitParts(trait).map(part => t(`trait.${part}.cause`)).join(' · ') }
+    function traitFactId(trait) { return TRAIT_BY_ID.get(trait)?.factId ?? trait }
+    const TRAIT_API = { TRAIT_MAX, TRAIT_EXTRA, TRAIT_BY_ID, traitParts, joinTraits, traitPrice, traitLabel }
     /** The weather each ground turns into a curiosity: harvest in it for a chance. */
     const SCENE_TRAIT = {
       meadow: { trait: 'rainbow', weather: 'rain' },
@@ -2248,15 +2289,15 @@ const REGION_SPECIES = [
 
     /** Chance that a harvest turns up the gold bloom; the flower book lists these. */
     function hiddenChance(plot, weather, now, scene) {
-      let chance = 0.03
-      if (plot.dried !== true) chance += 0.07
+      let chance = 0.01
+      if (plot.dried !== true) chance += 0.01
       const favoured = scene.rainWets ? weather === 'rain' : weather === 'clear'
-      if (favoured) chance += 0.05
+      if (favoured) chance += 0.01
       const hour = new Date(now).getHours()
-      if (hour >= 22 || hour < 5) chance += 0.07
-      if (plot.moisture >= 80) chance += 0.08
+      if (hour >= 22 || hour < 5) chance += 0.01
+      if (plot.moisture >= 80) chance += 0.01
       chance += seasonalBonus(plot.species, now)
-      return Math.min(0.3, chance)
+      return Math.min(HIDDEN_CAP, chance)
     }
 
     // ---------------------------------------------------------------------
@@ -2333,7 +2374,7 @@ const REGION_SPECIES = [
         specimens: {},
         commissions: { period: ecologyPeriod(now), accepted: {}, completed: [] }, patronage: 0, commissionLog: [],
         study: {}, ecology: { period: ecologyPeriod(now), grounds: ['meadow'], observed: [], visitors: [], claimed: [] }, researchSeals: 0, researchSpent: 0, research: sanitizeResearch(null), journal: [],
-        daily: { claimedDay: -1, streak: 0 }, quests: null, giftBucket: -1, affinity: {}, arranged: 0, bouquetBest: 0, pedigree: {}, lineage: {}, goalsDone: {}, bouquets: [], cards: [], cardSeq: 0, expedition: null, trips: 0, vases: [], shelf: { slots: 0, cards: [] }, workshop: { benches: 0, jobs: [] }, pagesDone: {}, contest: null, contestWins: 0, crafted: 0, legacy: 0, fund: 0, used: 0, wanted: null, wantedDone: 0, companions: [], events: 0, briefs: 0, eventBucket: -1, briefDay: -1, boost: null,
+        daily: { claimedDay: -1, streak: 0 }, quests: null, giftBucket: -1, affinity: {}, arranged: 0, bouquetBest: 0, pedigree: {}, lineage: {}, goalsDone: {}, bouquets: [], cards: [], cardSeq: 0, expedition: null, trips: 0, vases: [], vaseTints: {}, shelf: { slots: 0, cards: [] }, workshop: { benches: 0, jobs: [] }, pagesDone: {}, contest: null, contestWins: 0, crafted: 0, legacy: 0, fund: 0, goods: { dried: 0, tea: 0, perfume: 0 }, goodsUsed: 0, scent: null, used: 0, wanted: null, wantedDone: 0, companions: [], events: 0, briefs: 0, eventBucket: -1, briefDay: -1, boost: null,
         seed: 20261116,
         orderSeq: 1,
         lastTick: now,
@@ -2535,7 +2576,7 @@ const REGION_SPECIES = [
         specimens: sanitizeSpecimens(raw.specimens),
         commissions: sanitizeCommissions(raw.commissions,now), patronage: Math.floor(finiteOr(raw.patronage,0)), commissionLog: sanitizeCommissionLog(raw.commissionLog),
         study: sanitizeStudy(raw.study), ecology: sanitizeEcology(raw.ecology, now, scenes), researchSeals: Math.max(0, Math.floor(finiteOr(raw.researchSeals, 0))), researchSpent: Math.max(0, Math.floor(finiteOr(raw.researchSpent, 0))), research: sanitizeResearch(raw.research), journal: sanitizeJournal(raw.journal),
-        ...sanitizePlay(raw, now), ...sanitizeCraft(raw), ...sanitizeKin(raw), ...sanitizeAlbum(raw, now), ...sanitizeEconomy(raw), ...sanitizeLongterm(raw, now), ...sanitizeFund(raw), ...sanitizeFun(raw, now), ...sanitizeFlowers(raw, now),
+        ...sanitizePlay(raw, now), ...sanitizeCraft(raw), ...sanitizeKin(raw), ...sanitizeAlbum(raw, now), ...sanitizeEconomy(raw), ...sanitizeLongterm(raw, now), ...sanitizeFund(raw), ...sanitizeFun(raw, now), ...sanitizeFlowers(raw, now), ...sanitizeGoods(raw, now), ...sanitizeTints(raw),
         seed: Math.floor(finiteOr(raw.seed, 20261116)) || 20261116,
         orderSeq: Math.max(1, Math.floor(finiteOr(raw.orderSeq, 1))),
         lastTick: Math.min(finiteOr(raw.lastTick, now), now),
@@ -2632,17 +2673,17 @@ function revealBloom(state, sceneId, index, now, weather = weatherAt(now)) {
   let cursor=state.seed, charm=state.charm, nextPlot={...plot}, changed=false
   const draw=()=>{const step=nextRandom(cursor);cursor=step.seed;return step.value}
   if(plot.identified!==true){
-    const chance=Math.min(charm===true?0.55:0.3,hiddenChance(plot,weather,now,SCENE_BY_ID.get(sceneId))+(charm===true?CHARM_BONUS:0)+shelfBonus(state).spirit + studyBonus(state, plot.species) + boostBonus(state, now))
+    const chance=Math.min(charm===true?CHARM_CAP:HIDDEN_CAP,hiddenChance(plot,weather,now,SCENE_BY_ID.get(sceneId))+(charm===true?CHARM_BONUS:0)+shelfBonus(state).spirit + studyBonus(state, plot.species) + boostBonus(state, now))
     nextPlot.variant=draw()<chance?'hidden':plot.tint?'base':plotVariant(species,index)
     nextPlot.identified=true;nextPlot.traitChecks=[];charm=false;changed=true
   }
-  if(nextPlot.variant!=='hidden' && !nextPlot.trait){
+  if(nextPlot.variant!=='hidden' && traitParts(nextPlot.trait).length<TRAIT_MAX){
     const checked=new Set(nextPlot.traitChecks??[])
     const boost=1+FACILITY_BY_ID.get('greenhouse').step*facilityLevel(state,'greenhouse')
     for(const id of traitCauses(nextPlot,sceneId,weather,now)){
       if(checked.has(id))continue
       checked.add(id);changed=true
-      if(draw()<Math.min(0.9,TRAIT_BY_ID.get(id).chance*boost)){nextPlot.trait=id;break}
+      const have=traitParts(nextPlot.trait);if(have.length>=TRAIT_MAX)break;if(draw()<Math.min(0.9,TRAIT_BASE.get(id).chance*boost*TRAIT_EXTRA[have.length]))nextPlot.trait=joinTraits([...have,id])
     }
     nextPlot.traitChecks=[...checked]
   }
@@ -2668,7 +2709,7 @@ function retainAt(state, sceneId, index, now) {
   const roll = nextRandom(state.seed)
   const hiddenBase = hiddenChance(plot, weatherAt(now), now, scene)
   const charmBonus = state.charm === true ? CHARM_BONUS : 0
-  const chance = Math.min(state.charm === true ? 0.55 : 0.3, hiddenBase + charmBonus + shelfBonus(state).spirit + studyBonus(state, plot.species) + boostBonus(state, now))
+  const chance = Math.min(state.charm === true ? CHARM_CAP : HIDDEN_CAP, hiddenBase + charmBonus + shelfBonus(state).spirit + studyBonus(state, plot.species) + boostBonus(state, now))
   const hidden = plot.identified ? plot.variant === 'hidden' : roll.value < chance
   let cursor = plot.identified ? state.seed : roll.seed
   const dna = Number.isFinite(plot.dna) && plot.dna > 0 ? plot.dna : 1 + Math.floor(hashUnit(state.seed, index, 12345) * 2147483646)
@@ -2682,7 +2723,7 @@ function retainAt(state, sceneId, index, now) {
       cursor = step.seed
       const greenhouse = typeof facilityLevel === 'function' ? facilityLevel(state, 'greenhouse') : 0
       const boost = 1 + greenhouse * 0.1
-      if (step.value < Math.min(0.9, (TRAIT_BY_ID.get(id)?.chance ?? 0) * boost)) { trait = id; break }
+      const have = traitParts(trait); if (step.value < Math.min(0.9, (TRAIT_BASE.get(id)?.chance ?? 0) * boost * TRAIT_EXTRA[have.length])) { trait = joinTraits([...have, id]); if (have.length + 1 >= TRAIT_MAX) break }
     }
   }
   if (trait !== undefined) first.trait = trait
@@ -2697,7 +2738,7 @@ function retainAt(state, sceneId, index, now) {
   const hybrids = { ...(state.hybrids ?? {}) }
   if (first.tint !== undefined) hybrids[`${species.id}~${first.tint}`] = (hybrids[`${species.id}~${first.tint}`] ?? 0) + 1
   const exotics = { ...(state.exotics ?? {}) }
-  if (trait !== undefined) exotics[`${species.id}:${trait}`] = (exotics[`${species.id}:${trait}`] ?? 0) + 1
+  for (const part of traitCountKeys(trait)) exotics[`${species.id}:${part}`] = (exotics[`${species.id}:${part}`] ?? 0) + 1
   return {
     ...state,
     seed: cursor,
@@ -2793,7 +2834,7 @@ function gardenEcology(state, now) {
     roles: [...roles],
     roleCoverage: roles.size,
     seasonal: seasonal.size,
-    visitorBonus: Math.min(ECO_VISITOR_CAP, roles.size * 0.02 + Math.min(0.04, seasonal.size * 0.005)) + researchLevel(state, 'ecology') * 0.02 + shelfBonus(state).visitor,
+    visitorBonus: Math.min(ECO_VISITOR_CAP, roles.size * 0.02 + Math.min(0.04, seasonal.size * 0.005)) + researchLevel(state, 'ecology') * 0.02 + shelfBonus(state).visitor + scentBonus(state, now),
   }
 }
 
@@ -3072,7 +3113,7 @@ const ECOLOGY_API = { ECO_PERIOD_MS, ECO_OBSERVE_MS, ecologyPeriod, ecologyState
       if (species === undefined || plot.growthMs < growMsOf(species)) return null
       if (state.basket.length >= basketCapacity(state)) return null
       const bonus = state.charm === true ? CHARM_BONUS : 0
-      const chance = Math.min(state.charm === true ? 0.55 : 0.3, hiddenChance(plot, weather, now, scene) + bonus + shelfBonus(state).spirit + studyBonus(state, plot.species) + boostBonus(state, now))
+      const chance = Math.min(state.charm === true ? CHARM_CAP : HIDDEN_CAP, hiddenChance(plot, weather, now, scene) + bonus + shelfBonus(state).spirit + studyBonus(state, plot.species) + boostBonus(state, now))
       const roll = nextRandom(state.seed)
       const hidden = (plot.resident || plot.identified) ? plot.variant === 'hidden' : roll.value < chance
       let cursor = (plot.resident || plot.identified) ? state.seed : roll.seed
@@ -3088,9 +3129,10 @@ const ECOLOGY_API = { ECO_PERIOD_MS, ECO_OBSERVE_MS, ecologyPeriod, ecologyState
       if (!hidden && !plot.resident && !plot.identified) {
         const boost = 1 + FACILITY_BY_ID.get('greenhouse').step * facilityLevel(state, 'greenhouse')
         for (const id of traitCauses(plot, sceneId, weather, now)) {
-          if (draw() < Math.min(0.9, TRAIT_BY_ID.get(id).chance * boost)) {
-            trait = id
-            break
+          const have = traitParts(trait)
+          if (draw() < Math.min(0.9, TRAIT_BASE.get(id).chance * boost * TRAIT_EXTRA[have.length])) {
+            trait = joinTraits([...have, id])
+            if (have.length + 1 >= TRAIT_MAX) break
           }
         }
       }
@@ -3136,8 +3178,8 @@ const ECOLOGY_API = { ECO_PERIOD_MS, ECO_OBSERVE_MS, ecologyPeriod, ecologyState
           const key = `${bloom.species}:${bloom.variant}`
           seen[key] = (seen[key] ?? 0) + 1
         }
-        if (bloom.trait !== undefined) {
-          const key = `${bloom.species}:${bloom.trait}`
+        for (const part of traitCountKeys(bloom.trait)) {
+          const key = `${bloom.species}:${part}`
           exotics[key] = (exotics[key] ?? 0) + 1
         }
       }
@@ -3204,7 +3246,7 @@ const ECOLOGY_API = { ECO_PERIOD_MS, ECO_OBSERVE_MS, ecologyPeriod, ecologyState
       const species = SPECIES_BY_ID.get(item.species)
       const tint = item.tint === undefined ? undefined : SPECIES_BY_ID.get(item.tint)
       const base = tint === undefined ? species.sell : ((species.sell + tint.sell) / 2) * HYBRID_PRICE
-      return base * variantMultiplier(item.variant) * (item.trait !== undefined ? TRAIT_PRICE : 1)
+      return base * variantMultiplier(item.variant) * traitPrice(item.trait)
     }
 
     /** How many price steps a species is down right now; it climbs back one step at a time. */
@@ -3392,7 +3434,7 @@ const ECOLOGY_API = { ECO_PERIOD_MS, ECO_OBSERVE_MS, ecologyPeriod, ecologyState
         case 'meadowKinds': return SCENES[0].species.filter(grown).length
         case 'grounds': return SCENES.filter(scene => (state.scenes[scene.id]?.unlocked ?? 0) > 0).length
         case 'hybridKinds': return Object.keys(state.hybrids ?? {}).length
-        case 'traitKinds': return new Set(Object.keys(state.exotics ?? {}).map(key => key.split(':')[1])).size
+        case 'traitKinds': return new Set(Object.keys(state.exotics ?? {}).flatMap(key => traitParts(key.split(':')[1]))).size
         case 'ribbonsEarned': return state.ribbonsEarned ?? 0
         case 'entries': return CODEX_ENTRIES.filter(entry => (state.seen[`${entry.species}:${entry.variant}`] ?? 0) > 0).length
         case 'arranged': case 'trips': case 'crafted': case 'contestWins': case 'fund': return state[metric] ?? 0
@@ -3521,7 +3563,7 @@ const ECOLOGY_API = { ECO_PERIOD_MS, ECO_OBSERVE_MS, ecologyPeriod, ecologyState
       return 1
         + (item.variant === 'alt' ? 1 : 0)
         + (item.tint !== undefined ? 2 : 0)
-        + (item.trait !== undefined ? 3 : 0)
+        + (item.trait !== undefined ? 2 + traitParts(item.trait).length : 0)
         + (item.variant === 'hidden' ? 4 : 0)
         + (entry.kinds.includes(item.species) ? 0 : 2)
     }
@@ -3614,6 +3656,143 @@ const ECOLOGY_API = { ECO_PERIOD_MS, ECO_OBSERVE_MS, ecologyPeriod, ecologyState
       return t('time.hours', { n: Math.round(minutes / 6) / 10 })
     }
 
+
+    // ---------------------------------------------------------------------
+    // §3n Bulk actions: harvest every ripe plant, sow every empty plot at random.
+    // ---------------------------------------------------------------------
+    /** Harvest every ripe, non-resident plant of one ground, until the basket is full. Null when nothing was picked. */
+    function harvestAll(state, sceneId, now) {
+      let next = state
+      const count = state.scenes[sceneId]?.unlocked ?? 0
+      for (let index = 0; index < count; index += 1) {
+        const plot = next.scenes[sceneId].plots[index]
+        if (plot === null || plot === undefined || plot.resident) continue
+        const done = harvestAt(next, sceneId, index, now, weatherAt(now), false)
+        if (done !== null) next = done
+      }
+      return next === state ? null : next
+    }
+
+    /** Fill every empty plot of one ground with a random seed the purse can pay for. Null when nothing was sown. */
+    function sowRandom(state, sceneId) {
+      const scene = SCENE_BY_ID.get(sceneId)
+      if (scene === undefined || state.scenes[sceneId] === undefined) return null
+      let next = state
+      for (let index = 0; index < next.scenes[sceneId].unlocked; index += 1) {
+        if (next.scenes[sceneId].plots[index] !== null) continue
+        const pool = scene.species.filter(id => SPECIES_BY_ID.get(id).cost <= next.coins)
+        if (pool.length === 0) break
+        const pick = pool[Math.floor(hashUnit(next.seed, next.planted ?? 0, index + 97) * pool.length)]
+        const done = plantAt(next, sceneId, index, pick)
+        if (done !== null) next = done
+      }
+      return next === state ? null : next
+    }
+
+    function ripeCount(slot) {
+      return slot.plots.slice(0, slot.unlocked).filter(plot => plot && !plot.resident && stageOf(plot) === 'bloom').length
+    }
+
+    function emptyCount(slot) {
+      return slot.plots.slice(0, slot.unlocked).filter(plot => plot === null).length
+    }
+
+    /** How many visitors are waiting on one ground right now. */
+    function visitorCount(state, sceneId, now) {
+      const slot = state.scenes[sceneId]
+      if (slot === undefined) return 0
+      const weather = weatherAt(now), hive = facilityLevel(state, 'hive'), bonus = gardenEcology(state, now).visitorBonus
+      return slot.plots.slice(0, slot.unlocked).filter((plot, index) => visitorAt(sceneId, index, plot, now, weather, hive, bonus, state) !== null).length
+    }
+
+    /** Greet every visitor waiting on one ground. Null when nobody is there. */
+    function greetAll(state, sceneId, now) {
+      let next = state
+      const count = state.scenes[sceneId]?.unlocked ?? 0
+      for (let index = 0; index < count; index += 1) {
+        const done = greetVisitor(next, sceneId, index, now, weatherAt(now))
+        if (done !== null) next = done
+      }
+      return next === state ? null : next
+    }
+
+    const BULK_API = { harvestAll, sowRandom, ripeCount, emptyCount, visitorCount, greetAll }
+
+    // ---------------------------------------------------------------------
+    // §3o Vase colours: every owned vase can be repainted, and a bouquet card
+    //     remembers the colour its vase had.
+    // ---------------------------------------------------------------------
+    const VASE_SWATCHES = ['#a9cdb8', '#8fc0d6', '#f1f4f7', '#7a5aa8', '#e2b93b', '#d9706a', '#2f3a4a', '#e8a0b8']
+
+    function cleanTint(value) {
+      return typeof value === 'string' && /^#[0-9a-f]{6}$/iu.test(value) ? value.toLowerCase() : null
+    }
+
+    function vaseTint(state, id) {
+      return cleanTint(state.vaseTints?.[id])
+    }
+
+    /** Paint an owned vase; `null` puts its own glaze back. */
+    function setVaseTint(state, id, color) {
+      if (!VASE_BY_ID.has(id) || !vaseOwned(state, id)) return null
+      const tints = { ...state.vaseTints }
+      if (color === null) delete tints[id]
+      else if (cleanTint(color) === null) return null
+      else tints[id] = cleanTint(color)
+      return { ...state, vaseTints: tints }
+    }
+
+    function sanitizeTints(raw) {
+      const vaseTints = {}
+      for (const vase of VASES) { const tint = cleanTint(raw.vaseTints?.[vase.id]); if (tint !== null) vaseTints[vase.id] = tint }
+      return { vaseTints }
+    }
+
+    const TINT_API = { VASE_SWATCHES, cleanTint, vaseTint, setVaseTint, sanitizeTints }
+
+    // ---------------------------------------------------------------------
+    // §3p Workshop goods: a finished job can be kept as an item with a use of
+    //     its own, instead of being sold for coins.
+    // ---------------------------------------------------------------------
+    const GOODS = ['dried', 'tea', 'perfume']
+    const TEA_BOND = 8
+    const SCENT_MS = 30 * 60 * 1000
+    const SCENT_BONUS = 0.15
+
+    function goodsCount(state, id) {
+      return Math.max(0, Math.floor(state.goods?.[id] ?? 0))
+    }
+
+    function spendGood(state, id) {
+      return { ...state, goods: { ...state.goods, [id]: goodsCount(state, id) - 1 }, goodsUsed: (state.goodsUsed ?? 0) + 1 }
+    }
+
+    /** A cup of flower tea for a visitor the player has met; refused when the bond is already complete. */
+    function serveTea(state, visitorId) {
+      if (!VISITOR_BY_ID.has(visitorId) || !((state.visitors?.[visitorId] ?? 0) > 0) || goodsCount(state, 'tea') <= 0) return null
+      if (affinityLevel(state, visitorId) >= AFFINITY_LEVELS.length) return null
+      return addAffinity(spendGood(state, 'tea'), visitorId, TEA_BOND)
+    }
+
+    function scentBonus(state, now) {
+      return state.scent && state.scent.until > now ? SCENT_BONUS : 0
+    }
+
+    /** Perfume over the whole garden: more visitors for half an hour. It does not stack. */
+    function sprayPerfume(state, now) {
+      if (goodsCount(state, 'perfume') <= 0 || scentBonus(state, now) > 0) return null
+      return { ...spendGood(state, 'perfume'), scent: { until: now + SCENT_MS } }
+    }
+
+    function sanitizeGoods(raw, now) {
+      return {
+        goods: Object.fromEntries(GOODS.map(id => [id, Math.floor(finiteOr(raw.goods?.[id], 0))])),
+        goodsUsed: Math.floor(finiteOr(raw.goodsUsed, 0)),
+        scent: Number.isFinite(raw.scent?.until) ? { until: Math.min(raw.scent.until, now + SCENT_MS) } : null,
+      }
+    }
+
+    const GOODS_API = { GOODS, TEA_BOND, SCENT_MS, SCENT_BONUS, goodsCount, serveTea, scentBonus, sprayPerfume, sanitizeGoods }
 
     // ---------------------------------------------------------------------
     // §3q Every flower is good for something: a bloom can be used up for an
@@ -3714,7 +3893,7 @@ const ECOLOGY_API = { ECO_PERIOD_MS, ECO_OBSERVE_MS, ecologyPeriod, ecologyState
     const EVENT_WINDOW_MS = 8 * 60 * 1000
     const EVENT_CHANCE = 0.35
     const BOOST_MS = 10 * 60 * 1000
-    const BOOST_SPIRIT = 0.1
+    const BOOST_SPIRIT = 0.02
     const BRIEF_REWARD = { coins: 60, ribbons: 1 }
 
     function companionRole(id) {
@@ -3948,11 +4127,11 @@ const ECOLOGY_API = { ECO_PERIOD_MS, ECO_OBSERVE_MS, ecologyPeriod, ecologyState
       return { ...state, coins: state.coins - recipe.fee, basket: state.basket.filter((_, index) => !used.has(index)), workshop: { benches: benchCount(state), jobs: [...jobs, job] } }
     }
 
-    function claimJob(state, index, now) {
+    function claimJob(state, index, now, keep = false) {
       const jobs = state.workshop?.jobs ?? []
       const job = jobs[index]
       if (job === undefined || now < job.end) return null
-      return { ...state, coins: state.coins + job.coins, crafted: (state.crafted ?? 0) + 1, workshop: { benches: benchCount(state), jobs: jobs.filter((_, at) => at !== index) } }
+      return { ...state, ...(keep ? { goods: { ...state.goods, [job.recipe]: goodsCount(state, job.recipe) + 1 } } : { coins: state.coins + job.coins }), crafted: (state.crafted ?? 0) + 1, workshop: { benches: benchCount(state), jobs: jobs.filter((_, at) => at !== index) } }
     }
 
     /** What the flower cards cover on one collection page. */
@@ -4009,7 +4188,7 @@ const ECOLOGY_API = { ECO_PERIOD_MS, ECO_OBSERVE_MS, ecologyPeriod, ecologyState
       const legacy = (state.legacy ?? 0) + 1
       const keep = {}
       for (const field of ['ui', 'discoveries', 'discoverySeq', 'seen', 'specimens', 'hybrids', 'exotics', 'visitors', 'affinity', 'study', 'claimed',
-        'daily', 'goalsDone', 'pagesDone', 'pedigree', 'bouquets', 'cards', 'cardSeq', 'vases', 'shelf', 'arranged', 'bouquetBest', 'trips', 'contest', 'contestWins', 'crafted', 'fund', 'companions', 'events', 'briefs', 'used', 'wantedDone']) {
+        'daily', 'goalsDone', 'pagesDone', 'pedigree', 'bouquets', 'cards', 'cardSeq', 'vases', 'shelf', 'arranged', 'bouquetBest', 'trips', 'contest', 'contestWins', 'crafted', 'fund', 'companions', 'events', 'briefs', 'used', 'wantedDone', 'vaseTints']) {
         if (state[field] !== undefined) keep[field] = state[field]
       }
       return {
@@ -4139,8 +4318,8 @@ const ECOLOGY_API = { ECO_PERIOD_MS, ECO_OBSERVE_MS, ecologyPeriod, ecologyState
     // ---------------------------------------------------------------------
     // §3w Real seasons, night blooms, seed expeditions, vases and keepsake cards.
     // ---------------------------------------------------------------------
-    const SEASON_BONUS = 0.05
-    const NIGHT_BONUS = 0.08
+    const SEASON_BONUS = 0.01
+    const NIGHT_BONUS = 0.01
     const VASES = [
       { id: 'classic', need: 0 }, { id: 'round', need: 2 }, { id: 'tall', need: 5 },
       { id: 'basket', need: 10 }, { id: 'moon', need: 20 }, { id: 'gold', stars: 5 },
@@ -4193,7 +4372,7 @@ const ECOLOGY_API = { ECO_PERIOD_MS, ECO_OBSERVE_MS, ecologyPeriod, ecologyState
     /** Every finished bouquet leaves a card behind; the oldest cards make room. */
     function bouquetCardPatch(state, items, score, vase, now) {
       const id = (state.cardSeq ?? 0) + 1
-      const card = { id, at: now, stars: score.stars, theme: score.theme, coins: score.coins, vase: vaseOwned(state, vase) ? vase : 'classic', match: score.match === true, items: items.map(cleanBloom).filter(Boolean) }
+      const card = { id, at: now, stars: score.stars, theme: score.theme, coins: score.coins, vase: vaseOwned(state, vase) ? vase : 'classic', match: score.match === true, ...(vaseTint(state, vase) ? { tint: vaseTint(state, vase) } : {}), items: items.map(cleanBloom).filter(Boolean) }
       return { cardSeq: id, bouquets: [...(state.bouquets ?? []), card].slice(-BOUQUET_CARD_CAP) }
     }
 
@@ -4258,7 +4437,7 @@ const ECOLOGY_API = { ECO_PERIOD_MS, ECO_OBSERVE_MS, ecologyPeriod, ecologyState
       const bouquets = (Array.isArray(raw.bouquets) ? raw.bouquets : []).filter(card => card && Number.isFinite(card.id) && Array.isArray(card.items)).map(card => ({
         id: Math.floor(card.id), at: stamp(card.at), stars: Math.max(1, Math.min(5, Math.floor(finiteOr(card.stars, 1)))),
         theme: BOUQUET_THEMES.includes(card.theme) ? card.theme : BOUQUET_THEMES[0], coins: Math.floor(finiteOr(card.coins, 0)),
-        vase: VASE_BY_ID.has(card.vase) ? card.vase : 'classic', match: card.match === true, title: cleanText(card.title, 20), note: cleanText(card.note, 60), items: card.items.slice(0, BOUQUET_MAX).map(cleanBloom).filter(Boolean),
+        vase: VASE_BY_ID.has(card.vase) ? card.vase : 'classic', match: card.match === true, ...(cleanTint(card.tint) ? { tint: cleanTint(card.tint) } : {}), title: cleanText(card.title, 20), note: cleanText(card.note, 60), items: card.items.slice(0, BOUQUET_MAX).map(cleanBloom).filter(Boolean),
       })).filter(card => card.items.length > 0).slice(-BOUQUET_CARD_CAP)
       const cards = (Array.isArray(raw.cards) ? raw.cards : []).filter(card => card && Number.isFinite(card.id) && cleanBloom(card.item) !== null)
         .map(card => ({ id: Math.floor(card.id), at: stamp(card.at), item: cleanBloom(card.item) })).slice(-FLOWER_CARD_CAP)
@@ -4481,7 +4660,7 @@ const ECOLOGY_API = { ECO_PERIOD_MS, ECO_OBSERVE_MS, ecologyPeriod, ecologyState
     }
 
     /** One to five stars for three to seven blooms; a bouquet pays more than the same flowers sold loose. */
-    function arrangeScore(items, now, vase) {
+    function arrangeScore(items, now, vase, dried = false) {
       if (!Array.isArray(items) || items.length < BOUQUET_MIN || items.length > BOUQUET_MAX) return null
       const tones = items.map(bloomTone)
       const values = items.map(itemValue).sort((a, b) => b - a)
@@ -4493,18 +4672,19 @@ const ECOLOGY_API = { ECO_PERIOD_MS, ECO_OBSERVE_MS, ecologyPeriod, ecologyState
         focal: special === 1 || (special === 0 && values[0] >= values[1] * 1.4),
         theme: tones.filter(tone => tone.family === theme).length * 2 >= items.length,
       }
-      const stars = 1 + Object.values(checks).filter(Boolean).length
+      const stars = Math.min(5, 1 + Object.values(checks).filter(Boolean).length + (dried ? 1 : 0))
       const match = vaseMatch(vase, items)
       const value = values.reduce((sum, n) => sum + n, 0)
       return { stars, checks, theme, value: Math.round(value), match, coins: Math.round(value * (1 + BOUQUET_STAR_BONUS * stars + (match ? VASE_MATCH_BONUS : 0))), xp: stars * 2 }
     }
 
-    function arrangeBouquet(state, indices, now, vase = 'classic') {
+    function arrangeBouquet(state, indices, now, vase = 'classic', useDried = false) {
       if (!Array.isArray(indices) || new Set(indices).size !== indices.length) return null
       if (indices.some(index => !Number.isInteger(index) || index < 0 || index >= state.basket.length)) return null
       const items = indices.map(index => state.basket[index])
       const pot = vaseOwned(state, vase) ? vase : 'classic'
-      const score = arrangeScore(items, now, pot)
+      const dried = useDried === true && goodsCount(state, 'dried') > 0
+      const score = arrangeScore(items, now, pot, dried)
       if (score === null) return null
       const used = new Set(indices)
       return {
@@ -4516,6 +4696,7 @@ const ECOLOGY_API = { ECO_PERIOD_MS, ECO_OBSERVE_MS, ecologyPeriod, ecologyState
         bouquetBest: Math.max(state.bouquetBest ?? 0, score.stars),
         ...bouquetCardPatch(state, items, score, pot, now),
         ...briefPatch(state, items, score, now),
+        ...(dried ? { goods: { ...state.goods, dried: goodsCount(state, 'dried') - 1 }, goodsUsed: (state.goodsUsed ?? 0) + 1 } : {}),
       }
     }
 
@@ -4974,7 +5155,7 @@ const ECOLOGY_API = { ECO_PERIOD_MS, ECO_OBSERVE_MS, ecologyPeriod, ecologyState
       // Variegated plants carry cream margins on every leaf.
       const across = { x1: '0', y1: '0.5', x2: '1', y2: '0.5' }
       const margin = (edge, heart) => [[0, edge], [20, edge], [34, heart], [66, heart], [80, edge], [100, edge]]
-      const striped = trait !== undefined && trait.id === 'variegated'
+      const striped = !hidden && traitParts(look?.trait).includes('variegated')
       lazy('leaf', () => (striped
         ? ink.lin('leaf', margin('#f6efc8', pal.leaf), across)
         : ink.lin('leaf', [[0, darken(pal.leaf, 0.22)], [100, lighten(pal.leaf, 0.14)]])))
@@ -6559,6 +6740,9 @@ const NEW_PLANTS = {
     }
 
     /** Small six-armed crystals for a frost bloom, or a heat glow for an ember one. */
+    function mergeLayers(list) { return { under: list.flatMap(layer => layer.under), over: list.flatMap(layer => layer.over) } }
+    function traitExtrasAll(traitId, headY) { return mergeLayers(traitParts(traitId).map(part => traitExtras(part, headY))) }
+    function specialTraitArtAll(ink, traitId, headY) { return mergeLayers(traitParts(traitId).map(part => specialTraitArt(ink, part, headY))) }
     function traitExtras(traitId, headY) {
       if (traitId === 'frost') {
         const arms = [[27, headY - 14, 2.6], [73, headY - 8, 2.2], [68, headY + 16, 1.8], [30, headY + 12, 2]]
@@ -6625,7 +6809,7 @@ const REGION_PLANTS = {
         : stage === 'sprout'
           ? sproutArt(ink, species)
           : PLANTS[species.head](ink, { bloom: stage === 'bloom', top: stage === 'bloom' ? HEAD_Y : 54, k: stage === 'bloom' ? 1 : 0.74 }))
-      const draw = () => { const layers = specialTraitArt(ink, traitId, headY); return [...layers.under, ...drawBase(), ...layers.over] }
+      const draw = () => { const layers = specialTraitArtAll(ink, traitId, headY); return [...layers.under, ...drawBase(), ...layers.over] }
       artSalt = genes === 0 ? 0 : (genes % 9973) / 97
       // Floating and pad plants do not sway on a stem.
       const sway = stage === 'seed' || floating ? undefined : 'fg-plant'
@@ -6634,11 +6818,11 @@ const REGION_PLANTS = {
       try {
         const grown = stage !== 'seed' && genes !== 0
         const lean = grown && !floating ? (hashUnit(genes, 4, 9) - 0.5) * 12 : 0
-        const big = traitId === 'giant' ? 1.2 : 1
+        const big = traitParts(traitId).includes('giant') ? 1.2 : 1
         const sy = (grown ? 0.84 + hashUnit(genes, 5, 9) * 0.25 : 1) * big
         const sx = (grown ? 0.9 + hashUnit(genes, 6, 9) * 0.2 : 1) * big
         const flip = grown && hashUnit(genes, 7, 9) < 0.5 ? -1 : 1
-        if (traitId === 'twin') {
+        if (traitParts(traitId).includes('twin')) {
           // Two flowers on one root: the second is the first one's mirror, a little smaller.
           const spread = floating ? 0 : 11
           bodies = [
@@ -6653,7 +6837,7 @@ const REGION_PLANTS = {
       } finally {
         artSalt = 0
       }
-      const extras = traitExtras(traitId, headY)
+      const extras = traitExtrasAll(traitId, headY)
       return h('svg', {...SVG_PROPS,className:presentation==='specimen'?'fg-flowerSpecimen':'fg-flowerLiving','data-presentation':presentation},
         h('defs', null, ...ink.defs, hidden ? hiddenAuraDef(`${species.id}-${paintId}`) : null),
         ...(hidden ? hiddenAura(`${species.id}-${paintId}`, headY) : []),
@@ -7040,7 +7224,7 @@ function specialTraitArt(ink, traitId, headY = HEAD_Y) {
     /** One flower detail card: drawing, name, variant, Latin, meaning, figures, actions. */
     function bloomName(item, t) {
       let name = item.tint ? t('hybrid.name', { form: t(`species.${item.species}`), tint: t(`species.${item.tint}`) }) : t(`species.${item.species}`)
-      if (item.trait) name = t('trait.named', { trait: t(`trait.${item.trait}`), flower: name })
+      if (item.trait) name = t('trait.named', { trait: traitLabel(item.trait, t), flower: name })
       return name
     }
 
@@ -7079,8 +7263,8 @@ function specialTraitArt(ink, traitId, headY = HEAD_Y) {
           h('div', { className: 'fg-previewMeaning' }, t(`codex.${species.id}`)),
           modal ? h('span', { className: 'fg-note' }, t(specimenMode?'card.specimenTitle':sample!==null?'card.example':'card.living')) : null,
           modal ? h('p', { className: 'fg-cardFact' }, t(`fact.${species.id}`)) : null,
-          trait ? h('p', { className: 'fg-note' }, t(`trait.${trait}.cause`)) : null,
-          trait && TRAIT_BY_ID.get(trait)?.source ? h('div', { className: 'fg-purpose' }, h('p',null,t(`trait.${trait}.fact`)), h('a',{href:TRAIT_BY_ID.get(trait).source,target:'_blank',rel:'noopener noreferrer'},t('trait.source'))) : null,
+          trait ? h('p', { className: 'fg-note' }, traitCauseText(trait, t)) : null,
+          trait && TRAIT_BY_ID.get(trait)?.source ? h('div', { className: 'fg-purpose' }, h('p',null,t(`trait.${traitFactId(trait)}.fact`)), h('a',{href:TRAIT_BY_ID.get(trait).source,target:'_blank',rel:'noopener noreferrer'},t('trait.source'))) : null,
           tint ? h('p', { className: 'fg-note' }, t('hybrid.how')) : null,
           modal ? h('div', { className: 'fg-previewStats' },
             h('span', null, `${t('card.ground')} · ${t(`scene.${SCENES.find(ground => ground.species.includes(species.id)).id}`)}`),
@@ -7141,7 +7325,7 @@ function specialTraitArt(ink, traitId, headY = HEAD_Y) {
         const name = item.tint === undefined
           ? t(`species.${item.species}`)
           : t('hybrid.name', { tint: t(`species.${item.tint}`), form: t(`species.${item.species}`) })
-        return [name, t(`variant.${item.variant}`), item.trait === undefined ? null : t(`trait.${item.trait}`)]
+        return [name, t(`variant.${item.variant}`), item.trait === undefined ? null : traitLabel(item.trait, t)]
           .filter(Boolean).join(' · ')
       }
       function enter(key, item) {
@@ -7476,7 +7660,7 @@ function DiscoveryCard({entry,t,onClose,onOpen}) {
    h('div',{className:'fg-discoveryArt'},item.type==='visitor'?h(VisitorArt,{id:item.visitor}):h(FlowerArt,{speciesId:item.species,stage:'bloom',variant:item.variant,dna:item.dna,trait:item.trait,tint:item.tint})),
    h('div',{className:'fg-discoveryCopy'},h('span',{className:'fg-badge'},t(item.type==='seed'?'discovery.seed':item.type==='visitor'?'discovery.visitor':item.first?'discovery.first':'discovery.special')),
     h('h3',null,item.type==='visitor'?t(`visitor.${item.visitor}`):bloomName(item,t)),
-    item.type==='flower'?h('p',null,t(`variant.${item.variant}`),item.trait?' · '+t(`trait.${item.trait}`):'',item.tint?' · '+t('hybrid.tag'):''):null,
+    item.type==='flower'?h('p',null,t(`variant.${item.variant}`),item.trait?' · '+traitLabel(item.trait, t):'',item.tint?' · '+t('hybrid.tag'):''):null,
     h('p',{className:'fg-hint'},t(item.type==='seed'?'discovery.seedWhere':item.type==='visitor'?'discovery.visitorWhere':item.kept?'discovery.kept':'discovery.basket')),
     h('button',{type:'button',className:'fg-btn',onClick:()=>onOpen(item)},t('discovery.open')))))),
   h('footer',{className:'fg-discoveryFooter'},h('button',{type:'button',className:'fg-btn fg-btnPrimary',autoFocus:true,onClick:onClose},t('discovery.dismiss'))))
@@ -7503,6 +7687,7 @@ function rewardForChange(before, next, t) {
     const gain=(next.bag?.[item.id]??0)-(before.bag?.[item.id]??0)
     if(gain>0) entries.push({id:item.id,label:t(`item.${item.id}`),amount:`+${gain}`,owned:next.bag[item.id]})
   }
+  for(const id of GOODS){const gain=goodsCount(next,id)-goodsCount(before,id);if(gain>0)entries.push({id,label:t(`item.${id}`),amount:`+${gain}`,owned:goodsCount(next,id)})}
   for(const [id,key] of [['researchSeals','reward.seals'],['coins','stat.coins'],['ribbons','ribbon.label'],['xp','reward.xp'],['patronage','reward.reputation']]) {
     const gain=(next[id]??0)-(before[id]??0)
     if(gain>0)entries.push({id,label:t(key),amount:`+${gain}`})
@@ -7561,9 +7746,11 @@ function updateMini(patch) {
 function openMini() {
   updateMini({open:true,minimized:false,x:Math.max(8,(window.innerWidth??1000)-miniWindow.width-24),y:Math.max(64,(window.innerHeight??800)-miniWindow.height-130)})
 }
+Object.assign(zh, {'mini.sown':'已种下{flower}'})
+Object.assign(en, {'mini.sown':'Planted {flower}'})
 function MiniGarden({t}) {
   const state=useSyncExternalStore(subscribeGarden,getState,getState)
-  const [clock,setClock]=React.useState(()=>Date.now()), [notice,setNotice]=React.useState(''), [discovery,setDiscovery]=React.useState(null)
+  const [clock,setClock]=React.useState(()=>Date.now()), [notice,setNotice]=React.useState(null), [discovery,setDiscovery]=React.useState(null)
   const [selection,setSelection]=React.useState({}), [preview,setPreview]=React.useState(null)
   const miniRoot=React.useRef(null), opener=React.useRef(null)
   function restoreMiniFocus(){window.setTimeout(()=>{const target=opener.current?.isConnected?opener.current:miniRoot.current?.querySelector('select,button');target?.focus()},0)}
@@ -7571,21 +7758,29 @@ function MiniGarden({t}) {
   const scene=sceneOf(state.scene), slot=state.scenes[state.scene], weather=weatherAt(clock), period=gardenClock(clock).period
   React.useEffect(()=>{setSelection({})},[scene.id])
   const ripeCount=slot.plots.slice(0,slot.unlocked).filter(plot=>plot&&!plot.resident&&stageOf(plot)==='bloom').length
-  function act(transition,kind,index) {
-    const actionOpener=typeof document==='undefined'?null:document.activeElement
+  function feedback(text, tone = 'ok') {
+    setNotice(previous => ({text, tone, id:(previous?.id ?? 0) + 1}))
+  }
+  function act(transition,kind,index,label) {
     tick()
     const before=getState(), next=transition(before)
-    if(!next){setNotice(t('mini.error'));return}
+    if(!next){feedback(t('mini.error'), 'error');return}
     const items=kind?discoveryItems(before,next,kind,before.scene,index):[]
     const recorded=recordDiscoveries(next,items,Date.now())
-    commit(recorded,true);const gained=rewardForChange(before,recorded,t);setNotice(gained?gained.entries.map(entry=>`${entry.label} ${entry.amount}`).join(' · '):t('mini.saved'))
-    if(items.length)setNotice(t('discovery.noted'))
+    commit(recorded,true)
+    const gained = rewardForChange(before,recorded,t)
+    const summary = gained?.entries.map(entry => `${entry.label} ${entry.amount}`).join(' · ')
+    const picked = items.find(item => item.type === 'flower')
+    const discoveryText = picked ? `${t(`bag.rarity.${rarityOf(picked)}`)} · ${bloomName(picked,t)}` : t('discovery.noted')
+    feedback([items.length ? discoveryText : label, summary].filter(Boolean).join(' · ') || t('mini.saved'), items.length || gained ? 'gold' : 'ok')
   }
   return h('div',{ref:miniRoot,className:'fg-view fg-miniView','data-scene':scene.id},
     h('div',{className:'fg-miniTools'},
       h('select',{'aria-label':t('plot.section'),value:scene.id,onChange:event=>{commit({...getState(),scene:event.target.value},true);setSelection({})}},SCENES.filter(entry=>(state.scenes[entry.id]?.unlocked??0)>0).map(entry=>h('option',{key:entry.id,value:entry.id},t(`scene.${entry.id}`)))),
-      h('button',{type:'button',className:'fg-btn',onClick:()=>act(before=>waterAll(before,before.scene))},t('mini.water')),
+      h('button',{type:'button',className:'fg-btn',onClick:()=>act(before=>waterAll(before,before.scene),null,null,t('plot.watered'))},t('mini.water')),
       ripeCount>0?h('button',{type:'button',className:'fg-btn fg-btnPrimary','data-mini':'harvestAll',onClick:()=>act(before=>{let next=before;const live=before.scenes[before.scene];for(let i=0;i<live.unlocked;i++){const plot=next.scenes[before.scene].plots[i];if(!plot||plot.resident)continue;const done=harvestAt(next,before.scene,i,Date.now(),weatherAt(Date.now()),false);if(done)next=done}return next===before?null:next},'harvest',0)},t('mini.harvestAll',{n:ripeCount})):null,
+      visitorCount(state,scene.id,clock)>0?h('button',{type:'button',className:'fg-btn fg-btnPrimary','data-mini':'greetAll',onClick:()=>act(before=>greetAll(before,before.scene,Date.now()),'visitor',0)},'👋 ',t('bulk.greet',{n:visitorCount(state,scene.id,clock)})):null,
+      emptyCount(slot)>0?h('button',{type:'button',className:'fg-btn','data-mini':'sowAll',onClick:()=>act(before=>sowRandom(before,before.scene))},'🎲 ',t('bulk.sow',{n:emptyCount(slot)})):null,
       (state.bag.sprinkler??0)>0&&!((slot.sprinklerUntil??0)>clock)?h('button',{type:'button',className:'fg-btn','data-mini':'sprinkle',onClick:()=>act(before=>useSprinkler(before,before.scene,Date.now()))},t('mini.sprinkle',{n:state.bag.sprinkler})):null),
     h('p',{className:'fg-miniSummary'},t('mini.basket',{n:state.basket.length,max:basketCapacity(state)}),' · ',state.coins,' ',t('stat.coins')),
     h(MiniToday,{state,t,clock,run:act}),
@@ -7596,33 +7791,37 @@ function MiniGarden({t}) {
         const seed=scene.species.includes(selection[index])?selection[index]:scene.species[0]
         const seedSpecies=SPECIES_BY_ID.get(seed)
         const visitor=plot?visitorAt(scene.id,index,plot,clock,weather,facilityLevel(state,'hive'),gardenEcology(state,clock).visitorBonus,state):null
-        return h('article',{key:index,className:'fg-miniPlot','data-mini-plot':index},
-          h('div',{className:'fg-miniPlant'},plot?h(FlowerArt,{speciesId:plot.species,stage,variant:plot.variant??(plot.tint?'base':plotVariant(species,index)),trait:plot.trait,tint:plot.tint,dna:plot.dna}):EmptyArt(),
+        const variant = plot && ((plot.resident || plot.identified) ? plot.variant : plot.tint ? 'base' : plotVariant(species,index))
+         const rarity = plot && stage === 'bloom' ? rarityOf({...plot,variant}) : null
+         return h('article',{key:index,className:'fg-miniPlot','data-mini-plot':index,'data-rarity':rarity,'data-variant':variant,'data-trait':plot?.trait},
+          h('div',{className:'fg-miniPlant'},plot?h(FlowerArt,{speciesId:plot.species,stage,variant,trait:plot.trait,tint:plot.tint,dna:plot.dna}):EmptyArt(),
             visitor?h('button',{type:'button',className:'fg-miniVisitor','data-mini-visitor':visitor.id,title:t('visitor.greet',{name:t(`visitor.${visitor.id}`)}),'aria-label':t('visitor.greet',{name:t(`visitor.${visitor.id}`)}),onClick:()=>act(before=>greetVisitor(before,scene.id,index,Date.now(),weatherAt(Date.now())),'visitor',index)},h(VisitorArt,{id:visitor.id})):null),
           h('strong',null,plot?bloomName({...plot,variant:plot.variant??'base'},t):t('mini.empty')),
           plot?h('span',{className:'fg-note'},t(`stage.${stage}`),' · ',t('mini.moisture',{n:Math.round(plot.moisture)})):null,
-          plot?.trait?h('span',{className:'fg-badge fg-badgeWarn'},t(`trait.${plot.trait}`)):null,
+          rarity && rarity!=='base'?h('span',{className:'fg-badge fg-miniRarity'},'✦ ',t(`bag.rarity.${rarity}`)):null,
           plot?h('div',{className:'fg-miniActions'},
-            h('button',{type:'button',className:'fg-btn',disabled:plot.moisture>=99.5,onClick:()=>act(before=>waterAt(before,scene.id,index))},t('plot.water')),
+            h('button',{type:'button',className:'fg-btn',disabled:plot.moisture>=99.5,onClick:()=>act(before=>waterAt(before,scene.id,index),null,index,t('plot.watered'))},t('plot.water')),
             stage==='bloom'?h('button',{type:'button',className:'fg-btn',disabled:state.basket.length>=basketCapacity(state),onClick:()=>{
               if(plot.resident&&selection.retire!==`${scene.id}:${index}`){setSelection(current=>({...current,retire:`${scene.id}:${index}`}));return}
               setSelection(current=>({...current,retire:undefined}))
               act(before=>harvestAt(before,scene.id,index,Date.now(),weatherAt(Date.now()),plot.resident===true),'harvest',index)
             }},plot.resident?t(selection.retire===`${scene.id}:${index}`?'eco.retireConfirm':'eco.retire'):t('plot.harvest')):
-              h('button',{type:'button',className:'fg-btn',disabled:(state.bag.fertilizer??0)<=0,onClick:()=>act(before=>fertilizeAt(before,scene.id,index))},t('item.fertilizer')),
+              h('button',{type:'button',className:'fg-btn',disabled:(state.bag.fertilizer??0)<=0,onClick:()=>act(before=>fertilizeAt(before,scene.id,index),null,index,t('item.fertilized',{flower:t(`species.${plot.species}`)}))},t('item.fertilizer')),
             stage==='bloom'&&!plot.resident?h('button',{type:'button',className:'fg-btn',onClick:()=>act(before=>retainAt(before,scene.id,index,Date.now()),'retain',index)},t('eco.retain')):null,
             visitor?h('span',{className:'fg-note'},t(`visitor.${visitor.id}`)):null):
           h('div',{className:'fg-miniActions'},
             h('select',{'aria-label':`${t('mini.seed')} ${index+1}`,value:seed,onChange:event=>{const value=event.target.value;setSelection(current=>({...current,[index]:value}))}},scene.species.map(id=>h('option',{key:id,value:id},`${t(`species.${id}`)} · ${SPECIES_BY_ID.get(id).cost}`))),
-            h('button',{type:'button',className:'fg-btn',disabled:state.coins<seedSpecies.cost,onClick:()=>act(before=>plantAt(before,scene.id,index,seed))},t('mini.plant'))))
+            h('button',{type:'button',className:'fg-btn',disabled:state.coins<seedSpecies.cost,onClick:()=>act(before=>plantAt(before,scene.id,index,seed),null,index,t('mini.sown',{flower:t(`species.${seed}`)}))},t('mini.plant'))))
       }))),
-    h('p',{className:'fg-miniNotice',role:'status','aria-live':'polite'},notice),
+    h('p',{className:'fg-miniNotice',role:'status','aria-live':'polite','data-tone':notice?.tone,'data-feedback-id':notice?.id},notice?.text),
     discovery?h(DiscoveryCard,{entry:discovery,t,onClose:()=>{setDiscovery(null);restoreMiniFocus()},onOpen:item=>{setDiscovery(null);setPreview(item)}}):null,
     preview?(preview.type==='visitor'?h(VisitorPreview,{visitorId:preview.visitor,state,t,onClose:()=>{setPreview(null);restoreMiniFocus()}}):h(BloomPreview,{id:'fg-mini-preview',speciesId:preview.species,variant:preview.variant??'base',trait:preview.trait,tint:preview.tint,dna:preview.dna,t,modal:true,onClose:()=>{setPreview(null);restoreMiniFocus()}})):null)
 }
 function FloatingGarden() {
   const mini=useSyncExternalStore(subscribeMini,getMini,getMini), drag=React.useRef(null)
   const t=boundT
+  const body=React.useRef(null)
+  const desktop=useDesktopGarden(body,t)
   const [,refreshLocale]=React.useReducer(n=>n+1,0)
   React.useEffect(()=>{const locale=pluginCtx?.locale;return typeof locale?.subscribe==='function'?locale.subscribe(()=>refreshLocale()):undefined},[])
   React.useEffect(()=>{const resize=()=>updateMini({});window.addEventListener('resize',resize);return()=>window.removeEventListener('resize',resize)},[])
@@ -7641,9 +7840,11 @@ function FloatingGarden() {
     h('style',null,CSS,MINI_CSS),
     h('header',{className:'fg-floatingBar',onPointerDown:start,onPointerMove:move,onPointerUp:end,onPointerCancel:end,onLostPointerCapture:end},
       h('span',{className:'fg-floatingMove',tabIndex:0,role:'button','aria-label':t('mini.move'),onKeyDown:event=>keys(event)},'✿ ',t('mini.title')),
+      h('button',{type:'button',className:'fg-desktopPin',disabled:desktop.phase==='opening'||(mini.minimized&&desktop.phase==='idle'),onClick:desktop.toggle},t(desktop.phase==='idle'?'desktop.pin':desktop.phase==='opening'?'desktop.opening':'desktop.unpin')),
       h('button',{type:'button',title:t(mini.minimized?'mini.restore':'mini.minimize'),'aria-label':t(mini.minimized?'mini.restore':'mini.minimize'),onClick:()=>updateMini({minimized:!mini.minimized})},mini.minimized?'▢':'−'),
-      h('button',{type:'button',title:t('mini.close'),'aria-label':t('mini.close'),onClick:()=>updateMini({open:false})},'×')),
-    !mini.minimized?h('div',{className:'fg-floatingBody'},h(MiniGarden,{t})):null,
+      h('button',{type:'button',title:t('mini.close'),'aria-label':t('mini.close'),onClick:()=>{if(desktop.phase!=='idle')desktop.toggle();updateMini({open:false})}},'×')),
+    desktop.message?h('p',{className:'fg-miniNotice',role:'status'},t(desktop.message)):null,
+    (!mini.minimized||desktop.phase!=='idle')?h('div',{className:'fg-floatingBody',ref:body,hidden:mini.minimized},h(MiniGarden,{t})):null,
     !mini.minimized?h('span',{className:'fg-floatingResize',tabIndex:0,role:'button','aria-label':t('mini.resize'),onKeyDown:event=>keys(event,true),onPointerDown:event=>start(event,true),onPointerMove:move,onPointerUp:end,onPointerCancel:end,onLostPointerCapture:end},'◢'):null)
 }
 const MINI_CSS=`
@@ -7658,8 +7859,169 @@ const MINI_CSS=`
 .fg-miniPlots{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.fg-miniPlot{min-width:0;display:flex;flex-direction:column;gap:6px;padding:9px;border:1px solid var(--dsw-alias-border-l2);border-radius:12px;background:color-mix(in srgb,var(--dsw-alias-bg-layer-1) 88%,transparent)}
 .fg-miniPlant{position:relative;height:96px;display:flex;align-items:center;justify-content:center}
 .fg-miniVisitor{position:absolute;top:0;right:0;width:38px;height:38px;padding:3px;border:1px solid var(--dsw-alias-state-success-primary);border-radius:50%;background:var(--dsw-alias-bg-layer-1);cursor:pointer;box-shadow:0 2px 8px #0002;animation:fg-bob 1.7s ease-in-out infinite alternate}.fg-miniPlant .fg-miniVisitor svg{width:30px;height:30px}.fg-miniVisitor:hover{background:var(--dsw-alias-bg-layer-2)}.fg-miniPlant svg{height:96px;width:96px}.fg-miniPlot strong{font-size:13px;overflow-wrap:anywhere;line-height:1.5}.fg-miniPlot .fg-note{white-space:normal}.fg-miniActions{display:flex;flex-wrap:wrap;gap:4px}.fg-miniActions select{width:100%}.fg-miniView .fg-btn{font-size:12px;min-height:28px;padding:4px 7px}.fg-miniNotice{margin:0;padding:8px 14px 22px;color:var(--dsw-alias-label-secondary)}
+.fg-miniPlot[data-rarity="spirit"]{--fg-mini-rarity:var(--fg-r-spirit)}
+.fg-miniPlot[data-rarity="curio"]{--fg-mini-rarity:var(--fg-r-curio)}
+.fg-miniPlot[data-rarity="hybrid"]{--fg-mini-rarity:var(--fg-r-hybrid)}
+.fg-miniPlot[data-rarity="alt"]{--fg-mini-rarity:var(--fg-r-alt)}
+.fg-miniPlot[data-rarity]:not([data-rarity="base"]){border-color:var(--fg-mini-rarity);box-shadow:inset 0 2px 0 var(--fg-mini-rarity)}
+.fg-miniRarity{align-self:flex-start;border:1px solid var(--fg-mini-rarity);background:color-mix(in srgb,var(--fg-mini-rarity) 18%,var(--dsw-alias-bg-layer-1))}
+.fg-miniView .fg-miniNotice:not(:empty){position:sticky;bottom:0;z-index:2;margin:0;padding:8px 12px;background:var(--dsw-alias-bg-layer-1);border-inline-start:3px solid var(--fg-accent);color:var(--dsw-alias-label-primary)}
+.fg-miniView .fg-miniNotice[data-tone="gold"]{border-color:var(--fg-r-spirit)}
+.fg-miniView .fg-miniNotice[data-tone="error"]{border-color:var(--dsw-alias-state-error-primary)}
+
 `
 
+
+Object.assign(zh, { 'bulk.harvest':'一键收获 · {n}', 'bulk.sow':'随机播种 · {n}', 'bulk.harvested':'收获了 {n} 朵花', 'bulk.sown':'随机种下了 {n} 株', 'bulk.none':'做不了：金币不够，或者花篮满了' })
+Object.assign(en, { 'bulk.harvest':'Harvest all · {n}', 'bulk.sow':'Random sow · {n}', 'bulk.harvested':'Harvested {n} flowers', 'bulk.sown':'Sowed {n} random seeds', 'bulk.none':'Not possible: too few coins, or the basket is full' })
+Object.assign(zh, { 'bulk.greet':'一键问候 · {n}', 'bulk.greeted':'问候了 {n} 位访客，小费 +{coins}', 'bulk.nobody':'现在没有访客' })
+Object.assign(en, { 'bulk.greet':'Greet all · {n}', 'bulk.greeted':'Greeted {n} visitors, tips +{coins}', 'bulk.nobody':'No visitors right now' })
+// The desktop window mirrors this mounted MiniGarden. All commands resolve against
+// current, connected controls here, where React and the garden store live.
+Object.assign(zh, {
+  'desktop.pin':'放到桌面', 'desktop.unpin':'收回桌面小窗', 'desktop.opening':'正在打开…',
+  'desktop.error':'桌面小窗未连接。请确认桌面运行环境可用后重试。',
+  'desktop.busy':'另一扇窗口正在控制桌面花园。请先在那里收回小窗。', 'desktop.close':'关闭桌面小窗',
+  'desktop.unavailable':'当前环境无法启动桌面窗口。你可以继续使用随身花园。',
+})
+Object.assign(en, {
+  'desktop.pin':'Pin to desktop', 'desktop.unpin':'Bring garden back', 'desktop.opening':'Opening…',
+  'desktop.error':'Desktop garden disconnected. Check the desktop runtime and try again.',
+  'desktop.unavailable':'This environment cannot open a desktop window. Your pocket garden is still available.',
+  'desktop.busy':'Another window controls the desktop garden. Close its desktop garden first.', 'desktop.close':'Close desktop garden',
+})
+
+function createDesktopMirror(root, t) {
+  const identities = new WeakMap()
+  let nextId = 0, controls = new Map()
+  const meaning = node => {
+    const plot = node.closest('[data-mini-plot]')
+    const state = getState()
+    const flower = plot && state.scenes[state.scene]?.plots[Number(plot.dataset.miniPlot)]
+    return [state.scene, plot?.dataset.miniPlot, flower?.species, flower?.dna, node.textContent, node.value, node.title].join('|')
+  }
+  const colorKeys = 'bg-base bg-layer-1 bg-layer-2 label-primary label-secondary border-l1 border-l2 brand-primary state-success-primary state-error-primary state-warn-primary state-idle-primary'.split(' ')
+  // Resolve host theme colors here, including modern CSS color functions, then
+  // normalize to sRGB pixels. The companion receives colors rather than CSS.
+  const colorCanvas = document.createElement('canvas')
+  colorCanvas.width = colorCanvas.height = 1
+  const paint = colorCanvas.getContext('2d', {willReadFrequently:true})
+  const colors = new Map()
+  function palette(live) {
+    const theme = {}
+    if (!paint) return theme
+    const style = window.getComputedStyle(live)
+    for (const key of colorKeys) {
+      const value = style.getPropertyValue(`--dsw-alias-${key}`).trim()
+      if (!value || !window.CSS.supports('color',value)) continue
+      if (!colors.has(value)) {
+        paint.clearRect(0,0,1,1)
+        paint.fillStyle = value
+        paint.fillRect(0,0,1,1)
+        colors.set(value,'#'+Array.from(paint.getImageData(0,0,1,1).data, n=>n.toString(16).padStart(2,'0')).join(''))
+      }
+      theme[key] = colors.get(value)
+    }
+    return theme
+  }
+  function snapshot() {
+    const live = root.current?.firstElementChild
+    if (!live) return undefined
+    const fresh = new Map()
+    function encode(node) {
+      if (node.nodeType === 3) return node.nodeValue
+      if (node.nodeType !== 1) return ''
+      const attrs = Object.fromEntries(Array.from(node.attributes).filter(attr => attr.name !== 'style').map(attr => [attr.name, attr.value]))
+      for (const property of ['animation-delay','transform-origin','fill','stroke','stroke-width','stroke-linecap','stroke-dasharray','background-color']) {
+        const value = node.style?.getPropertyValue(property)
+        if (value) attrs[`$${property}`] = value
+      }
+      if (node.matches('button,select')) {
+        const signature = meaning(node)
+        let identity = identities.get(node)
+        if (identity?.signature !== signature) {
+          identity = { id: String(++nextId), signature }
+          identities.set(node, identity)
+        }
+        fresh.set(identity.id, { node, signature })
+        attrs['data-command'] = identity.id
+        if (node.localName === 'select') attrs['data-selection'] = node.value
+      }
+      return [node.localName, attrs, Array.from(node.childNodes, encode)]
+    }
+    const tree = encode(live)
+    controls = fresh
+    return { tree, theme:palette(live), title:t('mini.title'), close:t('desktop.close'), lang:document.documentElement.lang || 'en' }
+  }
+  function act(action) {
+    const target = controls.get(action?.id)
+    if (!target) return
+    const {node, signature} = target
+    if (!root.current?.contains(node) || node.disabled || meaning(node) !== signature) return
+    if (node.localName === 'button' && action.value === undefined) node.click()
+    if (node.localName === 'select' && Array.from(node.options).some(option => option.value === action.value)) {
+      node.value = action.value
+      node.dispatchEvent(new Event('change', {bubbles:true}))
+    }
+  }
+  return {snapshot, act}
+}
+
+async function desktopGardenRequest(payload) {
+  const path = '/api/flower-garden/desktop'
+  const options = {method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}
+  const response = await globalThis.fetch(path, options)
+  const result = await response.json()
+  if (!response.ok && !result?.error) throw new Error('Desktop garden request failed')
+  return result
+}
+
+function useDesktopGarden(body, t) {
+  const [phase, setPhase] = React.useState('idle')
+  const [message, setMessage] = React.useState('')
+  const session = React.useRef(null)
+  function stop() {
+    const active = session.current
+    if (!active) return
+    session.current = null
+    window.clearTimeout(active.timer)
+    window.removeEventListener('pagehide',active.cleanup)
+    desktopGardenRequest({op:'close',owner:active.owner}).catch(()=>{})
+  }
+  React.useEffect(()=>()=>stop(),[])
+  async function toggle() {
+    if (session.current) { stop(); setPhase('idle'); setMessage(''); return }
+    const active = {owner:crypto.randomUUID(), timer:0, cleanup:stop, previous:null}
+    const mirror = createDesktopMirror(body,t)
+    session.current = active
+    window.addEventListener('pagehide',stop)
+    setPhase('opening'); setMessage('')
+    async function sync(op) {
+      if (session.current !== active) return
+      try {
+        const snapshot = mirror.snapshot()
+        const encoded = JSON.stringify(snapshot)
+        const result = await desktopGardenRequest({op,owner:active.owner,snapshot:encoded===active.previous ? undefined : snapshot})
+        active.previous = encoded
+        if (session.current !== active) return
+        if (!result?.ok || !result.open) {
+          stop()
+          setPhase('idle')
+          const errors = {busy:'desktop.busy', 'runtime-unavailable':'desktop.unavailable'}
+          setMessage(result?.ok ? '' : errors[result?.error] ?? 'desktop.error')
+          return
+        }
+        setPhase('open')
+        for (const action of result.actions ?? []) mirror.act(action)
+        active.timer = window.setTimeout(()=>sync('sync'), 450)
+      } catch {
+        if (session.current === active) { stop(); setPhase('idle'); setMessage('desktop.error') }
+      }
+    }
+    await sync('open')
+  }
+  return {phase,message,toggle,stop}
+}
 
 // The pocket garden's "today" strip: everything worth a click, without leaving the conversation.
 Object.assign(zh, {
@@ -7732,7 +8094,7 @@ const MORE_PANORAMA = {
 Object.assign(zh, {
   'use.nectar':'酿成花蜜', 'use.pollen':'撒花粉', 'use.seed':'收种做肥', 'use.shelter':'铺作花泥', 'use.water':'洒作花露', 'use.night':'点作夜香',
   'use.nectar.note':'用途：偏爱它的访客好感 +2', 'use.pollen.note':'用途：给当前花地一株花授粉', 'use.seed.note':'用途：换一份肥料',
-  'use.shelter.note':'用途：当前花地每个花圃地力 +20', 'use.water.note':'用途：把当前花地的花全部浇透', 'use.night.note':'用途：五分钟内仙品率 +10%',
+  'use.shelter.note':'用途：当前花地每个花圃地力 +20', 'use.water.note':'用途：把当前花地的花全部浇透', 'use.night.note':'用途：五分钟内仙品率 +2%',
   'use.done':'用掉了{flower}：{effect}', 'use.cannot':'现在用不上{flower}，先留着',
   'want.title':'今日征花', 'want.have':'花篮里有 {n} 朵', 'want.give':'交付 · +{n}', 'want.done':'已交付', 'want.count':'累计交付 {n} 朵',
   'want.rules':'每天点名三种花，按顺序把已解锁花地的每一种花都轮一遍。交一朵得到两倍卖价再加 10 金币，不受跌价影响；三种都交齐再得 1 条绶带。另外，背包里每朵花都能直接用掉：蜜源花涨访客好感，花粉花授粉，种实花换肥料，庇护花养地力，水岸花浇水，夜花提高仙品率；杂交、奇珍和仙品效果加倍。',
@@ -7740,7 +8102,7 @@ Object.assign(zh, {
 Object.assign(en, {
   'use.nectar':'Make nectar', 'use.pollen':'Scatter pollen', 'use.seed':'Seed into feed', 'use.shelter':'Mulch the beds', 'use.water':'Sprinkle as dew', 'use.night':'Burn as night scent',
   'use.nectar.note':'Use: +2 bond with the visitor that loves it', 'use.pollen.note':'Use: pollinates one plant in this ground', 'use.seed.note':'Use: becomes one fertiliser',
-  'use.shelter.note':'Use: +20 soil for every plot in this ground', 'use.water.note':'Use: waters every plant in this ground', 'use.night.note':'Use: +10% spirit chance for five minutes',
+  'use.shelter.note':'Use: +20 soil for every plot in this ground', 'use.water.note':'Use: waters every plant in this ground', 'use.night.note':'Use: +2% spirit chance for five minutes',
   'use.done':'Used {flower}: {effect}', 'use.cannot':'No use for {flower} right now; keep it',
   'want.title':'Wanted today', 'want.have':'{n} in the basket', 'want.give':'Deliver · +{n}', 'want.done':'Delivered', 'want.count':'{n} delivered so far',
   'want.rules':'Three species are wanted each day, walking through every flower of your opened grounds in turn. One bloom pays twice its price plus 10 coins, whatever the market slump; all three add a ribbon. Besides, any bloom in the backpack can be used up: nectar flowers raise a bond, pollen flowers pollinate, seed flowers become fertiliser, shelter flowers feed the soil, waterside flowers water, night flowers raise the spirit chance; hybrids, curiosities and spirit blooms count double.',
@@ -7774,8 +8136,8 @@ Object.assign(zh, {
   'pal.do.pollinator':'每小时给一株花授粉', 'pal.do.waterside':'每小时把最干的一株浇透', 'pal.do.guardian':'每小时给最瘦的花圃 +15 地力',
   'pal.rules':'好感满四级的访客可以花金币邀请住下，最多三位。传粉的每小时给一株花授粉，水岸的每小时把最干的一株浇透，护园的每小时给地力最低的花圃 +15。关掉页面再回来，只补最近一小时的那一次。',
   'event.rainbow':'雨后彩虹', 'event.swarm':'蜂群过境', 'event.dew':'晨露降临', 'event.meteor':'流星划过',
-  'event.rainbow.do':'追彩虹 · 十分钟仙品率 +10%', 'event.swarm.do':'迎蜂群 · 这块地全部授粉', 'event.dew.do':'接晨露 · 所有花浇透', 'event.meteor.do':'许个愿 · 幸运符生效',
-  'event.left':'{n}后消失', 'event.boost':'彩虹还在 · 仙品率 +10% · {n}', 'event.done':'{name}！',
+  'event.rainbow.do':'追彩虹 · 十分钟仙品率 +2%', 'event.swarm.do':'迎蜂群 · 这块地全部授粉', 'event.dew.do':'接晨露 · 所有花浇透', 'event.meteor.do':'许个愿 · 幸运符生效',
+  'event.left':'{n}后消失', 'event.boost':'彩虹还在 · 仙品率 +2% · {n}', 'event.done':'{name}！',
   'brief.title':'今日花束订单', 'brief.need':'{stars}★ 以上 · 至少 {count} 朵 · {theme}主题', 'brief.reward':'奖 {reward}', 'brief.done':'今日已交',
   'greet.open':'做成花语贺卡', 'greet.toPh':'写给谁', 'greet.to':'致 {name}', 'greet.title':'送你一束花语', 'greet.save':'存成贺卡',
 })
@@ -7786,8 +8148,8 @@ Object.assign(en, {
   'pal.do.pollinator':'Pollinates one plant an hour', 'pal.do.waterside':'Waters the driest plant every hour', 'pal.do.guardian':'Adds 15 soil to the poorest plot every hour',
   'pal.rules':'A visitor at bond level four can be invited to stay for coins, up to three. Pollinators pollinate one plant an hour, waterside visitors water the driest plant, guardians add 15 soil to the poorest plot. After time away only the latest hour is made up.',
   'event.rainbow':'A rainbow', 'event.swarm':'A passing swarm', 'event.dew':'Morning dew', 'event.meteor':'A shooting star',
-  'event.rainbow.do':'Chase it · spirit chance +10% for ten minutes', 'event.swarm.do':'Welcome it · pollinates this whole ground', 'event.dew.do':'Catch it · waters every plant', 'event.meteor.do':'Make a wish · arms a lucky charm',
-  'event.left':'gone in {n}', 'event.boost':'Rainbow still up · spirit chance +10% · {n}', 'event.done':'{name}!',
+  'event.rainbow.do':'Chase it · spirit chance +2% for ten minutes', 'event.swarm.do':'Welcome it · pollinates this whole ground', 'event.dew.do':'Catch it · waters every plant', 'event.meteor.do':'Make a wish · arms a lucky charm',
+  'event.left':'gone in {n}', 'event.boost':'Rainbow still up · spirit chance +2% · {n}', 'event.done':'{name}!',
   'brief.title':'Today’s bouquet brief', 'brief.need':'{stars}★ or better · {count}+ flowers · {theme} theme', 'brief.reward':'Pays {reward}', 'brief.done':'Delivered today',
   'greet.open':'Make a flower-language card', 'greet.toPh':'Who is it for', 'greet.to':'For {name}', 'greet.title':'A bouquet of meanings', 'greet.save':'Save the card',
 })
@@ -7869,10 +8231,6 @@ Object.assign(en, {
   'ach.fund10.name':'Garden patron', 'ach.fund10.desc':'Raise the garden fund to level 10', 'ach.bonds3.name':'Close friends', 'ach.bonds3.desc':'Complete the bond with 3 visitors',
   'ach.breeder7.name':'Master breeder', 'ach.breeder7.desc':'Finish all 7 breeding goals', 'ach.cards30.name':'Collector', 'ach.cards30.desc':'Keep 30 flower cards in the album',
 })
-zh['trip.rules'] += '委托声望每满 10 点，小队多带回一样东西，最多三样。赶时间可以用 1 条绶带让小队立刻回来。'
-en['trip.rules'] += ' Every 10 points of commission reputation adds one more find, up to three. In a hurry, 1 ribbon brings the party back at once.'
-zh['work.rules'] += '等不及可以用 1 条绶带让一件成品立刻完成。'
-en['work.rules'] += ' One ribbon finishes a job at once.'
 zh['eco.milestones'] = (zh['eco.milestones'] ?? '') + ' 研究等级每升一级，这个品种的仙品率 +1%。'
 en['eco.milestones'] = (en['eco.milestones'] ?? '') + ' Each study level adds 1% spirit chance for that species.'
 
@@ -7954,11 +8312,12 @@ function Workshop({ state, t, clock, onChange }) {
       (state.crafted ?? 0) > 0 ? h('span', { className: 'fg-sectionMeta' }, t('work.count', { n: state.crafted })) : null,
       benches < BENCH_PRICES.length ? h('button', { type: 'button', className: 'fg-btn fg-btnSmall', 'data-action': 'benchBuy', disabled: state.coins < BENCH_PRICES[benches], onClick: () => apply(buyBench) }, t('work.bench', { n: BENCH_PRICES[benches] })) : null,
       h(InfoTip, { t, lines: [t('work.rules')] })),
+    h(GoodsShelf, { state, t, clock, onChange }),
     benches === 0 ? h('p', { className: 'fg-empty' }, t('work.none')) : null,
     jobs.map((job, index) => h('div', { key: index, className: 'fg-tripRow', 'data-job': job.recipe },
       h('progress', { max: job.end - job.start, value: Math.max(0, Math.min(job.end - job.start, clock - job.start)), 'aria-label': t(`work.${job.recipe}`) }),
       clock >= job.end
-        ? h('button', { type: 'button', className: 'fg-btn fg-btnPrimary', 'data-action': 'jobClaim', onClick: () => apply((current, now) => claimJob(current, index, now)) }, t('work.claim', { name: t(`work.${job.recipe}`), n: job.coins }))
+        ? h(React.Fragment, null, h('strong', null, t(`work.${job.recipe}`)), h('button', { type: 'button', className: 'fg-btn fg-btnPrimary', 'data-action': 'jobKeep', onClick: () => apply((current, now) => claimJob(current, index, now, true)) }, t('goods.keep', { name: t(`item.${job.recipe}`) })), h('button', { type: 'button', className: 'fg-btn', 'data-action': 'jobClaim', onClick: () => apply((current, now) => claimJob(current, index, now)) }, t('goods.sell', { n: job.coins })))
         : h('span', { className: 'fg-note' }, t('work.busy', { name: t(`work.${job.recipe}`), time: formatDuration(job.end - clock, t) })),
       clock < job.end ? h('button', { type: 'button', className: 'fg-btn fg-btnSmall', 'data-action': 'jobRush', disabled: (state.ribbons ?? 0) < RUSH_RIBBONS, onClick: () => apply((current, now) => rushJob(current, index, now)) }, t('rush.go')) : null)),
     jobs.length < benches ? h('div', { className: 'fg-workNew' },
@@ -8046,28 +8405,42 @@ function fxText(effect, t) {
   return t(`shelf.fx.${effect.type}`, { n: Math.round(effect.amount * 100) })
 }
 
-/** Vases: owned ones are chosen, earned ones are bought with a second click, the rest wait. */
+/** Vases as labelled cards: owned ones are chosen, earned ones show a price, the rest say what unlocks them. */
 function VaseShelf({ state, t, vase, onPick, onChange }) {
   const [armed, setArmed] = React.useState(null)
-  return h('div', { className: 'fg-vasePicker', role: 'group', 'aria-label': t('vase.pick') }, VASES.map(entry => {
-    const owned = vaseOwned(state, entry.id), earned = vaseUnlocked(state, entry.id), price = VASE_PRICE[entry.id]
-    const need = entry.stars !== undefined ? t('vase.needStars') : t('vase.need', { n: Math.max(0, entry.need - (state.arranged ?? 0)) })
-    const like = VASE_LIKES[entry.id] ? ` · ${t(`vase.like.${VASE_LIKES[entry.id]}`)}` : ''
-    const label = owned ? t(`vase.${entry.id}`) + like
-      : earned ? t(armed === entry.id ? 'vase.buyConfirm' : 'vase.buy', { name: t(`vase.${entry.id}`), n: price }) + like : `${t(`vase.${entry.id}`)} · ${need}`
-    return h('button', {
-      key: entry.id, type: 'button', className: 'fg-vaseChoice', 'data-vase': entry.id, 'data-earned': earned ? 'true' : 'false', 'data-owned': owned ? 'true' : 'false',
-      'data-armed': armed === entry.id ? 'true' : undefined, 'aria-pressed': vase === entry.id ? 'true' : 'false',
-      disabled: !earned || (!owned && state.coins < price), title: label, 'aria-label': label,
-      onClick: () => {
-        if (owned) { onPick(entry.id); return }
-        if (armed !== entry.id) { setArmed(entry.id); return }
-        setArmed(null); tick()
-        const next = buyVase(getState(), entry.id)
-        if (next !== null) { onChange(next); onPick(entry.id) }
+  const like = VASE_LIKES[vase]
+  const paint = color => { const next = setVaseTint(getState(), vase, color); if (next !== null) onChange(next) }
+  return h('div', { className: 'fg-vaseShelf' },
+    h('div', { className: 'fg-vasePicker', role: 'group', 'aria-label': t('vase.pick') }, VASES.map(entry => {
+      const owned = vaseOwned(state, entry.id), earned = vaseUnlocked(state, entry.id), price = VASE_PRICE[entry.id]
+      const need = entry.stars !== undefined ? t('vase.needStars') : t('vase.need', { n: Math.max(0, entry.need - (state.arranged ?? 0)) })
+      const likes = VASE_LIKES[entry.id] ? ` · ${t(`vase.like.${VASE_LIKES[entry.id]}`)}` : ''
+      const label = owned ? t(`vase.${entry.id}`) + likes
+        : earned ? t(armed === entry.id ? 'vase.buyConfirm' : 'vase.buy', { name: t(`vase.${entry.id}`), n: price }) + likes : `${t(`vase.${entry.id}`)} · ${need}`
+      return h('button', {
+        key: entry.id, type: 'button', className: 'fg-vaseChoice', 'data-vase': entry.id, 'data-earned': earned ? 'true' : 'false', 'data-owned': owned ? 'true' : 'false',
+        'data-armed': armed === entry.id ? 'true' : undefined, 'aria-pressed': vase === entry.id ? 'true' : 'false',
+        disabled: !earned || (!owned && state.coins < price), title: label, 'aria-label': label,
+        onClick: () => {
+          if (owned) { onPick(entry.id); return }
+          if (armed !== entry.id) { setArmed(entry.id); return }
+          setArmed(null); tick()
+          const next = buyVase(getState(), entry.id)
+          if (next !== null) { onChange(next); onPick(entry.id) }
+        },
       },
-    }, h(VaseArt, { id: entry.id }), owned ? null : h('span', { className: 'fg-vasePrice' }, earned ? String(price) : '🔒'))
-  }))
+      h(VaseArt, { id: entry.id, tint: vaseTint(state, entry.id) }),
+      h('span', { className: 'fg-vaseName' }, t(`vase.${entry.id}`)),
+      h('span', { className: 'fg-vaseState' }, owned ? t(vase === entry.id ? 'vase.using' : 'vase.owned')
+        : !earned ? `🔒 ${need}` : armed === entry.id ? t('vase.again') : [CoinGlyph(), h('span', { key: 'p', className: 'fg-vasePrice' }, String(price))]))
+    })),
+    h('p', { className: 'fg-vaseHint' }, h('strong', null, t(`vase.${vase}`)), '：', like ? `${t(`vase.like.${like}`)}，${t('vase.bonus')}` : t('vase.like.none')),
+    h('div', { className: 'fg-vaseTints', role: 'group', 'aria-label': t('vase.tint') },
+      h('span', { className: 'fg-note' }, t('vase.tint')),
+      VASE_SWATCHES.map(color => h('button', { key: color, type: 'button', className: 'fg-vaseTint', 'data-tint': color, 'aria-pressed': vaseTint(state, vase) === color ? 'true' : 'false', style: { background: color }, title: color, 'aria-label': `${t('vase.tint')} ${color}`, onClick: () => paint(color) })),
+      h('input', { type: 'color', className: 'fg-vaseTintPick', value: vaseTint(state, vase) ?? VASE_LOOKS[vase].base, title: t('vase.tintCustom'), 'aria-label': t('vase.tintCustom'), onChange: event => paint(event.target.value) }),
+      vaseTint(state, vase) ? h('button', { type: 'button', className: 'fg-btn fg-btnSmall fg-btnGhost', 'data-action': 'vaseTintReset', onClick: () => paint(null) }, t('vase.tintReset')) : null),
+    h('p', { className: 'fg-vaseHint' }, t('vase.how')))
 }
 
 function Shelf({ state, t, onChange, compact = false }) {
@@ -8169,9 +8542,21 @@ function CardTools({ state, t, kind, card, onChange }) {
       : kind === 'bouquets' && (card.title || card.note) ? h('div', { className: 'fg-cardInscription' }, card.title ? h('strong', null, card.title) : null, card.note ? h('span', null, card.note) : null) : null)
 }
 
+Object.assign(zh, {
+  'vase.owned':'已拥有', 'vase.using':'使用中', 'vase.again':'再点一次购买', 'vase.bonus':'半数以上相配时花束多卖 5%', 'vase.like.none':'什么花都能插，没有额外加成',
+  'vase.how':'花瓶先靠插花数量解锁，再用金币买下；带锁的写着还差多少。',
+})
+Object.assign(en, {
+  'vase.owned':'Owned', 'vase.using':'In use', 'vase.again':'Click again to buy', 'vase.bonus':'bouquets sell 5% higher when half or more fit', 'vase.like.none':'takes any flower, with no extra bonus',
+  'vase.how':'A vase is unlocked by arranging bouquets, then bought with coins; locked ones say what is still needed.',
+})
+
+Object.assign(zh, { 'vase.tint':'花瓶颜色', 'vase.tintCustom':'自己调一个颜色', 'vase.tintReset':'恢复原色' })
+Object.assign(en, { 'vase.tint':'Vase colour', 'vase.tintCustom':'Mix your own colour', 'vase.tintReset':'Original glaze' })
+
 // Season chip, vases, keepsake album and seed expeditions.
 Object.assign(zh, {
-  'season.now':'{season} · 当季花 {n} 种 · 仙品率 +5%', 'season.night':'夜花 {n} 种 +8%',
+  'season.now':'{season} · 当季花 {n} 种 · 仙品率 +1%', 'season.night':'夜花 {n} 种 +1%',
   'vase.pick':'选花瓶', 'vase.classic':'青瓷瓶', 'vase.round':'圆肚瓶', 'vase.tall':'长颈瓶', 'vase.basket':'藤编篮', 'vase.moon':'月亮罐', 'vase.gold':'鎏金瓶',
   'vase.need':'再插 {n} 束解锁', 'vase.needStars':'插出一束五星解锁',
   'album.title':'收藏册', 'album.bouquets':'花束卡 {n}/{max}', 'album.cards':'花卡 {n}/{max}', 'album.empty':'完成的花束会自动留下一张卡；在背包里选一朵花，可以做成花卡留念。',
@@ -8182,7 +8567,7 @@ Object.assign(zh, {
   'trip.rules':'派一支小队去已解锁的花地，关掉页面也照常走。时间越长带回的东西越多：金币、那块地的杂交种子、肥料、堆肥，偶尔有绶带或幸运符。带回什么在出发时就定了。一次只能派一支。',
 })
 Object.assign(en, {
-  'season.now':'{season} · {n} flowers in season · spirit chance +5%', 'season.night':'{n} night flowers +8%',
+  'season.now':'{season} · {n} flowers in season · spirit chance +1%', 'season.night':'{n} night flowers +1%',
   'vase.pick':'Choose a vase', 'vase.classic':'Celadon vase', 'vase.round':'Round vase', 'vase.tall':'Tall vase', 'vase.basket':'Wicker basket', 'vase.moon':'Moon jar', 'vase.gold':'Gilded vase',
   'vase.need':'{n} more bouquets to unlock', 'vase.needStars':'Make one five-star bouquet to unlock',
   'album.title':'Keepsake album', 'album.bouquets':'Bouquet cards {n}/{max}', 'album.cards':'Flower cards {n}/{max}', 'album.empty':'Every finished bouquet leaves a card here. Pick a flower in the backpack to keep it as a flower card.',
@@ -8204,29 +8589,46 @@ function SeasonChip({ t, clock, sceneId }) {
     night.length > 0 ? ` · 🌙 ${t('season.night', { n: night.length })}` : null)
 }
 
-function VaseArt({ id }) {
-  const svg = (...kids) => h('svg', { viewBox: '0 0 80 76', width: 80, height: 76, 'aria-hidden': 'true', focusable: 'false', className: 'fg-vaseArt' }, ...kids)
-  const shine = h('path', { key: 'shine', d: 'M25 24c-3 10-3 22 1 34', fill: 'none', stroke: '#ffffff88', strokeWidth: 3, strokeLinecap: 'round' })
-  if (id === 'round') return svg(
-    h('path', { key: 'body', d: 'M30 6h20v9c14 6 22 17 22 31 0 16-14 28-32 28S8 62 8 46c0-14 8-25 22-31Z', fill: '#7fbf8f', stroke: '#4f8f63', strokeWidth: 2 }),
-    h('rect', { key: 'rim', x: 26, y: 2, width: 28, height: 7, rx: 3.5, fill: '#4f8f63' }), shine)
-  if (id === 'tall') return svg(
-    h('path', { key: 'body', d: 'M30 4h20l-2 18c9 10 10 32 4 52H28c-6-20-5-42 4-52Z', fill: '#a78bdc', stroke: '#7658b5', strokeWidth: 2 }),
-    h('rect', { key: 'rim', x: 27, y: 2, width: 26, height: 6, rx: 3, fill: '#7658b5' }),
-    h('path', { key: 'shine', d: 'M33 30c-3 12-3 26 0 38', fill: 'none', stroke: '#ffffff88', strokeWidth: 3, strokeLinecap: 'round' }))
-  if (id === 'basket') return svg(
-    h('path', { key: 'body', d: 'M9 14h62l-7 54a8 8 0 0 1-8 6H24a8 8 0 0 1-8-6Z', fill: '#c79a5b', stroke: '#8a6230', strokeWidth: 2 }),
-    h('path', { key: 'weave', d: 'M12 30h56M14 45h52M17 60h46M25 14l4 60M40 14v60M55 14l-4 60', fill: 'none', stroke: '#8a6230', strokeWidth: 1.6 }),
-    h('rect', { key: 'rim', x: 6, y: 10, width: 68, height: 8, rx: 4, fill: '#a87a3e' }))
-  if (id === 'moon') return svg(
-    h('path', { key: 'body', d: 'M30 6h20c2 7 22 15 22 37 0 19-14 31-32 31S8 62 8 43C8 21 28 13 30 6Z', fill: '#f6f3ea', stroke: '#cfc8b4', strokeWidth: 2 }),
-    h('rect', { key: 'rim', x: 27, y: 2, width: 26, height: 6, rx: 3, fill: '#cfc8b4' }),
-    h('path', { key: 'motif', d: 'M40 34c5 4 8 9 8 14a8 8 0 0 1-16 0c0-5 3-10 8-14Z', fill: '#7d9fd6', opacity: 0.75 }))
-  const gold = id === 'gold'
-  return svg(
-    h('path', { key: 'body', d: 'M14 6h52c2 0 3 2 3 4l-6 54c-1 6-5 10-11 10H28c-6 0-10-4-11-10L11 10c0-2 1-4 3-4Z', fill: gold ? '#e2b93b' : '#8fc0d6', stroke: gold ? '#a67c12' : '#5d94ad', strokeWidth: 2 }),
-    gold ? h('path', { key: 'star', d: 'M40 26l4 9 10 1-7.500 6.500 2.300 9.500L40 47l-8.800 5 2.300-9.500L26 36l10-1Z', fill: '#fff3c4' }) : null,
-    shine)
+const VASE_LOOKS = {
+  classic: { d: 'M30,8C30,14 14,20 14,36C14,54 24,66 28,70L52,70C56,66 66,54 66,36C66,20 50,14 50,8Z', ry0: 8, rx: 10, rr: 3, foot: 12, base: '#a9cdb8', light: '#e4f3ea', dark: '#6f9a84', line: '#5c8672', rim: '#c9e2d3', inside: '#4f6f60', shine: 'M22,28C19,38 21,50 27,60',
+    deco: V => [h('path', { key: 'crackle', d: 'M22,30l6,8l-4,9M34,22l5,10l8,4l-3,10M50,26l-4,9M56,40l-6,8l4,9M30,52l8,4l6,-5', fill: 'none', stroke: V.dark, strokeWidth: .5, opacity: .4 }), h('path', { key: 'band', d: 'M29,14Q40,18 51,14', fill: 'none', stroke: V.dark, strokeWidth: .8, opacity: .6 })] },
+  round: { d: 'M33,7C33,13 10,18 10,42C10,60 24,71 40,71C56,71 70,60 70,42C70,18 47,13 47,7Z', ry0: 7, rx: 7, rr: 2.4, foot: 10, base: '#f1f4f7', light: '#ffffff', dark: '#b9c4d0', line: '#8f9db0', rim: '#ffffff', inside: '#5a6678', shine: 'M19,30C15,40 17,54 25,63',
+    deco: () => { const blue = '#2f55a8'; return [
+      h('path', { key: 'bands', d: 'M10,28Q40,35 70,28M10,56Q40,64 70,56M30,13Q40,16 50,13', fill: 'none', stroke: blue, strokeWidth: 1.2 }),
+      ...[0, 72, 144, 216, 288].map(a => h('ellipse', { key: `p${a}`, cx: 40, cy: 37.5, rx: 2.4, ry: 4.6, fill: blue, opacity: .85, transform: `rotate(${a} 40 43)` })),
+      h('circle', { key: 'eye', cx: 40, cy: 43, r: 1.8, fill: '#f1f4f7', stroke: blue, strokeWidth: .8 }),
+      h('path', { key: 'scroll', d: 'M18,46q6,-9 13,-2M62,46q-6,-9 -13,-2M22,40q4,7 10,4M58,40q-4,7 -10,4M16,38q3,-4 6,-1M64,38q-3,-4 -6,-1', fill: 'none', stroke: blue, strokeWidth: 1, strokeLinecap: 'round' })] } },
+  tall: { d: 'M35,4L35,30C35,38 22,44 22,56C22,66 30,71 40,71C50,71 58,66 58,56C58,44 45,38 45,30L45,4Z', ry0: 4, rx: 5, rr: 1.8, foot: 9, base: '#7a5aa8', light: '#b9a0dc', dark: '#4a3470', line: '#3f2c60', rim: '#a48ad0', inside: '#2c1f44', shine: 'M38,8L38,28M28,50C27,58 31,65 35,67', shineW: 2,
+    deco: V => [h('path', { key: 'rings', d: 'M34,11Q40,13 46,11M34,27Q40,29 46,27', fill: 'none', stroke: V.light, strokeWidth: .8, opacity: .7 }), h('ellipse', { key: 'pool', cx: 40, cy: 68, rx: 20, ry: 6, fill: '#000', opacity: .16 })] },
+  basket: { d: 'M13,22L67,22L60,67Q40,73 20,67Z', ry0: 22, rx: 27, rr: 5, foot: 18, base: '#c79a5b', light: '#e6c48c', dark: '#8f6632', line: '#7a5526', rim: '#a87a3e', inside: '#5c3f1c',
+    deco: V => { const out = []; for (let row = 0; row < 8; row += 1) for (let col = 0; col < 9; col += 1) { const x = 8 + col * 8 + (row % 2) * 4, y = 30 + row * 5.6; out.push(h('path', { key: `w${row}-${col}`, d: `M${x},${y}q3,-2.6 6,0`, fill: 'none', stroke: row % 2 ? V.dark : V.light, strokeWidth: 2.2, strokeLinecap: 'round', opacity: .8 })) } out.push(h('path', { key: 'ribs', d: 'M24,24L28,69M40,24L40,71M56,24L52,69', fill: 'none', stroke: V.line, strokeWidth: .7, opacity: .5 })); return out } },
+  moon: { d: 'M32,8C14,12 8,26 8,40C8,58 22,71 40,71C58,71 72,58 72,40C72,26 66,12 48,8Z', ry0: 8, rx: 8, rr: 2.6, foot: 13, base: '#f4f1e8', light: '#ffffff', dark: '#cbc5b4', line: '#aaa390', rim: '#fffdf6', inside: '#6a6456', shine: 'M20,24C14,36 15,52 23,62', shineW: 4,
+    deco: () => [h('path', { key: 'seam', d: 'M8,40Q40,45 72,40', fill: 'none', stroke: '#8a8472', strokeWidth: .6, opacity: .25 }), h('ellipse', { key: 'shade', cx: 44, cy: 64, rx: 30, ry: 11, fill: '#8f9db0', opacity: .14 })] },
+  gold: { d: 'M33,6C33,12 26,14 22,22C16,34 20,52 30,62L28,70L52,70L50,62C60,52 64,34 58,22C54,14 47,12 47,6Z', ry0: 6, rx: 7, rr: 2.4, foot: 12, base: '#e2b93b', light: '#fff0b0', dark: '#9a7210', line: '#7a580a', rim: '#f6da7a', inside: '#5a4208', shine: 'M27,22C23,34 26,50 32,58', handles: 'M23,21C9,19 9,39 21,41M57,21C71,19 71,39 59,41',
+    deco: V => [h('path', { key: 'bands', d: 'M18,27Q40,32 62,27M18,47Q40,53 62,47', fill: 'none', stroke: V.line, strokeWidth: 1 }),
+      ...[0, 1, 2, 3, 4, 5, 6].map(i => i === 3 ? null : h('path', { key: `d${i}`, d: `M${21 + i * 6.3},38l2.4,-3.4l2.4,3.4l-2.4,3.4Z`, fill: V.light, stroke: V.line, strokeWidth: .5 })),
+      h('ellipse', { key: 'gem', cx: 40, cy: 38, rx: 3.6, ry: 4.6, fill: '#b8243a', stroke: V.line, strokeWidth: .8 }), h('ellipse', { key: 'glint', cx: 38.8, cy: 36.4, rx: 1, ry: 1.4, fill: '#fff', opacity: .7 })] },
+}
+
+/** A vase with a rounded body: glaze gradient, an open mouth you can see into, a highlight and a cast shadow. */
+function VaseArt({ id, tint }) {
+  const raw = typeof React.useId === 'function' ? React.useId() : 'v'
+  const own = VASE_LOOKS[id] ?? VASE_LOOKS.classic
+  const paint = cleanTint(tint)
+  const V = paint === null ? own : { ...own, base: paint, light: lighten(paint, 0.45), dark: darken(paint, 0.35), line: darken(paint, 0.55), rim: lighten(paint, 0.25), inside: darken(paint, 0.65) }
+  const u = `fgv-${VASE_LOOKS[id] ? id : 'classic'}-${String(raw).replace(/[^a-zA-Z0-9_-]/g, '')}`
+  return h('svg', { viewBox: '0 0 80 76', width: 80, height: 76, 'aria-hidden': 'true', focusable: 'false', className: 'fg-vaseArt' },
+    h('defs', null,
+      h('linearGradient', { id: `${u}-g`, x1: 0, y1: 0, x2: 1, y2: 0 },
+        h('stop', { offset: '0%', stopColor: V.dark }), h('stop', { offset: '28%', stopColor: V.light }), h('stop', { offset: '58%', stopColor: V.base }), h('stop', { offset: '100%', stopColor: V.dark })),
+      h('clipPath', { id: `${u}-c` }, h('path', { d: V.d }))),
+    h('ellipse', { cx: 42, cy: 72.6, rx: V.foot + 8, ry: 2.6, fill: '#000', opacity: .16 }),
+    V.handles ? h('path', { d: V.handles, fill: 'none', stroke: V.dark, strokeWidth: 2.6, strokeLinecap: 'round' }) : null,
+    h('path', { d: V.d, fill: `url(#${u}-g)`, stroke: V.line, strokeWidth: 1.1, strokeLinejoin: 'round' }),
+    h('g', { clipPath: `url(#${u}-c)` }, ...V.deco(V)),
+    V.shine ? h('path', { d: V.shine, fill: 'none', stroke: '#fff', strokeWidth: V.shineW ?? 3, strokeLinecap: 'round', opacity: .5 }) : null,
+    h('ellipse', { cx: 40, cy: V.ry0, rx: V.rx, ry: V.rr, fill: V.inside, stroke: V.rim, strokeWidth: 1.6 }),
+    h('path', { d: `M${40 - V.foot},70.6H${40 + V.foot}`, stroke: V.line, strokeWidth: 1.8, strokeLinecap: 'round' }))
 }
 
 function stemTilt(index, count) {
@@ -8235,11 +8637,11 @@ function stemTilt(index, count) {
 }
 
 /** A finished bouquet, drawn the way the arranging table shows it. */
-function BouquetArt({ items, vase }) {
+function BouquetArt({ items, vase, tint }) {
   return h('div', { className: 'fg-vase fg-vaseStill' },
     items.map((item, index) => h('span', { key: index, className: 'fg-vaseStem', style: { transform: stemTilt(index, items.length) } },
       h(FlowerArt, { speciesId: item.species, stage: 'bloom', variant: item.variant, dna: item.dna, trait: item.trait, tint: item.tint }))),
-    h('div', { className: 'fg-vasePot' }, h(VaseArt, { id: vase })))
+    h('div', { className: 'fg-vasePot' }, h(VaseArt, { id: vase, tint })))
 }
 
 function VasePicker({ state, t, vase, onPick }) {
@@ -8261,15 +8663,27 @@ function Album({ state, t, onChange }) {
   const cards = (state.cards ?? []).slice().reverse()
   function remove(kind, id) {
     const key = `${kind}:${id}`
-    if (armed !== key) { setArmed(key); return }
+    if (armed !== key) return
     setArmed(null)
     tick()
     const next = removeCard(getState(), kind, id)
     if (next !== null) onChange(next)
   }
+  React.useEffect(() => {
+    if (armed === null) return undefined
+    const id = window.setTimeout(() => setArmed(null), 6000)
+    return () => window.clearTimeout(id)
+  }, [armed])
   const del = (kind, id) => {
     const on = armed === `${kind}:${id}`
-    return h('button', { type: 'button', className: 'fg-cardDel', 'data-armed': on ? 'true' : 'false', title: t(on ? 'album.removeConfirm' : 'album.remove'), 'aria-label': t(on ? 'album.removeConfirm' : 'album.remove'), onClick: () => remove(kind, id) }, on ? '?' : '×')
+    return h(React.Fragment, null,
+      h('button', { type: 'button', className: 'fg-cardDel', 'data-armed': on ? 'true' : 'false', title: t('album.remove'), 'aria-label': t('album.remove'), onClick: () => setArmed(on ? null : `${kind}:${id}`) }, '×'),
+      on ? h('div', { className: 'fg-cardWarn', role: 'alert' },
+        h('strong', null, t('album.warnTitle')),
+        h('span', null, t(kind === 'cards' ? 'album.warnFlower' : 'album.warnBouquet')),
+        h('div', { className: 'fg-cardWarnActions' },
+          h('button', { type: 'button', className: 'fg-btn fg-btnSmall', 'data-action': 'cardKeep', autoFocus: true, onClick: () => setArmed(null) }, t('album.keepIt')),
+          h('button', { type: 'button', className: 'fg-btn fg-btnSmall fg-btnDanger', 'data-action': 'cardDelete', onClick: () => remove(kind, id) }, t('album.delete')))) : null)
   }
   const day = at => new Date(at).toLocaleDateString()
   return h('section', { className: 'fg-section fg-album', id: 'fg-album' },
@@ -8284,7 +8698,7 @@ function Album({ state, t, onChange }) {
     bouquets.length > 0 ? h('div', { className: 'fg-cardGrid' }, bouquets.map(card =>
       h('article', { key: card.id, className: 'fg-keepCard', 'data-card': `bouquet-${card.id}`, 'data-stars': card.stars },
         del('bouquets', card.id),
-        h('div', { className: 'fg-cardVase' }, h(BouquetArt, { items: card.items, vase: card.vase })),
+        h('div', { className: 'fg-cardVase' }, h(BouquetArt, { items: card.items, vase: card.vase, tint: card.tint })),
         h('span', { className: 'fg-vaseStars', 'data-stars': card.stars }, '★'.repeat(card.stars) + '☆'.repeat(5 - card.stars)),
         h('span', { className: 'fg-note' }, t(`vase.${card.vase}`), ' · ', t(`arrange.theme.${card.theme}`)),
         h('time', { className: 'fg-note', dateTime: new Date(card.at).toISOString() }, day(card.at)),
@@ -8331,6 +8745,13 @@ function ExpeditionBoard({ state, t, clock, onChange }) {
           onClick: () => run((current, now) => startExpedition(current, sceneId, entry.id, now)),
         }, t('trip.go', { time: t(`trip.${entry.id}`), n: entry.cost })))))
 }
+
+Object.assign(zh, {
+  'album.remove':'删除这张卡', 'album.warnTitle':'永久删除这张卡？', 'album.warnFlower':'花不会回到花篮，展示架加成和卡册进度也会跟着掉。', 'album.warnBouquet':'花束卡删掉就找不回来，展示架加成也会消失。', 'album.keepIt':'留着', 'album.delete':'删除',
+})
+Object.assign(en, {
+  'album.remove':'Delete this card', 'album.warnTitle':'Delete this card for good?', 'album.warnFlower':'The flower does not go back to the basket, and its shelf bonus and page progress go with it.', 'album.warnBouquet':'A deleted bouquet card cannot be recovered, and its shelf bonus goes with it.', 'album.keepIt':'Keep it', 'album.delete':'Delete',
+})
 
 // Gene bars, family tree, cross prediction and the breeding goal board.
 Object.assign(zh, {
@@ -8439,9 +8860,11 @@ Object.assign(en, {
 function ArrangeTable({ state, t, clock, onChange }) {
   const [picked, setPicked] = React.useState([])
   const [vaseChoice, setVase] = React.useState('classic')
+  const [useDried, setUseDried] = React.useState(false)
+  const dried = useDried && goodsCount(state, 'dried') > 0
   const vase = vaseOwned(state, vaseChoice) ? vaseChoice : 'classic'
   const chosen = picked.filter(item => state.basket.includes(item))
-  const score = arrangeScore(chosen, clock, vase)
+  const score = arrangeScore(chosen, clock, vase, dried)
   const theme = bouquetTheme(clock)
   const entries = bagEntries(state, t).filter(entry => entry.kind === 'bloom')
     .map(entry => ({ ...entry, free: entry.items.filter(item => !chosen.includes(item)) }))
@@ -8455,7 +8878,7 @@ function ArrangeTable({ state, t, clock, onChange }) {
     tick()
     const current = getState()
     const indices = chosen.map(item => current.basket.indexOf(item))
-    const next = indices.includes(-1) ? null : arrangeBouquet(current, indices, Date.now(), vase)
+    const next = indices.includes(-1) ? null : arrangeBouquet(current, indices, Date.now(), vase, dried)
     setPicked([])
     if (next !== null) onChange(next)
   }
@@ -8477,12 +8900,13 @@ function ArrangeTable({ state, t, clock, onChange }) {
               onClick: () => setPicked(chosen.filter(other => other !== item)),
             }, h(FlowerArt, { speciesId: item.species, stage: 'bloom', variant: item.variant, dna: item.dna, trait: item.trait, tint: item.tint }))
           }),
-          h('div', { className: 'fg-vasePot' }, h(VaseArt, { id: vase }))),
+          h('div', { className: 'fg-vasePot' }, h(VaseArt, { id: vase, tint: vaseTint(state, vase) }))),
         h(VaseShelf, { state, t, vase, onPick: setVase, onChange }),
         score?.match ? h('span', { className: 'fg-questChip', 'data-tone': 'gold' }, t('vase.matched')) : null,
         h('div', { className: 'fg-vaseStars', 'data-stars': score?.stars ?? 0, 'aria-label': `${score?.stars ?? 0}/5` }, '★'.repeat(score?.stars ?? 0) + '☆'.repeat(5 - (score?.stars ?? 0))),
         h('div', { className: 'fg-ecoTargets' }, ['harmony', 'variety', 'focal', 'theme'].map(id =>
           h('span', { key: id, className: 'fg-questChip', 'data-done': score?.checks[id] ? 'true' : 'false' }, score?.checks[id] ? '✓ ' : '○ ', t(`arrange.check.${id}`)))),
+        goodsCount(state, 'dried') > 0 ? h('button', { type: 'button', className: 'fg-bagFilter', 'data-action': 'arrangeDried', 'aria-pressed': dried ? 'true' : 'false', onClick: () => setUseDried(!useDried) }, '🌾 ', t('goods.dried', { n: goodsCount(state, 'dried') })) : null,
         h('button', { type: 'button', className: 'fg-btn fg-btnPrimary fg-btnBlock', 'data-action': 'arrange', disabled: score === null, onClick: finish },
           score === null ? t('arrange.need') : t('arrange.make', { n: score.coins }))),
       entries.length === 0 && chosen.length === 0
@@ -8527,6 +8951,7 @@ function AffinityBoard({ state, t, onChange }) {
         h('div', { className: 'fg-ecoTargets' }, h('span', { className: 'fg-note' }, t('bond.fav')),
           favourites.slice(0, 6).map(id => h('span', { key: id, className: 'fg-questChip' }, h(BloomDot, { speciesId: id }), ' ', t(`species.${id}`))))),
       h('div', { className: 'fg-bondGift' },
+        goodsCount(state, 'tea') > 0 && level < AFFINITY_LEVELS.length ? h('button', { type: 'button', className: 'fg-btn fg-btnSmall fg-btnPrimary', 'data-action': 'bondTea', onClick: () => { tick(); const next = serveTea(getState(), current.id); if (next === null) return; onChange(next); setNotice(t('goods.teaServed', { name: t(`visitor.${current.id}`), n: TEA_BOND })) } }, '🍵 ', t('goods.teaServe', { n: goodsCount(state, 'tea') })) : null,
         h('span', { className: 'fg-note' }, t('bond.gift')),
         blooms.length === 0 ? h('p', { className: 'fg-empty' }, t('bond.noFlowers')) : h(BagGrid, { entries: blooms, onSelect: gift }))),
     h('p', { role: 'status', 'aria-live': 'polite', className: 'fg-sectionOk' }, notice))
@@ -8693,13 +9118,14 @@ function bagEntries(state, t) {
     if (item.kind !== 'consumable' || count <= 0) continue
     entries.push({ kind: 'item', key: `item:${item.id}`, id: item.id, count, name: t(`item.${item.id}`), rarity: 'base' })
   }
+  for (const id of GOODS) if (goodsCount(state, id) > 0) entries.push({ kind: 'item', key: `item:${id}`, id, count: goodsCount(state, id), name: t(`item.${id}`), rarity: 'base' })
   return entries
 }
 
 function bagArt(entry) {
   if (entry.kind === 'bloom') return h(FlowerArt, { speciesId: entry.item.species, stage: 'bloom', variant: entry.item.variant, dna: entry.item.dna, trait: entry.item.trait, tint: entry.item.tint })
   if (entry.kind === 'seed') return h(SeedGlyph, { species: entry.species, tint: entry.tint })
-  return h(ItemIcon, { id: entry.id })
+  return GOODS.includes(entry.id) ? h('span', { className: 'fg-goodsIcon', 'aria-hidden': true }, GOODS_ICON[entry.id]) : h(ItemIcon, { id: entry.id })
 }
 
 function BagSlot({ entry, selected, onSelect }) {
@@ -8751,7 +9177,7 @@ function InventoryDialog({ state, t, clock = Date.now(), onClose, onGarden, onSh
     h('button', { key: 'keep', type: 'button', className: 'fg-btn', 'data-action': 'bagKeep', onClick: () => onKeep?.(current.groupKey) }, t('album.keep')),
   ] : current.kind === 'seed' ? [
     h('button', { key: 'plant', type: 'button', className: 'fg-btn fg-btnPrimary', onClick: onGarden }, t('bag.plant')),
-  ] : current.id === 'sprinkler' ? [
+  ] : GOODS.includes(current.id) ? (current.id === 'perfume' ? [h('button', { key: 'use', type: 'button', className: 'fg-btn fg-btnPrimary', onClick: () => onUse?.('perfume') }, t('goods.spray'))] : []) : current.id === 'sprinkler' ? [
     h('button', { key: 'use', type: 'button', className: 'fg-btn fg-btnPrimary', onClick: () => onUse?.('sprinkler') }, t('item.useGround')),
   ] : current.id === 'charm' ? [
     state.charm ? h('span', { key: 'on', className: 'fg-badge fg-badgeWarn' }, t('item.charmReady'))
@@ -9073,6 +9499,32 @@ function AwayCard({ report, t, onClose }) {
         commit(waterAt(getState(), state.scene, index), true)
       }
 
+      function harvestEvery() {
+        tick()
+        const before = getState(), next = harvestAll(before, before.scene, Date.now())
+        if (next === null) { announce(t('bulk.none'), 'warn'); return }
+        flyTo(rootRef.current?.querySelector('.fg-grid'), rootRef.current?.querySelector('.fg-bagButton'), '🌸')
+        commitDiscovered(before, next, 'harvest', 0)
+        playSound(found.current ? 'gold' : 'harvest')
+        announce(t('bulk.harvested', { n: next.basket.length - before.basket.length }) + (found.current ? ` · ${t('discovery.noted')}` : ''), found.current ? 'gold' : 'ok')
+      }
+      function greetEvery() {
+        tick()
+        const now = Date.now(), before = getState(), n = visitorCount(before, before.scene, now), next = greetAll(before, before.scene, now)
+        if (next === null) { announce(t('bulk.nobody'), 'warn'); return }
+        commitDiscovered(before, next, 'visitor', 0)
+        playSound('coin')
+        flyTo(rootRef.current?.querySelector('.fg-grid'), rootRef.current?.querySelector('.fg-stats .fg-chip'), '🪙')
+        announce(t('bulk.greeted', { n, coins: next.coins - before.coins }) + (found.current ? ` · ${t('discovery.noted')}` : ''), found.current ? 'gold' : 'ok')
+      }
+      function sowEvery() {
+        tick()
+        const before = getState(), next = sowRandom(before, before.scene)
+        if (next === null) { announce(t('bulk.none'), 'warn'); return }
+        commit(next, true); playSound('plant'); setPicker(null)
+        announce(t('bulk.sown', { n: (next.planted ?? 0) - (before.planted ?? 0) }), 'ok')
+      }
+
       function waterEvery() {
         commit(waterAll(getState(), state.scene), true)
       }
@@ -9160,7 +9612,7 @@ function AwayCard({ report, t, onClose }) {
         const first = next.basket[before.basket.length]
         const spirit = first?.variant === 'hidden'
         let text = spirit ? t('reward.gold', { flower: bloomName(first, t), n: 3 })
-          : first?.trait ? t('reward.trait', { name: bloomName(first, t), n: TRAIT_PRICE })
+          : first?.trait ? t('reward.trait', { name: bloomName(first, t), n: traitPrice(first.trait) })
             : t(next.basket.length - before.basket.length > 1 ? 'reward.double' : 'reward.gain', { flower: bloomName(first, t), xp: species.xp })
         if (next.lastBred) {
           const [form, tint] = next.lastBred.split('~')
@@ -9371,9 +9823,9 @@ function AwayCard({ report, t, onClose }) {
           h('details', { className: 'fg-ecoDetails' }, h('summary', null, t('trait.guide')),
             h('div', { className: 'fg-archiveGrid' }, TRAITS.filter(trait=>trait.source).map(trait=>h('article',{key:trait.id,className:'fg-ecoProject'},
               h(FlowerArt,{speciesId:trait.specimen,stage:'bloom',variant:'base',trait:trait.id}),
-              h('strong',null,t(`trait.${trait.id}`)),h('p',{className:'fg-hint'},t(`trait.${trait.id}.fact`)),h('p',{className:'fg-hint'},t(`trait.${trait.id}.cause`)),
+              h('strong',null,traitLabel(trait.id, t)),h('p',{className:'fg-hint'},t(`trait.${traitFactId(trait.id)}.fact`)),h('p',{className:'fg-hint'},traitCauseText(trait.id, t)),
               h('a',{href:trait.source,target:'_blank',rel:'noopener noreferrer',className:'fg-source'},t('trait.source')))))),
-          h('div', { className: 'fg-basket' }, TRAITS.map(trait => h('span', { key: trait.id, className: 'fg-badge', title: t(`trait.${trait.id}.cause`) }, t(`trait.${trait.id}`), ' · ', t(`trait.${trait.id}.clue`)))),
+          h('div', { className: 'fg-basket' }, TRAITS.map(trait => h('span', { key: trait.id, className: 'fg-badge', title: traitCauseText(trait.id, t) }, traitLabel(trait.id, t), ' · ', t(`trait.${trait.id}.clue`)))),
           h('p', { className: 'fg-hint' }, t('hybrid.how')),
           h('div', { className: 'fg-archiveGrid' }, archive.filter(entry => (entry.trait || entry.tint) && guideScene.species.includes(entry.species.id)).map(entry =>
             h('button', { key: entry.key, type: 'button', className: 'fg-archiveEntry', 'data-codex': entry.key, onClick: () => { rememberOpener(); setCodexPreview(entry.key) } },
@@ -9607,7 +10059,7 @@ function AwayCard({ report, t, onClose }) {
           h('span', { className: 'fg-species' }, t(`species.${species.id}`)),
           h('span', { className: 'fg-stage' }, t(`stage.${stage}`)),
         ),
-        plot.trait ? h('span',{className:'fg-badge fg-badgeWarn'},'✦ ',t(`trait.${plot.trait}`)) : plot.variant==='hidden' ? h('span',{className:'fg-badge fg-badgeWarn'},'✦ ',t('variant.hidden')) : null,
+        plot.trait ? h('span',{className:'fg-badge fg-badgeWarn'},'✦ ',traitLabel(plot.trait, t)) : plot.variant==='hidden' ? h('span',{className:'fg-badge fg-badgeWarn'},'✦ ',t('variant.hidden')) : null,
         renderSoil(index),
         plot.resident ? h('span', { className: 'fg-badge fg-badgeOk' }, t('eco.resident'), ' · ', t('eco.history', { n: plot.careCount ?? 0, cycles: plot.reblooms ?? 0 })) : null,
         plot.resident ? renderResidentActions(plot, index, species) : bloomed ? h('button', { type: 'button', className: 'fg-btn fg-btnPrimary', onClick: () => tend('retain', index) }, t('eco.retain')) : null,
@@ -9979,6 +10431,9 @@ function AwayCard({ report, t, onClose }) {
            h('div',{className:'fg-gardenBar'},
              h(QuickBar, { state, t, tool, onPick: id => setTool(current => (current === id ? null : id)), onUse: id => applyItem(id, 0), onDragItem: id => { dragging.current = id } }),
              sprinklerLeftMs > 0 ? h('span', { className: 'fg-sectionOk' }, t('item.sprinklerLeft', { n: formatDuration(sprinklerLeftMs, t) })) : null,
+             ripeCount(slot) > 0 ? h('button', { type: 'button', className: 'fg-btn fg-btnSmall fg-btnPrimary', 'data-action': 'harvestAll', onClick: harvestEvery }, t('bulk.harvest', { n: ripeCount(slot) })) : null,
+             visitorCount(state, state.scene, clock) > 0 ? h('button', { type: 'button', className: 'fg-btn fg-btnSmall fg-btnPrimary', 'data-action': 'greetAll', onClick: greetEvery }, '👋 ', t('bulk.greet', { n: visitorCount(state, state.scene, clock) })) : null,
+             emptyCount(slot) > 0 ? h('button', { type: 'button', className: 'fg-btn fg-btnSmall', 'data-action': 'sowAll', onClick: sowEvery }, '🎲 ', t('bulk.sow', { n: emptyCount(slot) })) : null,
              thirsty > 1 ? h('button', { type: 'button', className: 'fg-btn fg-btnSmall fg-headAction', 'data-action': 'waterAll', onClick: waterEvery }, t('plot.waterAll', { n: thirsty })) : null),
            h('div', { className: 'fg-grid' }, slot.plots.map(renderPlot)),
            ))
@@ -10293,7 +10748,7 @@ h('footer', { className: 'fg-footer' },
           reward ? h(RewardDialog,{reward,state,t,onClose:()=>{setReward(null);restoreOpener()},onBag:()=>{setReward(null);setInventoryOpen(true)}}) : null,
           inventoryOpen ? h(InventoryDialog,{state,t,clock,onClose:()=>{setInventoryOpen(false);restoreOpener()},onGarden:()=>{setInventoryOpen(false);selectTab('garden',true)},onShop:()=>{setInventoryOpen(false);selectTab('shop',true)},
             onSell:key=>{const before=getState(),next=sellKind(before,key,Date.now());if(next===null)return;commit(next,true);playSound('coin');announce(t('reward.sellMany',{n:before.basket.length-next.basket.length,coins:next.coins-before.coins}),'ok')},
-            onUse:id=>{if(id==='sprinkler')sprinkle();else armCharm()},
+            onUse:id=>{if(id==='perfume'){tick();const next=sprayPerfume(getState(),Date.now());if(next===null){announce(t('goods.sprayBusy'),'warn');return}commit(next,true);playSound('plant');announce(t('goods.sprayed'),'ok');return}if(id==='sprinkler')sprinkle();else armCharm()},
             onUseBloom:key=>{tick();const before=getState(),at=before.basket.findIndex(item=>itemKey(item)===key),item=before.basket[at];if(!item)return;const next=useBloom(before,at,Date.now());if(next===null){announce(t('use.cannot',{flower:bloomName(item,t)}),'warn');return}commit(next,true);playSound('plant');announce(t('use.done',{flower:bloomName(item,t),effect:t('use.'+flowerUse(item.species)+'.note').replace(/^[^：:]*[：:]\s*/u,'')}),'ok')},
             onKeep:key=>{const before=getState(),next=pressCard(before,before.basket.findIndex(item=>itemKey(item)===key),Date.now());if(next===null){announce(t('album.full'),'warn');return}commit(next,true);playSound('plant');announce(t('album.kept'),'ok')},
             onOpenBloom:key=>{setInventoryOpen(false);selectTab('basket');setPreview(key)}}) : null,
@@ -10304,6 +10759,44 @@ h('footer', { className: 'fg-footer' },
       )
     }
 
+
+// Workshop goods on a shelf, and their copy.
+const GOODS_ICON = { dried: '🌾', tea: '🍵', perfume: '🧴' }
+Object.assign(zh, {
+  'item.dried':'干花', 'item.tea':'花茶', 'item.perfume':'香水',
+  'item.dried.note':'插花时加一枝，花束多一颗星，最多五星',
+  'item.tea.note':'在访客图鉴的好感里请一位访客喝，好感 +8',
+  'item.perfume.note':'喷洒后全花园访客出现率 +15%，持续 30 分钟',
+  'goods.keep':'收下{name}', 'goods.sell':'卖掉 · +{n}', 'goods.spray':'喷洒香水', 'goods.sprayed':'花园里香起来了，访客会多起来',
+  'goods.sprayBusy':'香气还没散，或者手里没有香水', 'goods.scentLeft':'香气还剩 {n}',
+  'goods.dried':'加一枝干花 · +1★ · 有 {n} 枝', 'goods.teaServe':'请喝花茶 · 好感 +8 · 有 {n} 杯', 'goods.teaServed':'{name}喝了花茶，好感 +{n}',
+})
+Object.assign(en, {
+  'item.dried':'Dried flowers', 'item.tea':'Flower tea', 'item.perfume':'Perfume',
+  'item.dried.note':'Add a sprig while arranging for one more star, up to five',
+  'item.tea.note':'Serve it to a visitor under Visitor bonds for +8 bond',
+  'item.perfume.note':'Spray it for +15% visitor chance across the garden for 30 minutes',
+  'goods.keep':'Keep the {name}', 'goods.sell':'Sell · +{n}', 'goods.spray':'Spray perfume', 'goods.sprayed':'The garden smells sweet; more visitors will come',
+  'goods.sprayBusy':'The scent has not faded yet, or there is no perfume', 'goods.scentLeft':'Scent lasts {n}',
+  'goods.dried':'Add a dried sprig · +1★ · {n} left', 'goods.teaServe':'Serve tea · +8 bond · {n} left', 'goods.teaServed':'{name} enjoyed the tea: bond +{n}',
+})
+zh['work.rules'] += '成品做好后可以收下当物品用：干花给花束加一颗星，花茶请访客喝涨 8 点好感，香水让全花园访客多起来；也可以照旧直接卖掉。等不及可以用 1 条绶带让一件成品立刻完成。'
+en['work.rules'] += ' A finished product can be kept and used: dried flowers add a star to a bouquet, tea gives a visitor 8 bond, perfume brings more visitors; or sell it as before. One ribbon finishes a job at once.'
+zh['trip.rules'] += '委托声望每满 10 点，小队多带回一样东西，最多三样。赶时间可以用 1 条绶带让小队立刻回来。'
+en['trip.rules'] += ' Every 10 points of commission reputation adds one more find, up to three. In a hurry, 1 ribbon brings the party back at once.'
+
+function GoodsShelf({ state, t, clock, onChange }) {
+  const scentLeft = scentBonus(state, clock) > 0 ? state.scent.until - clock : 0
+  return h('div', { className: 'fg-goods', id: 'fg-goods' }, GOODS.map(id =>
+    h('div', { key: id, className: 'fg-good', 'data-good': id, 'data-have': goodsCount(state, id) > 0 ? 'true' : 'false' },
+      h('span', { className: 'fg-goodsIcon', 'aria-hidden': true }, GOODS_ICON[id]),
+      h('strong', null, t(`item.${id}`), ' ×', goodsCount(state, id)),
+      h('span', { className: 'fg-note' }, t(`item.${id}.note`)),
+      id !== 'perfume' ? null : scentLeft > 0
+        ? h('span', { className: 'fg-questChip', 'data-tone': 'gold' }, t('goods.scentLeft', { n: formatDuration(scentLeft, t) }))
+        : h('button', { type: 'button', className: 'fg-btn fg-btnSmall fg-btnPrimary', 'data-action': 'goodsSpray', disabled: goodsCount(state, 'perfume') <= 0,
+          onClick: () => { tick(); const next = sprayPerfume(getState(), Date.now()); if (next !== null) onChange(next) } }, t('goods.spray')))))
+}
     // ---------------------------------------------------------------------
     // §7 Stylesheet. Rendered as a React element so unmounting the view
     //    removes it; only `--dsw-alias-*` tokens carry furniture colors.
@@ -10487,17 +10980,19 @@ h('footer', { className: 'fg-footer' },
 .fg-sectionMeta{font-size:calc(var(--fg-font-size,15px) * 0.8462);color:var(--dsw-alias-label-secondary);font-variant-numeric:tabular-nums}
 .fg-sectionWarn{font-size:calc(var(--fg-font-size,15px) * 0.8462);color:var(--dsw-alias-state-warn-primary)}
 .fg-sectionOk{font-size:calc(var(--fg-font-size,15px) * 0.8462);color:var(--dsw-alias-state-success-primary)}
-.fg-items{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px}
-.fg-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--dsw-alias-border-l1);border-radius:12px;background:var(--dsw-alias-bg-layer-1);min-width:0}
+.fg-items{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,240px),1fr));gap:10px}
+.fg-item{display:grid;grid-template-columns:20px minmax(0,1fr);grid-template-rows:1fr auto;align-items:start;gap:10px;padding:12px;border:1px solid var(--dsw-alias-border-l1);border-radius:12px;background:var(--dsw-alias-bg-layer-1);min-width:0}
 .fg-itemIcon{flex:none;display:inline-flex;width:20px;height:20px}
 .fg-itemBody{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:1px}
 .fg-itemName{display:flex;align-items:baseline;gap:6px;font-size:calc(var(--fg-font-size,15px) * 0.9231);font-weight:600}
 .fg-itemOwn{font-size:calc(var(--fg-font-size,15px) * 0.7692);font-weight:500;color:var(--dsw-alias-label-secondary);font-variant-numeric:tabular-nums}
 .fg-itemNote{font-size:calc(var(--fg-font-size,15px) * 0.8462);line-height:calc(var(--fg-font-size,15px) * 1.2308);color:var(--dsw-alias-label-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.fg-itemActions{flex:none;display:flex;gap:6px}
+.fg-itemActions{grid-column:2;display:flex;align-items:center;flex-wrap:wrap;gap:6px}
+.fg-itemName{flex-wrap:wrap;row-gap:2px}
+.fg-order > .fg-btn{margin-top:auto}
 .fg-itemMax{font-size:calc(var(--fg-font-size,15px) * 0.8462);color:var(--dsw-alias-label-secondary)}
 .fg-empty{margin:0;font-size:calc(var(--fg-font-size,15px) * 0.9231);line-height:calc(var(--fg-font-size,15px) * 1.3846);color:var(--dsw-alias-label-secondary)}
-.fg-orders{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px}
+.fg-orders{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,240px),1fr));gap:10px}
 .fg-order{display:flex;flex-direction:column;gap:8px;padding:10px 12px;border:1px solid var(--dsw-alias-border-l1);border-radius:12px;background:var(--dsw-alias-bg-layer-1)}
 .fg-order[data-ready="true"]{border-color:var(--dsw-alias-state-success-primary)}
 .fg-orderHead{display:flex;align-items:baseline;justify-content:space-between;gap:8px;flex-wrap:wrap}
@@ -10830,6 +11325,32 @@ h('footer', { className: 'fg-footer' },
 .fg-miniToday .fg-questChip{font-size:.85em}
 .fg-miniNotice{position:sticky;bottom:0;margin:0;padding:6px 12px;background:var(--dsw-alias-bg-layer-1);font-weight:600;color:var(--fg-accent)}
 .fg-miniNotice:empty{display:none}
+.fg-cardWarn{position:absolute;inset:0;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:14px;border-radius:14px;background:#fffdf6f2;color:#2a2a22;text-align:center;line-height:1.5}
+.fg-cardWarn strong{color:var(--dsw-alias-state-error-primary);font-size:1.05em}
+.fg-cardWarn span{font-size:.88em}
+.fg-cardWarnActions{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.fg-cardDel[data-armed="true"]{z-index:3}
+.fg-vaseShelf{display:flex;flex-direction:column;gap:6px;width:100%}
+.fg-vasePicker{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;padding-bottom:0}
+.fg-vaseChoice{width:auto;height:auto;flex-direction:column;gap:2px;padding:6px 2px 5px;color:var(--dsw-alias-label-primary);font:inherit;min-width:0}
+.fg-vaseChoice svg{width:46px;height:44px}
+.fg-vaseChoice:disabled{opacity:1;filter:none}
+.fg-vaseChoice:disabled svg{filter:grayscale(1);opacity:.45}
+.fg-vaseName{font-size:.74em;font-weight:600;line-height:1.2}
+.fg-vaseState{display:inline-flex;align-items:center;justify-content:center;gap:3px;flex-wrap:wrap;font-size:.64em;line-height:1.25;color:var(--dsw-alias-label-secondary);text-align:center}
+.fg-vaseChoice[data-owned="true"] .fg-vaseState{color:var(--fg-accent);font-weight:600}
+.fg-vasePrice{position:static;transform:none;padding:0;background:none;color:#a67c12;font-size:1.1em;font-weight:700}
+.fg-vaseHint{margin:0;font-size:.8em;line-height:1.5;text-align:center;color:var(--dsw-alias-label-secondary)}
+.fg-vasePot{filter:drop-shadow(0 4px 5px #0002)}
+.fg-goods{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr));gap:10px}
+.fg-good{display:flex;flex-direction:column;align-items:flex-start;gap:4px;padding:12px;border-radius:14px;border:1px solid var(--dsw-alias-border-l1);background:var(--dsw-alias-bg-base)}
+.fg-good[data-have="false"]{opacity:.6}
+.fg-goodsIcon{font-size:1.7em;line-height:1}
+.fg-slotArt .fg-goodsIcon{font-size:2em}
+.fg-vaseTints{display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap}
+.fg-vaseTint{appearance:none;width:22px;height:22px;padding:0;border-radius:50%;border:2px solid var(--dsw-alias-border-l2);cursor:pointer}
+.fg-vaseTint[aria-pressed="true"]{outline:2px solid var(--fg-accent);outline-offset:2px}
+.fg-vaseTintPick{appearance:none;width:30px;height:26px;padding:0;border:1px solid var(--dsw-alias-border-l2);border-radius:8px;background:none;cursor:pointer}
 `
 
     // §7b Backpack slots, daily play strip, rule tips and motion polish.
@@ -10852,8 +11373,9 @@ h('footer', { className: 'fg-footer' },
 .fg-tipToggle::-webkit-details-marker{display:none}
 .fg-tipMark{display:inline-flex;align-items:center;justify-content:center;width:1.5em;height:1.5em;border-radius:50%;border:1px solid var(--dsw-alias-border-l2);font-weight:700}
 .fg-tip[open] .fg-tipMark{background:var(--dsw-alias-brand-primary);color:#fff;border-color:transparent}
-.fg-tipBody{margin-top:8px;padding:10px 14px;border-radius:12px;background:var(--dsw-alias-bg-layer-2);max-width:70ch}
-.fg-tipBody p{margin:0 0 6px;line-height:1.7}.fg-tipBody p:last-child{margin:0}
+.fg-tipBody{margin-top:8px;padding:10px 14px;border-radius:12px;background:var(--dsw-alias-bg-layer-2);max-inline-size:min(36em,100%);box-sizing:border-box;overflow-wrap:anywhere}
+.fg-tipBody p{margin:0;line-height:1.65}
+.fg-tipBody p+p{margin-top:.55em;padding-top:.55em;border-top:1px solid var(--dsw-alias-border-l1)}
 .fg-slotGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(78px,1fr));gap:8px;align-content:start}
 .fg-slot{appearance:none;position:relative;box-sizing:border-box;aspect-ratio:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:6px 4px 4px;border:2px solid var(--fg-r-base);border-radius:14px;background:linear-gradient(160deg,var(--dsw-alias-bg-layer-1),var(--dsw-alias-bg-layer-2));color:var(--dsw-alias-label-primary);font:inherit;box-shadow:inset 0 -6px 12px #0000000f}
 button.fg-slot{cursor:pointer;transition:transform .12s ease,box-shadow .12s ease}
@@ -10946,13 +11468,13 @@ button.fg-slot[aria-pressed="true"]{outline:3px solid var(--dsw-alias-brand-prim
         }, GardenView))
       },
       /** Static pieces exported for layout tests only; the runtime never reads them. */
-      __components: { MiniToday, WantedBoard, CompanionBoard, EventBanner, BriefChip, GreetingEditor, FundBoard, VaseShelf, Shelf, CardTools, Workshop, CardPages, Contest, LegacyBoard, SeasonChip, VaseArt, BouquetArt, VasePicker, Album, ExpeditionBoard, GeneBars, GeneCard, Pedigree, CrossHint, BreedingGoals, ArrangeTable, AffinityBoard, QuickBar, PlayStrip, AwayCard, InfoTip, BagGrid, FloatingGarden, MiniGarden, RewardDialog, InventoryDialog, InventoryContents, GardenView, FlowerArt, BloomPreview, VisitorArt, GardenActivities, VisitorPreview, GardenEcology, SpeciesPurpose, SpecialCommissionBoard, SpecialVisitorArt, ScenePanorama, DiscoveryCard },
+      __components: { GoodsShelf, MiniToday, WantedBoard, CompanionBoard, EventBanner, BriefChip, GreetingEditor, FundBoard, VaseShelf, Shelf, CardTools, Workshop, CardPages, Contest, LegacyBoard, SeasonChip, VaseArt, BouquetArt, VasePicker, Album, ExpeditionBoard, GeneBars, GeneCard, Pedigree, CrossHint, BreedingGoals, ArrangeTable, AffinityBoard, QuickBar, PlayStrip, AwayCard, InfoTip, BagGrid, FloatingGarden, MiniGarden, RewardDialog, InventoryDialog, InventoryContents, GardenView, FlowerArt, BloomPreview, VisitorArt, GardenActivities, VisitorPreview, GardenEcology, SpeciesPurpose, SpecialCommissionBoard, SpecialVisitorArt, ScenePanorama, DiscoveryCard },
       __traits: TRAITS,
       /** Dictionaries exported so tests render with the shipped copy. */
       __dicts: { zh, en },
       /** Pure game transitions and tuning, exported for unit tests only. */
       __game: {
-        ...ECOLOGY_API, ...PLAY_API, ...CRAFT_API, ...GENE_API, ...ALBUM_API, ...ECONOMY_API, ...LONGTERM_API, ...FUND_API, ...USES_API, ...FUN_API, ...FLOWER_API, bagEntries, getAway, adoptStored, getState, playSound, miniGeometry, revealBloom, revealGarden, inventoryCount, rewardForChange, RESEARCH_BRANCHES, RESEARCH_OFFERS, sanitizeResearch, researchLevel, researchFee, researchCost, upgradeResearch, exchangeResearch, hybridChance, ECO_PROFILES, VISITOR_INFO, studyLevel, GARDEN_TABS, sanitizeUi, dayPeriod, gardenClock,
+        ...ECOLOGY_API, ...PLAY_API, ...CRAFT_API, ...GENE_API, ...ALBUM_API, ...ECONOMY_API, ...LONGTERM_API, ...FUND_API, ...USES_API, ...FUN_API, ...FLOWER_API, ...GOODS_API, ...TINT_API, ...BULK_API, ...TRAIT_API, HIDDEN_CAP, CHARM_CAP, bagEntries, getAway, adoptStored, getState, playSound, miniGeometry, revealBloom, revealGarden, inventoryCount, rewardForChange, RESEARCH_BRANCHES, RESEARCH_OFFERS, sanitizeResearch, researchLevel, researchFee, researchCost, upgradeResearch, exchangeResearch, hybridChance, ECO_PROFILES, VISITOR_INFO, studyLevel, GARDEN_TABS, sanitizeUi, dayPeriod, gardenClock,
         discoveryItems, recordDiscoveries, sanitizeDiscoveries, specialCommissions, commissionState, acceptCommission, commissionProgress, completeCommission, sanitizeCommissions, specialVisitorEligible,
         SCENES, SPECIES, CODEX_ENTRIES, HIDDEN_PAL, UNLOCK_COSTS, XP_PER_LEVEL, PLOT_COUNT,
         START_COINS, DRY_SHARE, BASKET_CAPACITY, ORDER_SLOTS, WEATHER_MS, ITEMS, SPRINKLER_MS, CHARM_BONUS,

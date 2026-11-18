@@ -159,6 +159,9 @@ const livingRenderState={...livingRenderBase,scenes:{...livingRenderBase.scenes,
 const livingBody=stripStyle(renderWith(livingRenderState))
 const livingGarden=livingBody.slice(livingBody.indexOf('id="fg-panel-garden"'),livingBody.indexOf('id="fg-panel-basket"'))
 check('a living spirit renders its actual special art before harvest', livingGarden.includes('data-variant="hidden"') && livingGarden.includes('fg-hid-daisy-') && livingGarden.includes('Spirit'))
+const livingMini = stripStyle(renderToStaticMarkup(React.createElement(definition.factory(() => React).__components.MiniGarden, { t })))
+check('pocket garden keeps spirit artwork and rarity', livingMini.includes('data-rarity="spirit"') && livingMini.includes('fg-hid-daisy-'))
+check('pocket garden labels the curiosity and its trait', livingMini.includes('data-rarity="curio"') && livingMini.includes('Twin') && livingMini.includes('Curiosity'))
 check('a living curiosity has its actual trait and visible label', livingGarden.includes('data-trait="twin"') && livingGarden.includes('Twin'))
 
 console.log('stocked garden with every scene open')
@@ -566,6 +569,44 @@ check('the pocket garden delivers a wanted flower in one click', pocket.includes
 check('the pocket garden harvests everything ripe and runs the sprinkler', pocket.includes('Harvest all · 2') && pocket.includes('Sprinkler ×1'))
 check('the pocket garden follows the region theme', pocket.includes('data-scene="meadow"'))
 }
+
+check('deleting a card is spelled out in both languages', ['album.warnTitle','album.warnFlower','album.warnBouquet','album.keepIt','album.delete'].every(key => typeof DICT[key] === 'string' && typeof ZH_DICT[key] === 'string') && econAlbum.includes('aria-label="Delete this card"') && !econAlbum.includes('fg-cardWarn'))
+
+check('each vase card names itself and says how to get it', econTable.includes('Round vase') && econTable.includes('In use') && econTable.includes('more bouquets to unlock') && econTable.includes('five-star bouquet') && econTable.includes('fg-vaseHint'))
+check('vase paints resolve inside their own drawing', [...econTable.matchAll(/url\(#(fgv-[^)]+)\)/g)].length >= 12 && [...econTable.matchAll(/url\(#(fgv-[^)]+)\)/g)].every(m => econTable.split(`id="${m[1]}"`).length === 2))
+
+console.log('workshop goods on the shelf')
+const goodsState = { ...craftState, goods: { dried: 2, tea: 1, perfume: 1 }, visitors: { bee: 2 }, workshop: { benches: 1, jobs: [{ recipe: 'tea', coins: 10, start: 1, end: 2 }] } }
+const goodsWork = renderToStaticMarkup(React.createElement(plugin.__components.Workshop, { state: goodsState, t, clock: Date.now(), onChange() {} }))
+check('a finished job offers keeping or selling', goodsWork.includes('data-action="jobKeep"') && goodsWork.includes('data-action="jobClaim"') && goodsWork.includes('Keep the Flower tea'))
+check('the goods shelf lists three products and a spray button', (goodsWork.match(/data-good="/g) ?? []).length === 3 && goodsWork.includes('data-action="goodsSpray"') && goodsWork.includes('Dried flowers ×2'))
+check('the arranging table offers a dried sprig', renderToStaticMarkup(React.createElement(plugin.__components.ArrangeTable, { state: goodsState, t, clock: Date.now(), onChange() {} })).includes('data-action="arrangeDried"') && !arrangeHtml.includes('data-action="arrangeDried"'))
+check('a visitor can be served tea', renderToStaticMarkup(React.createElement(plugin.__components.AffinityBoard, { state: goodsState, t, onChange() {} })).includes('data-action="bondTea"'))
+check('goods sit in the backpack', renderToStaticMarkup(React.createElement(plugin.__components.InventoryDialog, { state: goodsState, t, onClose() {}, onGarden() {}, onShop() {} })).includes('data-supply="perfume"'))
+
+console.log('vase colour picker')
+const tintTable = renderToStaticMarkup(React.createElement(plugin.__components.ArrangeTable, { state: { ...econState, vaseTints: { round: '#aa3355' } }, t, clock: Date.now(), onChange() {} }))
+check('the vase shelf offers swatches and a free colour picker', (tintTable.match(/data-tint="/g) ?? []).length === game.VASE_SWATCHES.length && tintTable.includes('type="color"') && tintTable.includes('#aa3355'))
+check('a painted vase is drawn in its colour', renderToStaticMarkup(React.createElement(plugin.__components.VaseArt, { id: 'moon', tint: '#336699' })).includes('#336699') && !renderToStaticMarkup(React.createElement(plugin.__components.VaseArt, { id: 'moon' })).includes('#336699'))
+
+console.log('bulk buttons')
+check('an empty garden offers random sowing', leanBody.includes('data-action="sowAll"') && leanBody.includes('Random sow · 3') && !leanBody.includes('data-action="harvestAll"'))
+check('a ripe plant brings the harvest-all button', stripStyle(renderWith(stocked)).includes('data-action="harvestAll"'))
+
+console.log('several curiosities drawn and named together')
+const multiArt = renderToStaticMarkup(React.createElement(FlowerArt, { speciesId: 'daisy', stage: 'bloom', variant: 'base', dna: 4321, trait: 'twin+frost+ember' }))
+const twinOnly = renderToStaticMarkup(React.createElement(FlowerArt, { speciesId: 'daisy', stage: 'bloom', variant: 'base', dna: 4321, trait: 'twin' }))
+check('a flower shows all of its curiosities at once', multiArt.includes('#8fc4ea') && multiArt.includes('#ff8a2b') && multiArt.length > twinOnly.length && !multiArt.includes('NaN'))
+check('combined curiosity paints resolve inside the drawing', [...multiArt.matchAll(/url\(#([^)]+)\)/g)].every(m => multiArt.includes(`id="${m[1]}"`)))
+const multiCard = renderToStaticMarkup(React.createElement(BloomPreview, { id: 'm', speciesId: 'daisy', variant: 'base', dna: 4321, trait: 'twin+frost', t, modal: true, onClose() {} }))
+check('combined curiosities are named and explained part by part', multiCard.includes('Twin·Frost') && multiCard.includes('Visited at least twice before harvest') && !/>trait\.[^<]*</u.test(multiCard))
+
+console.log('blended curiosity paint in the drawing')
+const blendArt = renderToStaticMarkup(React.createElement(FlowerArt, { speciesId: 'daisy', stage: 'bloom', variant: 'base', dna: 4321, trait: 'frost+ember' }))
+check('a frost and ember flower carries both colours on its petals', blendArt.includes('#8fbfe6') && blendArt.includes('#e4361e') && !blendArt.includes('NaN') && [...blendArt.matchAll(/url\(#([^)]+)\)/g)].every(m => blendArt.includes(`id="${m[1]}"`)))
+const stripedOne = renderToStaticMarkup(React.createElement(FlowerArt, { speciesId: 'rose', stage: 'bloom', variant: 'base', dna: 4321, trait: 'variegated' }))
+const stripedCombo = renderToStaticMarkup(React.createElement(FlowerArt, { speciesId: 'rose', stage: 'bloom', variant: 'base', dna: 4321, trait: 'twin+variegated' }))
+check('variegated leaves show in a combination too', stripedOne.includes('#f6efc8') === stripedCombo.includes('#f6efc8') && (stripedOne.includes('#f6efc8') || stripedOne.includes('#e6dcae')))
 
 console.log(failures === 0 ? '\nrender checks passed' : `\n${failures} render check(s) failed`)
 process.exit(failures === 0 ? 0 : 1)

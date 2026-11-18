@@ -1,0 +1,5 @@
+body > header { box-sizing: border-box; display: flex; align-items: center; gap: 3px; flex: 0 0 44px; height: 44px; padding: 4px 8px 4px 12px; }
+body > header > strong { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+body > header > button { flex: 0 0 32px; width: 32px; height: 32px; min-width: 32px; padding: 0; -webkit-app-region: no-drag; }
+body > header > button:focus-visible { outline: 2px solid currentColor; outline-offset: 1px; }
+#garden[hidden] { display: none; }

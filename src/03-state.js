@@ -72,7 +72,7 @@
         specimens: {},
         commissions: { period: ecologyPeriod(now), accepted: {}, completed: [] }, patronage: 0, commissionLog: [],
         study: {}, ecology: { period: ecologyPeriod(now), grounds: ['meadow'], observed: [], visitors: [], claimed: [] }, researchSeals: 0, researchSpent: 0, research: sanitizeResearch(null), journal: [],
-        daily: { claimedDay: -1, streak: 0 }, quests: null, giftBucket: -1, affinity: {}, arranged: 0, bouquetBest: 0, pedigree: {}, lineage: {}, goalsDone: {}, bouquets: [], cards: [], cardSeq: 0, expedition: null, trips: 0, vases: [], shelf: { slots: 0, cards: [] }, workshop: { benches: 0, jobs: [] }, pagesDone: {}, contest: null, contestWins: 0, crafted: 0, legacy: 0, fund: 0, used: 0, wanted: null, wantedDone: 0, companions: [], events: 0, briefs: 0, eventBucket: -1, briefDay: -1, boost: null,
+        daily: { claimedDay: -1, streak: 0 }, quests: null, giftBucket: -1, affinity: {}, arranged: 0, bouquetBest: 0, pedigree: {}, lineage: {}, goalsDone: {}, bouquets: [], cards: [], cardSeq: 0, expedition: null, trips: 0, vases: [], vaseTints: {}, shelf: { slots: 0, cards: [] }, workshop: { benches: 0, jobs: [] }, pagesDone: {}, contest: null, contestWins: 0, crafted: 0, legacy: 0, fund: 0, goods: { dried: 0, tea: 0, perfume: 0 }, goodsUsed: 0, scent: null, used: 0, wanted: null, wantedDone: 0, companions: [], events: 0, briefs: 0, eventBucket: -1, briefDay: -1, boost: null,
         seed: 20261116,
         orderSeq: 1,
         lastTick: now,
@@ -274,7 +274,7 @@
         specimens: sanitizeSpecimens(raw.specimens),
         commissions: sanitizeCommissions(raw.commissions,now), patronage: Math.floor(finiteOr(raw.patronage,0)), commissionLog: sanitizeCommissionLog(raw.commissionLog),
         study: sanitizeStudy(raw.study), ecology: sanitizeEcology(raw.ecology, now, scenes), researchSeals: Math.max(0, Math.floor(finiteOr(raw.researchSeals, 0))), researchSpent: Math.max(0, Math.floor(finiteOr(raw.researchSpent, 0))), research: sanitizeResearch(raw.research), journal: sanitizeJournal(raw.journal),
-        ...sanitizePlay(raw, now), ...sanitizeCraft(raw), ...sanitizeKin(raw), ...sanitizeAlbum(raw, now), ...sanitizeEconomy(raw), ...sanitizeLongterm(raw, now), ...sanitizeFund(raw), ...sanitizeFun(raw, now), ...sanitizeFlowers(raw, now),
+        ...sanitizePlay(raw, now), ...sanitizeCraft(raw), ...sanitizeKin(raw), ...sanitizeAlbum(raw, now), ...sanitizeEconomy(raw), ...sanitizeLongterm(raw, now), ...sanitizeFund(raw), ...sanitizeFun(raw, now), ...sanitizeFlowers(raw, now), ...sanitizeGoods(raw, now), ...sanitizeTints(raw),
         seed: Math.floor(finiteOr(raw.seed, 20261116)) || 20261116,
         orderSeq: Math.max(1, Math.floor(finiteOr(raw.orderSeq, 1))),
         lastTick: Math.min(finiteOr(raw.lastTick, now), now),
@@ -371,17 +371,17 @@ function revealBloom(state, sceneId, index, now, weather = weatherAt(now)) {
   let cursor=state.seed, charm=state.charm, nextPlot={...plot}, changed=false
   const draw=()=>{const step=nextRandom(cursor);cursor=step.seed;return step.value}
   if(plot.identified!==true){
-    const chance=Math.min(charm===true?0.55:0.3,hiddenChance(plot,weather,now,SCENE_BY_ID.get(sceneId))+(charm===true?CHARM_BONUS:0)+shelfBonus(state).spirit + studyBonus(state, plot.species) + boostBonus(state, now))
+    const chance=Math.min(charm===true?CHARM_CAP:HIDDEN_CAP,hiddenChance(plot,weather,now,SCENE_BY_ID.get(sceneId))+(charm===true?CHARM_BONUS:0)+shelfBonus(state).spirit + studyBonus(state, plot.species) + boostBonus(state, now))
     nextPlot.variant=draw()<chance?'hidden':plot.tint?'base':plotVariant(species,index)
     nextPlot.identified=true;nextPlot.traitChecks=[];charm=false;changed=true
   }
-  if(nextPlot.variant!=='hidden' && !nextPlot.trait){
+  if(nextPlot.variant!=='hidden' && traitParts(nextPlot.trait).length<TRAIT_MAX){
     const checked=new Set(nextPlot.traitChecks??[])
     const boost=1+FACILITY_BY_ID.get('greenhouse').step*facilityLevel(state,'greenhouse')
     for(const id of traitCauses(nextPlot,sceneId,weather,now)){
       if(checked.has(id))continue
       checked.add(id);changed=true
-      if(draw()<Math.min(0.9,TRAIT_BY_ID.get(id).chance*boost)){nextPlot.trait=id;break}
+      const have=traitParts(nextPlot.trait);if(have.length>=TRAIT_MAX)break;if(draw()<Math.min(0.9,TRAIT_BASE.get(id).chance*boost*TRAIT_EXTRA[have.length]))nextPlot.trait=joinTraits([...have,id])
     }
     nextPlot.traitChecks=[...checked]
   }
@@ -407,7 +407,7 @@ function retainAt(state, sceneId, index, now) {
   const roll = nextRandom(state.seed)
   const hiddenBase = hiddenChance(plot, weatherAt(now), now, scene)
   const charmBonus = state.charm === true ? CHARM_BONUS : 0
-  const chance = Math.min(state.charm === true ? 0.55 : 0.3, hiddenBase + charmBonus + shelfBonus(state).spirit + studyBonus(state, plot.species) + boostBonus(state, now))
+  const chance = Math.min(state.charm === true ? CHARM_CAP : HIDDEN_CAP, hiddenBase + charmBonus + shelfBonus(state).spirit + studyBonus(state, plot.species) + boostBonus(state, now))
   const hidden = plot.identified ? plot.variant === 'hidden' : roll.value < chance
   let cursor = plot.identified ? state.seed : roll.seed
   const dna = Number.isFinite(plot.dna) && plot.dna > 0 ? plot.dna : 1 + Math.floor(hashUnit(state.seed, index, 12345) * 2147483646)
@@ -421,7 +421,7 @@ function retainAt(state, sceneId, index, now) {
       cursor = step.seed
       const greenhouse = typeof facilityLevel === 'function' ? facilityLevel(state, 'greenhouse') : 0
       const boost = 1 + greenhouse * 0.1
-      if (step.value < Math.min(0.9, (TRAIT_BY_ID.get(id)?.chance ?? 0) * boost)) { trait = id; break }
+      const have = traitParts(trait); if (step.value < Math.min(0.9, (TRAIT_BASE.get(id)?.chance ?? 0) * boost * TRAIT_EXTRA[have.length])) { trait = joinTraits([...have, id]); if (have.length + 1 >= TRAIT_MAX) break }
     }
   }
   if (trait !== undefined) first.trait = trait
@@ -436,7 +436,7 @@ function retainAt(state, sceneId, index, now) {
   const hybrids = { ...(state.hybrids ?? {}) }
   if (first.tint !== undefined) hybrids[`${species.id}~${first.tint}`] = (hybrids[`${species.id}~${first.tint}`] ?? 0) + 1
   const exotics = { ...(state.exotics ?? {}) }
-  if (trait !== undefined) exotics[`${species.id}:${trait}`] = (exotics[`${species.id}:${trait}`] ?? 0) + 1
+  for (const part of traitCountKeys(trait)) exotics[`${species.id}:${part}`] = (exotics[`${species.id}:${part}`] ?? 0) + 1
   return {
     ...state,
     seed: cursor,
@@ -532,7 +532,7 @@ function gardenEcology(state, now) {
     roles: [...roles],
     roleCoverage: roles.size,
     seasonal: seasonal.size,
-    visitorBonus: Math.min(ECO_VISITOR_CAP, roles.size * 0.02 + Math.min(0.04, seasonal.size * 0.005)) + researchLevel(state, 'ecology') * 0.02 + shelfBonus(state).visitor,
+    visitorBonus: Math.min(ECO_VISITOR_CAP, roles.size * 0.02 + Math.min(0.04, seasonal.size * 0.005)) + researchLevel(state, 'ecology') * 0.02 + shelfBonus(state).visitor + scentBonus(state, now),
   }
 }
 
@@ -811,7 +811,7 @@ const ECOLOGY_API = { ECO_PERIOD_MS, ECO_OBSERVE_MS, ecologyPeriod, ecologyState
       if (species === undefined || plot.growthMs < growMsOf(species)) return null
       if (state.basket.length >= basketCapacity(state)) return null
       const bonus = state.charm === true ? CHARM_BONUS : 0
-      const chance = Math.min(state.charm === true ? 0.55 : 0.3, hiddenChance(plot, weather, now, scene) + bonus + shelfBonus(state).spirit + studyBonus(state, plot.species) + boostBonus(state, now))
+      const chance = Math.min(state.charm === true ? CHARM_CAP : HIDDEN_CAP, hiddenChance(plot, weather, now, scene) + bonus + shelfBonus(state).spirit + studyBonus(state, plot.species) + boostBonus(state, now))
       const roll = nextRandom(state.seed)
       const hidden = (plot.resident || plot.identified) ? plot.variant === 'hidden' : roll.value < chance
       let cursor = (plot.resident || plot.identified) ? state.seed : roll.seed
@@ -827,9 +827,10 @@ const ECOLOGY_API = { ECO_PERIOD_MS, ECO_OBSERVE_MS, ecologyPeriod, ecologyState
       if (!hidden && !plot.resident && !plot.identified) {
         const boost = 1 + FACILITY_BY_ID.get('greenhouse').step * facilityLevel(state, 'greenhouse')
         for (const id of traitCauses(plot, sceneId, weather, now)) {
-          if (draw() < Math.min(0.9, TRAIT_BY_ID.get(id).chance * boost)) {
-            trait = id
-            break
+          const have = traitParts(trait)
+          if (draw() < Math.min(0.9, TRAIT_BASE.get(id).chance * boost * TRAIT_EXTRA[have.length])) {
+            trait = joinTraits([...have, id])
+            if (have.length + 1 >= TRAIT_MAX) break
           }
         }
       }
@@ -875,8 +876,8 @@ const ECOLOGY_API = { ECO_PERIOD_MS, ECO_OBSERVE_MS, ecologyPeriod, ecologyState
           const key = `${bloom.species}:${bloom.variant}`
           seen[key] = (seen[key] ?? 0) + 1
         }
-        if (bloom.trait !== undefined) {
-          const key = `${bloom.species}:${bloom.trait}`
+        for (const part of traitCountKeys(bloom.trait)) {
+          const key = `${bloom.species}:${part}`
           exotics[key] = (exotics[key] ?? 0) + 1
         }
       }
@@ -943,7 +944,7 @@ const ECOLOGY_API = { ECO_PERIOD_MS, ECO_OBSERVE_MS, ecologyPeriod, ecologyState
       const species = SPECIES_BY_ID.get(item.species)
       const tint = item.tint === undefined ? undefined : SPECIES_BY_ID.get(item.tint)
       const base = tint === undefined ? species.sell : ((species.sell + tint.sell) / 2) * HYBRID_PRICE
-      return base * variantMultiplier(item.variant) * (item.trait !== undefined ? TRAIT_PRICE : 1)
+      return base * variantMultiplier(item.variant) * traitPrice(item.trait)
     }
 
     /** How many price steps a species is down right now; it climbs back one step at a time. */
@@ -1131,7 +1132,7 @@ const ECOLOGY_API = { ECO_PERIOD_MS, ECO_OBSERVE_MS, ecologyPeriod, ecologyState
         case 'meadowKinds': return SCENES[0].species.filter(grown).length
         case 'grounds': return SCENES.filter(scene => (state.scenes[scene.id]?.unlocked ?? 0) > 0).length
         case 'hybridKinds': return Object.keys(state.hybrids ?? {}).length
-        case 'traitKinds': return new Set(Object.keys(state.exotics ?? {}).map(key => key.split(':')[1])).size
+        case 'traitKinds': return new Set(Object.keys(state.exotics ?? {}).flatMap(key => traitParts(key.split(':')[1]))).size
         case 'ribbonsEarned': return state.ribbonsEarned ?? 0
         case 'entries': return CODEX_ENTRIES.filter(entry => (state.seen[`${entry.species}:${entry.variant}`] ?? 0) > 0).length
         case 'arranged': case 'trips': case 'crafted': case 'contestWins': case 'fund': return state[metric] ?? 0
@@ -1260,7 +1261,7 @@ const ECOLOGY_API = { ECO_PERIOD_MS, ECO_OBSERVE_MS, ecologyPeriod, ecologyState
       return 1
         + (item.variant === 'alt' ? 1 : 0)
         + (item.tint !== undefined ? 2 : 0)
-        + (item.trait !== undefined ? 3 : 0)
+        + (item.trait !== undefined ? 2 + traitParts(item.trait).length : 0)
         + (item.variant === 'hidden' ? 4 : 0)
         + (entry.kinds.includes(item.species) ? 0 : 2)
     }

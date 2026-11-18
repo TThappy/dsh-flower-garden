@@ -237,6 +237,32 @@
         commit(waterAt(getState(), state.scene, index), true)
       }
 
+      function harvestEvery() {
+        tick()
+        const before = getState(), next = harvestAll(before, before.scene, Date.now())
+        if (next === null) { announce(t('bulk.none'), 'warn'); return }
+        flyTo(rootRef.current?.querySelector('.fg-grid'), rootRef.current?.querySelector('.fg-bagButton'), '🌸')
+        commitDiscovered(before, next, 'harvest', 0)
+        playSound(found.current ? 'gold' : 'harvest')
+        announce(t('bulk.harvested', { n: next.basket.length - before.basket.length }) + (found.current ? ` · ${t('discovery.noted')}` : ''), found.current ? 'gold' : 'ok')
+      }
+      function greetEvery() {
+        tick()
+        const now = Date.now(), before = getState(), n = visitorCount(before, before.scene, now), next = greetAll(before, before.scene, now)
+        if (next === null) { announce(t('bulk.nobody'), 'warn'); return }
+        commitDiscovered(before, next, 'visitor', 0)
+        playSound('coin')
+        flyTo(rootRef.current?.querySelector('.fg-grid'), rootRef.current?.querySelector('.fg-stats .fg-chip'), '🪙')
+        announce(t('bulk.greeted', { n, coins: next.coins - before.coins }) + (found.current ? ` · ${t('discovery.noted')}` : ''), found.current ? 'gold' : 'ok')
+      }
+      function sowEvery() {
+        tick()
+        const before = getState(), next = sowRandom(before, before.scene)
+        if (next === null) { announce(t('bulk.none'), 'warn'); return }
+        commit(next, true); playSound('plant'); setPicker(null)
+        announce(t('bulk.sown', { n: (next.planted ?? 0) - (before.planted ?? 0) }), 'ok')
+      }
+
       function waterEvery() {
         commit(waterAll(getState(), state.scene), true)
       }
@@ -324,7 +350,7 @@
         const first = next.basket[before.basket.length]
         const spirit = first?.variant === 'hidden'
         let text = spirit ? t('reward.gold', { flower: bloomName(first, t), n: 3 })
-          : first?.trait ? t('reward.trait', { name: bloomName(first, t), n: TRAIT_PRICE })
+          : first?.trait ? t('reward.trait', { name: bloomName(first, t), n: traitPrice(first.trait) })
             : t(next.basket.length - before.basket.length > 1 ? 'reward.double' : 'reward.gain', { flower: bloomName(first, t), xp: species.xp })
         if (next.lastBred) {
           const [form, tint] = next.lastBred.split('~')
@@ -535,9 +561,9 @@
           h('details', { className: 'fg-ecoDetails' }, h('summary', null, t('trait.guide')),
             h('div', { className: 'fg-archiveGrid' }, TRAITS.filter(trait=>trait.source).map(trait=>h('article',{key:trait.id,className:'fg-ecoProject'},
               h(FlowerArt,{speciesId:trait.specimen,stage:'bloom',variant:'base',trait:trait.id}),
-              h('strong',null,t(`trait.${trait.id}`)),h('p',{className:'fg-hint'},t(`trait.${trait.id}.fact`)),h('p',{className:'fg-hint'},t(`trait.${trait.id}.cause`)),
+              h('strong',null,traitLabel(trait.id, t)),h('p',{className:'fg-hint'},t(`trait.${traitFactId(trait.id)}.fact`)),h('p',{className:'fg-hint'},traitCauseText(trait.id, t)),
               h('a',{href:trait.source,target:'_blank',rel:'noopener noreferrer',className:'fg-source'},t('trait.source')))))),
-          h('div', { className: 'fg-basket' }, TRAITS.map(trait => h('span', { key: trait.id, className: 'fg-badge', title: t(`trait.${trait.id}.cause`) }, t(`trait.${trait.id}`), ' · ', t(`trait.${trait.id}.clue`)))),
+          h('div', { className: 'fg-basket' }, TRAITS.map(trait => h('span', { key: trait.id, className: 'fg-badge', title: traitCauseText(trait.id, t) }, traitLabel(trait.id, t), ' · ', t(`trait.${trait.id}.clue`)))),
           h('p', { className: 'fg-hint' }, t('hybrid.how')),
           h('div', { className: 'fg-archiveGrid' }, archive.filter(entry => (entry.trait || entry.tint) && guideScene.species.includes(entry.species.id)).map(entry =>
             h('button', { key: entry.key, type: 'button', className: 'fg-archiveEntry', 'data-codex': entry.key, onClick: () => { rememberOpener(); setCodexPreview(entry.key) } },
@@ -771,7 +797,7 @@
           h('span', { className: 'fg-species' }, t(`species.${species.id}`)),
           h('span', { className: 'fg-stage' }, t(`stage.${stage}`)),
         ),
-        plot.trait ? h('span',{className:'fg-badge fg-badgeWarn'},'✦ ',t(`trait.${plot.trait}`)) : plot.variant==='hidden' ? h('span',{className:'fg-badge fg-badgeWarn'},'✦ ',t('variant.hidden')) : null,
+        plot.trait ? h('span',{className:'fg-badge fg-badgeWarn'},'✦ ',traitLabel(plot.trait, t)) : plot.variant==='hidden' ? h('span',{className:'fg-badge fg-badgeWarn'},'✦ ',t('variant.hidden')) : null,
         renderSoil(index),
         plot.resident ? h('span', { className: 'fg-badge fg-badgeOk' }, t('eco.resident'), ' · ', t('eco.history', { n: plot.careCount ?? 0, cycles: plot.reblooms ?? 0 })) : null,
         plot.resident ? renderResidentActions(plot, index, species) : bloomed ? h('button', { type: 'button', className: 'fg-btn fg-btnPrimary', onClick: () => tend('retain', index) }, t('eco.retain')) : null,
@@ -1143,6 +1169,9 @@
            h('div',{className:'fg-gardenBar'},
              h(QuickBar, { state, t, tool, onPick: id => setTool(current => (current === id ? null : id)), onUse: id => applyItem(id, 0), onDragItem: id => { dragging.current = id } }),
              sprinklerLeftMs > 0 ? h('span', { className: 'fg-sectionOk' }, t('item.sprinklerLeft', { n: formatDuration(sprinklerLeftMs, t) })) : null,
+             ripeCount(slot) > 0 ? h('button', { type: 'button', className: 'fg-btn fg-btnSmall fg-btnPrimary', 'data-action': 'harvestAll', onClick: harvestEvery }, t('bulk.harvest', { n: ripeCount(slot) })) : null,
+             visitorCount(state, state.scene, clock) > 0 ? h('button', { type: 'button', className: 'fg-btn fg-btnSmall fg-btnPrimary', 'data-action': 'greetAll', onClick: greetEvery }, '👋 ', t('bulk.greet', { n: visitorCount(state, state.scene, clock) })) : null,
+             emptyCount(slot) > 0 ? h('button', { type: 'button', className: 'fg-btn fg-btnSmall', 'data-action': 'sowAll', onClick: sowEvery }, '🎲 ', t('bulk.sow', { n: emptyCount(slot) })) : null,
              thirsty > 1 ? h('button', { type: 'button', className: 'fg-btn fg-btnSmall fg-headAction', 'data-action': 'waterAll', onClick: waterEvery }, t('plot.waterAll', { n: thirsty })) : null),
            h('div', { className: 'fg-grid' }, slot.plots.map(renderPlot)),
            ))
@@ -1457,7 +1486,7 @@ h('footer', { className: 'fg-footer' },
           reward ? h(RewardDialog,{reward,state,t,onClose:()=>{setReward(null);restoreOpener()},onBag:()=>{setReward(null);setInventoryOpen(true)}}) : null,
           inventoryOpen ? h(InventoryDialog,{state,t,clock,onClose:()=>{setInventoryOpen(false);restoreOpener()},onGarden:()=>{setInventoryOpen(false);selectTab('garden',true)},onShop:()=>{setInventoryOpen(false);selectTab('shop',true)},
             onSell:key=>{const before=getState(),next=sellKind(before,key,Date.now());if(next===null)return;commit(next,true);playSound('coin');announce(t('reward.sellMany',{n:before.basket.length-next.basket.length,coins:next.coins-before.coins}),'ok')},
-            onUse:id=>{if(id==='sprinkler')sprinkle();else armCharm()},
+            onUse:id=>{if(id==='perfume'){tick();const next=sprayPerfume(getState(),Date.now());if(next===null){announce(t('goods.sprayBusy'),'warn');return}commit(next,true);playSound('plant');announce(t('goods.sprayed'),'ok');return}if(id==='sprinkler')sprinkle();else armCharm()},
             onUseBloom:key=>{tick();const before=getState(),at=before.basket.findIndex(item=>itemKey(item)===key),item=before.basket[at];if(!item)return;const next=useBloom(before,at,Date.now());if(next===null){announce(t('use.cannot',{flower:bloomName(item,t)}),'warn');return}commit(next,true);playSound('plant');announce(t('use.done',{flower:bloomName(item,t),effect:t('use.'+flowerUse(item.species)+'.note').replace(/^[^：:]*[：:]\s*/u,'')}),'ok')},
             onKeep:key=>{const before=getState(),next=pressCard(before,before.basket.findIndex(item=>itemKey(item)===key),Date.now());if(next===null){announce(t('album.full'),'warn');return}commit(next,true);playSound('plant');announce(t('album.kept'),'ok')},
             onOpenBloom:key=>{setInventoryOpen(false);selectTab('basket');setPreview(key)}}) : null,

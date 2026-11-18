@@ -22,9 +22,11 @@ Object.assign(en, {
 function ArrangeTable({ state, t, clock, onChange }) {
   const [picked, setPicked] = React.useState([])
   const [vaseChoice, setVase] = React.useState('classic')
+  const [useDried, setUseDried] = React.useState(false)
+  const dried = useDried && goodsCount(state, 'dried') > 0
   const vase = vaseOwned(state, vaseChoice) ? vaseChoice : 'classic'
   const chosen = picked.filter(item => state.basket.includes(item))
-  const score = arrangeScore(chosen, clock, vase)
+  const score = arrangeScore(chosen, clock, vase, dried)
   const theme = bouquetTheme(clock)
   const entries = bagEntries(state, t).filter(entry => entry.kind === 'bloom')
     .map(entry => ({ ...entry, free: entry.items.filter(item => !chosen.includes(item)) }))
@@ -38,7 +40,7 @@ function ArrangeTable({ state, t, clock, onChange }) {
     tick()
     const current = getState()
     const indices = chosen.map(item => current.basket.indexOf(item))
-    const next = indices.includes(-1) ? null : arrangeBouquet(current, indices, Date.now(), vase)
+    const next = indices.includes(-1) ? null : arrangeBouquet(current, indices, Date.now(), vase, dried)
     setPicked([])
     if (next !== null) onChange(next)
   }
@@ -60,12 +62,13 @@ function ArrangeTable({ state, t, clock, onChange }) {
               onClick: () => setPicked(chosen.filter(other => other !== item)),
             }, h(FlowerArt, { speciesId: item.species, stage: 'bloom', variant: item.variant, dna: item.dna, trait: item.trait, tint: item.tint }))
           }),
-          h('div', { className: 'fg-vasePot' }, h(VaseArt, { id: vase }))),
+          h('div', { className: 'fg-vasePot' }, h(VaseArt, { id: vase, tint: vaseTint(state, vase) }))),
         h(VaseShelf, { state, t, vase, onPick: setVase, onChange }),
         score?.match ? h('span', { className: 'fg-questChip', 'data-tone': 'gold' }, t('vase.matched')) : null,
         h('div', { className: 'fg-vaseStars', 'data-stars': score?.stars ?? 0, 'aria-label': `${score?.stars ?? 0}/5` }, '★'.repeat(score?.stars ?? 0) + '☆'.repeat(5 - (score?.stars ?? 0))),
         h('div', { className: 'fg-ecoTargets' }, ['harmony', 'variety', 'focal', 'theme'].map(id =>
           h('span', { key: id, className: 'fg-questChip', 'data-done': score?.checks[id] ? 'true' : 'false' }, score?.checks[id] ? '✓ ' : '○ ', t(`arrange.check.${id}`)))),
+        goodsCount(state, 'dried') > 0 ? h('button', { type: 'button', className: 'fg-bagFilter', 'data-action': 'arrangeDried', 'aria-pressed': dried ? 'true' : 'false', onClick: () => setUseDried(!useDried) }, '🌾 ', t('goods.dried', { n: goodsCount(state, 'dried') })) : null,
         h('button', { type: 'button', className: 'fg-btn fg-btnPrimary fg-btnBlock', 'data-action': 'arrange', disabled: score === null, onClick: finish },
           score === null ? t('arrange.need') : t('arrange.make', { n: score.coins }))),
       entries.length === 0 && chosen.length === 0
@@ -110,6 +113,7 @@ function AffinityBoard({ state, t, onChange }) {
         h('div', { className: 'fg-ecoTargets' }, h('span', { className: 'fg-note' }, t('bond.fav')),
           favourites.slice(0, 6).map(id => h('span', { key: id, className: 'fg-questChip' }, h(BloomDot, { speciesId: id }), ' ', t(`species.${id}`))))),
       h('div', { className: 'fg-bondGift' },
+        goodsCount(state, 'tea') > 0 && level < AFFINITY_LEVELS.length ? h('button', { type: 'button', className: 'fg-btn fg-btnSmall fg-btnPrimary', 'data-action': 'bondTea', onClick: () => { tick(); const next = serveTea(getState(), current.id); if (next === null) return; onChange(next); setNotice(t('goods.teaServed', { name: t(`visitor.${current.id}`), n: TEA_BOND })) } }, '🍵 ', t('goods.teaServe', { n: goodsCount(state, 'tea') })) : null,
         h('span', { className: 'fg-note' }, t('bond.gift')),
         blooms.length === 0 ? h('p', { className: 'fg-empty' }, t('bond.noFlowers')) : h(BagGrid, { entries: blooms, onSelect: gift }))),
     h('p', { role: 'status', 'aria-live': 'polite', className: 'fg-sectionOk' }, notice))

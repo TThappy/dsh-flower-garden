@@ -137,7 +137,7 @@ function DiscoveryCard({entry,t,onClose,onOpen}) {
    h('div',{className:'fg-discoveryArt'},item.type==='visitor'?h(VisitorArt,{id:item.visitor}):h(FlowerArt,{speciesId:item.species,stage:'bloom',variant:item.variant,dna:item.dna,trait:item.trait,tint:item.tint})),
    h('div',{className:'fg-discoveryCopy'},h('span',{className:'fg-badge'},t(item.type==='seed'?'discovery.seed':item.type==='visitor'?'discovery.visitor':item.first?'discovery.first':'discovery.special')),
     h('h3',null,item.type==='visitor'?t(`visitor.${item.visitor}`):bloomName(item,t)),
-    item.type==='flower'?h('p',null,t(`variant.${item.variant}`),item.trait?' · '+t(`trait.${item.trait}`):'',item.tint?' · '+t('hybrid.tag'):''):null,
+    item.type==='flower'?h('p',null,t(`variant.${item.variant}`),item.trait?' · '+traitLabel(item.trait, t):'',item.tint?' · '+t('hybrid.tag'):''):null,
     h('p',{className:'fg-hint'},t(item.type==='seed'?'discovery.seedWhere':item.type==='visitor'?'discovery.visitorWhere':item.kept?'discovery.kept':'discovery.basket')),
     h('button',{type:'button',className:'fg-btn',onClick:()=>onOpen(item)},t('discovery.open')))))),
   h('footer',{className:'fg-discoveryFooter'},h('button',{type:'button',className:'fg-btn fg-btnPrimary',autoFocus:true,onClick:onClose},t('discovery.dismiss'))))
@@ -164,6 +164,7 @@ function rewardForChange(before, next, t) {
     const gain=(next.bag?.[item.id]??0)-(before.bag?.[item.id]??0)
     if(gain>0) entries.push({id:item.id,label:t(`item.${item.id}`),amount:`+${gain}`,owned:next.bag[item.id]})
   }
+  for(const id of GOODS){const gain=goodsCount(next,id)-goodsCount(before,id);if(gain>0)entries.push({id,label:t(`item.${id}`),amount:`+${gain}`,owned:goodsCount(next,id)})}
   for(const [id,key] of [['researchSeals','reward.seals'],['coins','stat.coins'],['ribbons','ribbon.label'],['xp','reward.xp'],['patronage','reward.reputation']]) {
     const gain=(next[id]??0)-(before[id]??0)
     if(gain>0)entries.push({id,label:t(key),amount:`+${gain}`})
@@ -222,9 +223,11 @@ function updateMini(patch) {
 function openMini() {
   updateMini({open:true,minimized:false,x:Math.max(8,(window.innerWidth??1000)-miniWindow.width-24),y:Math.max(64,(window.innerHeight??800)-miniWindow.height-130)})
 }
+Object.assign(zh, {'mini.sown':'已种下{flower}'})
+Object.assign(en, {'mini.sown':'Planted {flower}'})
 function MiniGarden({t}) {
   const state=useSyncExternalStore(subscribeGarden,getState,getState)
-  const [clock,setClock]=React.useState(()=>Date.now()), [notice,setNotice]=React.useState(''), [discovery,setDiscovery]=React.useState(null)
+  const [clock,setClock]=React.useState(()=>Date.now()), [notice,setNotice]=React.useState(null), [discovery,setDiscovery]=React.useState(null)
   const [selection,setSelection]=React.useState({}), [preview,setPreview]=React.useState(null)
   const miniRoot=React.useRef(null), opener=React.useRef(null)
   function restoreMiniFocus(){window.setTimeout(()=>{const target=opener.current?.isConnected?opener.current:miniRoot.current?.querySelector('select,button');target?.focus()},0)}
@@ -232,21 +235,29 @@ function MiniGarden({t}) {
   const scene=sceneOf(state.scene), slot=state.scenes[state.scene], weather=weatherAt(clock), period=gardenClock(clock).period
   React.useEffect(()=>{setSelection({})},[scene.id])
   const ripeCount=slot.plots.slice(0,slot.unlocked).filter(plot=>plot&&!plot.resident&&stageOf(plot)==='bloom').length
-  function act(transition,kind,index) {
-    const actionOpener=typeof document==='undefined'?null:document.activeElement
+  function feedback(text, tone = 'ok') {
+    setNotice(previous => ({text, tone, id:(previous?.id ?? 0) + 1}))
+  }
+  function act(transition,kind,index,label) {
     tick()
     const before=getState(), next=transition(before)
-    if(!next){setNotice(t('mini.error'));return}
+    if(!next){feedback(t('mini.error'), 'error');return}
     const items=kind?discoveryItems(before,next,kind,before.scene,index):[]
     const recorded=recordDiscoveries(next,items,Date.now())
-    commit(recorded,true);const gained=rewardForChange(before,recorded,t);setNotice(gained?gained.entries.map(entry=>`${entry.label} ${entry.amount}`).join(' · '):t('mini.saved'))
-    if(items.length)setNotice(t('discovery.noted'))
+    commit(recorded,true)
+    const gained = rewardForChange(before,recorded,t)
+    const summary = gained?.entries.map(entry => `${entry.label} ${entry.amount}`).join(' · ')
+    const picked = items.find(item => item.type === 'flower')
+    const discoveryText = picked ? `${t(`bag.rarity.${rarityOf(picked)}`)} · ${bloomName(picked,t)}` : t('discovery.noted')
+    feedback([items.length ? discoveryText : label, summary].filter(Boolean).join(' · ') || t('mini.saved'), items.length || gained ? 'gold' : 'ok')
   }
   return h('div',{ref:miniRoot,className:'fg-view fg-miniView','data-scene':scene.id},
     h('div',{className:'fg-miniTools'},
       h('select',{'aria-label':t('plot.section'),value:scene.id,onChange:event=>{commit({...getState(),scene:event.target.value},true);setSelection({})}},SCENES.filter(entry=>(state.scenes[entry.id]?.unlocked??0)>0).map(entry=>h('option',{key:entry.id,value:entry.id},t(`scene.${entry.id}`)))),
-      h('button',{type:'button',className:'fg-btn',onClick:()=>act(before=>waterAll(before,before.scene))},t('mini.water')),
+      h('button',{type:'button',className:'fg-btn',onClick:()=>act(before=>waterAll(before,before.scene),null,null,t('plot.watered'))},t('mini.water')),
       ripeCount>0?h('button',{type:'button',className:'fg-btn fg-btnPrimary','data-mini':'harvestAll',onClick:()=>act(before=>{let next=before;const live=before.scenes[before.scene];for(let i=0;i<live.unlocked;i++){const plot=next.scenes[before.scene].plots[i];if(!plot||plot.resident)continue;const done=harvestAt(next,before.scene,i,Date.now(),weatherAt(Date.now()),false);if(done)next=done}return next===before?null:next},'harvest',0)},t('mini.harvestAll',{n:ripeCount})):null,
+      visitorCount(state,scene.id,clock)>0?h('button',{type:'button',className:'fg-btn fg-btnPrimary','data-mini':'greetAll',onClick:()=>act(before=>greetAll(before,before.scene,Date.now()),'visitor',0)},'👋 ',t('bulk.greet',{n:visitorCount(state,scene.id,clock)})):null,
+      emptyCount(slot)>0?h('button',{type:'button',className:'fg-btn','data-mini':'sowAll',onClick:()=>act(before=>sowRandom(before,before.scene))},'🎲 ',t('bulk.sow',{n:emptyCount(slot)})):null,
       (state.bag.sprinkler??0)>0&&!((slot.sprinklerUntil??0)>clock)?h('button',{type:'button',className:'fg-btn','data-mini':'sprinkle',onClick:()=>act(before=>useSprinkler(before,before.scene,Date.now()))},t('mini.sprinkle',{n:state.bag.sprinkler})):null),
     h('p',{className:'fg-miniSummary'},t('mini.basket',{n:state.basket.length,max:basketCapacity(state)}),' · ',state.coins,' ',t('stat.coins')),
     h(MiniToday,{state,t,clock,run:act}),
@@ -257,33 +268,37 @@ function MiniGarden({t}) {
         const seed=scene.species.includes(selection[index])?selection[index]:scene.species[0]
         const seedSpecies=SPECIES_BY_ID.get(seed)
         const visitor=plot?visitorAt(scene.id,index,plot,clock,weather,facilityLevel(state,'hive'),gardenEcology(state,clock).visitorBonus,state):null
-        return h('article',{key:index,className:'fg-miniPlot','data-mini-plot':index},
-          h('div',{className:'fg-miniPlant'},plot?h(FlowerArt,{speciesId:plot.species,stage,variant:plot.variant??(plot.tint?'base':plotVariant(species,index)),trait:plot.trait,tint:plot.tint,dna:plot.dna}):EmptyArt(),
+        const variant = plot && ((plot.resident || plot.identified) ? plot.variant : plot.tint ? 'base' : plotVariant(species,index))
+         const rarity = plot && stage === 'bloom' ? rarityOf({...plot,variant}) : null
+         return h('article',{key:index,className:'fg-miniPlot','data-mini-plot':index,'data-rarity':rarity,'data-variant':variant,'data-trait':plot?.trait},
+          h('div',{className:'fg-miniPlant'},plot?h(FlowerArt,{speciesId:plot.species,stage,variant,trait:plot.trait,tint:plot.tint,dna:plot.dna}):EmptyArt(),
             visitor?h('button',{type:'button',className:'fg-miniVisitor','data-mini-visitor':visitor.id,title:t('visitor.greet',{name:t(`visitor.${visitor.id}`)}),'aria-label':t('visitor.greet',{name:t(`visitor.${visitor.id}`)}),onClick:()=>act(before=>greetVisitor(before,scene.id,index,Date.now(),weatherAt(Date.now())),'visitor',index)},h(VisitorArt,{id:visitor.id})):null),
           h('strong',null,plot?bloomName({...plot,variant:plot.variant??'base'},t):t('mini.empty')),
           plot?h('span',{className:'fg-note'},t(`stage.${stage}`),' · ',t('mini.moisture',{n:Math.round(plot.moisture)})):null,
-          plot?.trait?h('span',{className:'fg-badge fg-badgeWarn'},t(`trait.${plot.trait}`)):null,
+          rarity && rarity!=='base'?h('span',{className:'fg-badge fg-miniRarity'},'✦ ',t(`bag.rarity.${rarity}`)):null,
           plot?h('div',{className:'fg-miniActions'},
-            h('button',{type:'button',className:'fg-btn',disabled:plot.moisture>=99.5,onClick:()=>act(before=>waterAt(before,scene.id,index))},t('plot.water')),
+            h('button',{type:'button',className:'fg-btn',disabled:plot.moisture>=99.5,onClick:()=>act(before=>waterAt(before,scene.id,index),null,index,t('plot.watered'))},t('plot.water')),
             stage==='bloom'?h('button',{type:'button',className:'fg-btn',disabled:state.basket.length>=basketCapacity(state),onClick:()=>{
               if(plot.resident&&selection.retire!==`${scene.id}:${index}`){setSelection(current=>({...current,retire:`${scene.id}:${index}`}));return}
               setSelection(current=>({...current,retire:undefined}))
               act(before=>harvestAt(before,scene.id,index,Date.now(),weatherAt(Date.now()),plot.resident===true),'harvest',index)
             }},plot.resident?t(selection.retire===`${scene.id}:${index}`?'eco.retireConfirm':'eco.retire'):t('plot.harvest')):
-              h('button',{type:'button',className:'fg-btn',disabled:(state.bag.fertilizer??0)<=0,onClick:()=>act(before=>fertilizeAt(before,scene.id,index))},t('item.fertilizer')),
+              h('button',{type:'button',className:'fg-btn',disabled:(state.bag.fertilizer??0)<=0,onClick:()=>act(before=>fertilizeAt(before,scene.id,index),null,index,t('item.fertilized',{flower:t(`species.${plot.species}`)}))},t('item.fertilizer')),
             stage==='bloom'&&!plot.resident?h('button',{type:'button',className:'fg-btn',onClick:()=>act(before=>retainAt(before,scene.id,index,Date.now()),'retain',index)},t('eco.retain')):null,
             visitor?h('span',{className:'fg-note'},t(`visitor.${visitor.id}`)):null):
           h('div',{className:'fg-miniActions'},
             h('select',{'aria-label':`${t('mini.seed')} ${index+1}`,value:seed,onChange:event=>{const value=event.target.value;setSelection(current=>({...current,[index]:value}))}},scene.species.map(id=>h('option',{key:id,value:id},`${t(`species.${id}`)} · ${SPECIES_BY_ID.get(id).cost}`))),
-            h('button',{type:'button',className:'fg-btn',disabled:state.coins<seedSpecies.cost,onClick:()=>act(before=>plantAt(before,scene.id,index,seed))},t('mini.plant'))))
+            h('button',{type:'button',className:'fg-btn',disabled:state.coins<seedSpecies.cost,onClick:()=>act(before=>plantAt(before,scene.id,index,seed),null,index,t('mini.sown',{flower:t(`species.${seed}`)}))},t('mini.plant'))))
       }))),
-    h('p',{className:'fg-miniNotice',role:'status','aria-live':'polite'},notice),
+    h('p',{className:'fg-miniNotice',role:'status','aria-live':'polite','data-tone':notice?.tone,'data-feedback-id':notice?.id},notice?.text),
     discovery?h(DiscoveryCard,{entry:discovery,t,onClose:()=>{setDiscovery(null);restoreMiniFocus()},onOpen:item=>{setDiscovery(null);setPreview(item)}}):null,
     preview?(preview.type==='visitor'?h(VisitorPreview,{visitorId:preview.visitor,state,t,onClose:()=>{setPreview(null);restoreMiniFocus()}}):h(BloomPreview,{id:'fg-mini-preview',speciesId:preview.species,variant:preview.variant??'base',trait:preview.trait,tint:preview.tint,dna:preview.dna,t,modal:true,onClose:()=>{setPreview(null);restoreMiniFocus()}})):null)
 }
 function FloatingGarden() {
   const mini=useSyncExternalStore(subscribeMini,getMini,getMini), drag=React.useRef(null)
   const t=boundT
+  const body=React.useRef(null)
+  const desktop=useDesktopGarden(body,t)
   const [,refreshLocale]=React.useReducer(n=>n+1,0)
   React.useEffect(()=>{const locale=pluginCtx?.locale;return typeof locale?.subscribe==='function'?locale.subscribe(()=>refreshLocale()):undefined},[])
   React.useEffect(()=>{const resize=()=>updateMini({});window.addEventListener('resize',resize);return()=>window.removeEventListener('resize',resize)},[])
@@ -302,9 +317,11 @@ function FloatingGarden() {
     h('style',null,CSS,MINI_CSS),
     h('header',{className:'fg-floatingBar',onPointerDown:start,onPointerMove:move,onPointerUp:end,onPointerCancel:end,onLostPointerCapture:end},
       h('span',{className:'fg-floatingMove',tabIndex:0,role:'button','aria-label':t('mini.move'),onKeyDown:event=>keys(event)},'✿ ',t('mini.title')),
+      h('button',{type:'button',className:'fg-desktopPin',disabled:desktop.phase==='opening'||(mini.minimized&&desktop.phase==='idle'),onClick:desktop.toggle},t(desktop.phase==='idle'?'desktop.pin':desktop.phase==='opening'?'desktop.opening':'desktop.unpin')),
       h('button',{type:'button',title:t(mini.minimized?'mini.restore':'mini.minimize'),'aria-label':t(mini.minimized?'mini.restore':'mini.minimize'),onClick:()=>updateMini({minimized:!mini.minimized})},mini.minimized?'▢':'−'),
-      h('button',{type:'button',title:t('mini.close'),'aria-label':t('mini.close'),onClick:()=>updateMini({open:false})},'×')),
-    !mini.minimized?h('div',{className:'fg-floatingBody'},h(MiniGarden,{t})):null,
+      h('button',{type:'button',title:t('mini.close'),'aria-label':t('mini.close'),onClick:()=>{if(desktop.phase!=='idle')desktop.toggle();updateMini({open:false})}},'×')),
+    desktop.message?h('p',{className:'fg-miniNotice',role:'status'},t(desktop.message)):null,
+    (!mini.minimized||desktop.phase!=='idle')?h('div',{className:'fg-floatingBody',ref:body,hidden:mini.minimized},h(MiniGarden,{t})):null,
     !mini.minimized?h('span',{className:'fg-floatingResize',tabIndex:0,role:'button','aria-label':t('mini.resize'),onKeyDown:event=>keys(event,true),onPointerDown:event=>start(event,true),onPointerMove:move,onPointerUp:end,onPointerCancel:end,onLostPointerCapture:end},'◢'):null)
 }
 const MINI_CSS=`
@@ -319,5 +336,15 @@ const MINI_CSS=`
 .fg-miniPlots{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.fg-miniPlot{min-width:0;display:flex;flex-direction:column;gap:6px;padding:9px;border:1px solid var(--dsw-alias-border-l2);border-radius:12px;background:color-mix(in srgb,var(--dsw-alias-bg-layer-1) 88%,transparent)}
 .fg-miniPlant{position:relative;height:96px;display:flex;align-items:center;justify-content:center}
 .fg-miniVisitor{position:absolute;top:0;right:0;width:38px;height:38px;padding:3px;border:1px solid var(--dsw-alias-state-success-primary);border-radius:50%;background:var(--dsw-alias-bg-layer-1);cursor:pointer;box-shadow:0 2px 8px #0002;animation:fg-bob 1.7s ease-in-out infinite alternate}.fg-miniPlant .fg-miniVisitor svg{width:30px;height:30px}.fg-miniVisitor:hover{background:var(--dsw-alias-bg-layer-2)}.fg-miniPlant svg{height:96px;width:96px}.fg-miniPlot strong{font-size:13px;overflow-wrap:anywhere;line-height:1.5}.fg-miniPlot .fg-note{white-space:normal}.fg-miniActions{display:flex;flex-wrap:wrap;gap:4px}.fg-miniActions select{width:100%}.fg-miniView .fg-btn{font-size:12px;min-height:28px;padding:4px 7px}.fg-miniNotice{margin:0;padding:8px 14px 22px;color:var(--dsw-alias-label-secondary)}
+.fg-miniPlot[data-rarity="spirit"]{--fg-mini-rarity:var(--fg-r-spirit)}
+.fg-miniPlot[data-rarity="curio"]{--fg-mini-rarity:var(--fg-r-curio)}
+.fg-miniPlot[data-rarity="hybrid"]{--fg-mini-rarity:var(--fg-r-hybrid)}
+.fg-miniPlot[data-rarity="alt"]{--fg-mini-rarity:var(--fg-r-alt)}
+.fg-miniPlot[data-rarity]:not([data-rarity="base"]){border-color:var(--fg-mini-rarity);box-shadow:inset 0 2px 0 var(--fg-mini-rarity)}
+.fg-miniRarity{align-self:flex-start;border:1px solid var(--fg-mini-rarity);background:color-mix(in srgb,var(--fg-mini-rarity) 18%,var(--dsw-alias-bg-layer-1))}
+.fg-miniView .fg-miniNotice:not(:empty){position:sticky;bottom:0;z-index:2;margin:0;padding:8px 12px;background:var(--dsw-alias-bg-layer-1);border-inline-start:3px solid var(--fg-accent);color:var(--dsw-alias-label-primary)}
+.fg-miniView .fg-miniNotice[data-tone="gold"]{border-color:var(--fg-r-spirit)}
+.fg-miniView .fg-miniNotice[data-tone="error"]{border-color:var(--dsw-alias-state-error-primary)}
+
 `
 

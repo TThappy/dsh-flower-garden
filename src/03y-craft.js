@@ -43,7 +43,7 @@
     }
 
     /** One to five stars for three to seven blooms; a bouquet pays more than the same flowers sold loose. */
-    function arrangeScore(items, now, vase) {
+    function arrangeScore(items, now, vase, dried = false) {
       if (!Array.isArray(items) || items.length < BOUQUET_MIN || items.length > BOUQUET_MAX) return null
       const tones = items.map(bloomTone)
       const values = items.map(itemValue).sort((a, b) => b - a)
@@ -55,18 +55,19 @@
         focal: special === 1 || (special === 0 && values[0] >= values[1] * 1.4),
         theme: tones.filter(tone => tone.family === theme).length * 2 >= items.length,
       }
-      const stars = 1 + Object.values(checks).filter(Boolean).length
+      const stars = Math.min(5, 1 + Object.values(checks).filter(Boolean).length + (dried ? 1 : 0))
       const match = vaseMatch(vase, items)
       const value = values.reduce((sum, n) => sum + n, 0)
       return { stars, checks, theme, value: Math.round(value), match, coins: Math.round(value * (1 + BOUQUET_STAR_BONUS * stars + (match ? VASE_MATCH_BONUS : 0))), xp: stars * 2 }
     }
 
-    function arrangeBouquet(state, indices, now, vase = 'classic') {
+    function arrangeBouquet(state, indices, now, vase = 'classic', useDried = false) {
       if (!Array.isArray(indices) || new Set(indices).size !== indices.length) return null
       if (indices.some(index => !Number.isInteger(index) || index < 0 || index >= state.basket.length)) return null
       const items = indices.map(index => state.basket[index])
       const pot = vaseOwned(state, vase) ? vase : 'classic'
-      const score = arrangeScore(items, now, pot)
+      const dried = useDried === true && goodsCount(state, 'dried') > 0
+      const score = arrangeScore(items, now, pot, dried)
       if (score === null) return null
       const used = new Set(indices)
       return {
@@ -78,6 +79,7 @@
         bouquetBest: Math.max(state.bouquetBest ?? 0, score.stars),
         ...bouquetCardPatch(state, items, score, pot, now),
         ...briefPatch(state, items, score, now),
+        ...(dried ? { goods: { ...state.goods, dried: goodsCount(state, 'dried') - 1 }, goodsUsed: (state.goodsUsed ?? 0) + 1 } : {}),
       }
     }
 

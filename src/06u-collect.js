@@ -21,28 +21,42 @@ function fxText(effect, t) {
   return t(`shelf.fx.${effect.type}`, { n: Math.round(effect.amount * 100) })
 }
 
-/** Vases: owned ones are chosen, earned ones are bought with a second click, the rest wait. */
+/** Vases as labelled cards: owned ones are chosen, earned ones show a price, the rest say what unlocks them. */
 function VaseShelf({ state, t, vase, onPick, onChange }) {
   const [armed, setArmed] = React.useState(null)
-  return h('div', { className: 'fg-vasePicker', role: 'group', 'aria-label': t('vase.pick') }, VASES.map(entry => {
-    const owned = vaseOwned(state, entry.id), earned = vaseUnlocked(state, entry.id), price = VASE_PRICE[entry.id]
-    const need = entry.stars !== undefined ? t('vase.needStars') : t('vase.need', { n: Math.max(0, entry.need - (state.arranged ?? 0)) })
-    const like = VASE_LIKES[entry.id] ? ` · ${t(`vase.like.${VASE_LIKES[entry.id]}`)}` : ''
-    const label = owned ? t(`vase.${entry.id}`) + like
-      : earned ? t(armed === entry.id ? 'vase.buyConfirm' : 'vase.buy', { name: t(`vase.${entry.id}`), n: price }) + like : `${t(`vase.${entry.id}`)} · ${need}`
-    return h('button', {
-      key: entry.id, type: 'button', className: 'fg-vaseChoice', 'data-vase': entry.id, 'data-earned': earned ? 'true' : 'false', 'data-owned': owned ? 'true' : 'false',
-      'data-armed': armed === entry.id ? 'true' : undefined, 'aria-pressed': vase === entry.id ? 'true' : 'false',
-      disabled: !earned || (!owned && state.coins < price), title: label, 'aria-label': label,
-      onClick: () => {
-        if (owned) { onPick(entry.id); return }
-        if (armed !== entry.id) { setArmed(entry.id); return }
-        setArmed(null); tick()
-        const next = buyVase(getState(), entry.id)
-        if (next !== null) { onChange(next); onPick(entry.id) }
+  const like = VASE_LIKES[vase]
+  const paint = color => { const next = setVaseTint(getState(), vase, color); if (next !== null) onChange(next) }
+  return h('div', { className: 'fg-vaseShelf' },
+    h('div', { className: 'fg-vasePicker', role: 'group', 'aria-label': t('vase.pick') }, VASES.map(entry => {
+      const owned = vaseOwned(state, entry.id), earned = vaseUnlocked(state, entry.id), price = VASE_PRICE[entry.id]
+      const need = entry.stars !== undefined ? t('vase.needStars') : t('vase.need', { n: Math.max(0, entry.need - (state.arranged ?? 0)) })
+      const likes = VASE_LIKES[entry.id] ? ` · ${t(`vase.like.${VASE_LIKES[entry.id]}`)}` : ''
+      const label = owned ? t(`vase.${entry.id}`) + likes
+        : earned ? t(armed === entry.id ? 'vase.buyConfirm' : 'vase.buy', { name: t(`vase.${entry.id}`), n: price }) + likes : `${t(`vase.${entry.id}`)} · ${need}`
+      return h('button', {
+        key: entry.id, type: 'button', className: 'fg-vaseChoice', 'data-vase': entry.id, 'data-earned': earned ? 'true' : 'false', 'data-owned': owned ? 'true' : 'false',
+        'data-armed': armed === entry.id ? 'true' : undefined, 'aria-pressed': vase === entry.id ? 'true' : 'false',
+        disabled: !earned || (!owned && state.coins < price), title: label, 'aria-label': label,
+        onClick: () => {
+          if (owned) { onPick(entry.id); return }
+          if (armed !== entry.id) { setArmed(entry.id); return }
+          setArmed(null); tick()
+          const next = buyVase(getState(), entry.id)
+          if (next !== null) { onChange(next); onPick(entry.id) }
+        },
       },
-    }, h(VaseArt, { id: entry.id }), owned ? null : h('span', { className: 'fg-vasePrice' }, earned ? String(price) : '🔒'))
-  }))
+      h(VaseArt, { id: entry.id, tint: vaseTint(state, entry.id) }),
+      h('span', { className: 'fg-vaseName' }, t(`vase.${entry.id}`)),
+      h('span', { className: 'fg-vaseState' }, owned ? t(vase === entry.id ? 'vase.using' : 'vase.owned')
+        : !earned ? `🔒 ${need}` : armed === entry.id ? t('vase.again') : [CoinGlyph(), h('span', { key: 'p', className: 'fg-vasePrice' }, String(price))]))
+    })),
+    h('p', { className: 'fg-vaseHint' }, h('strong', null, t(`vase.${vase}`)), '：', like ? `${t(`vase.like.${like}`)}，${t('vase.bonus')}` : t('vase.like.none')),
+    h('div', { className: 'fg-vaseTints', role: 'group', 'aria-label': t('vase.tint') },
+      h('span', { className: 'fg-note' }, t('vase.tint')),
+      VASE_SWATCHES.map(color => h('button', { key: color, type: 'button', className: 'fg-vaseTint', 'data-tint': color, 'aria-pressed': vaseTint(state, vase) === color ? 'true' : 'false', style: { background: color }, title: color, 'aria-label': `${t('vase.tint')} ${color}`, onClick: () => paint(color) })),
+      h('input', { type: 'color', className: 'fg-vaseTintPick', value: vaseTint(state, vase) ?? VASE_LOOKS[vase].base, title: t('vase.tintCustom'), 'aria-label': t('vase.tintCustom'), onChange: event => paint(event.target.value) }),
+      vaseTint(state, vase) ? h('button', { type: 'button', className: 'fg-btn fg-btnSmall fg-btnGhost', 'data-action': 'vaseTintReset', onClick: () => paint(null) }, t('vase.tintReset')) : null),
+    h('p', { className: 'fg-vaseHint' }, t('vase.how')))
 }
 
 function Shelf({ state, t, onChange, compact = false }) {
@@ -143,3 +157,15 @@ function CardTools({ state, t, kind, card, onChange }) {
       h('button', { type: 'button', className: 'fg-btn fg-btnSmall fg-btnPrimary', 'data-action': 'cardNameSave', onClick: () => { apply(current => nameBouquet(current, card.id, title, note)); setEditing(false) } }, t('keep.done')))
       : kind === 'bouquets' && (card.title || card.note) ? h('div', { className: 'fg-cardInscription' }, card.title ? h('strong', null, card.title) : null, card.note ? h('span', null, card.note) : null) : null)
 }
+
+Object.assign(zh, {
+  'vase.owned':'已拥有', 'vase.using':'使用中', 'vase.again':'再点一次购买', 'vase.bonus':'半数以上相配时花束多卖 5%', 'vase.like.none':'什么花都能插，没有额外加成',
+  'vase.how':'花瓶先靠插花数量解锁，再用金币买下；带锁的写着还差多少。',
+})
+Object.assign(en, {
+  'vase.owned':'Owned', 'vase.using':'In use', 'vase.again':'Click again to buy', 'vase.bonus':'bouquets sell 5% higher when half or more fit', 'vase.like.none':'takes any flower, with no extra bonus',
+  'vase.how':'A vase is unlocked by arranging bouquets, then bought with coins; locked ones say what is still needed.',
+})
+
+Object.assign(zh, { 'vase.tint':'花瓶颜色', 'vase.tintCustom':'自己调一个颜色', 'vase.tintReset':'恢复原色' })
+Object.assign(en, { 'vase.tint':'Vase colour', 'vase.tintCustom':'Mix your own colour', 'vase.tintReset':'Original glaze' })

@@ -19,8 +19,9 @@
 .fg-tipToggle::-webkit-details-marker{display:none}
 .fg-tipMark{display:inline-flex;align-items:center;justify-content:center;width:1.5em;height:1.5em;border-radius:50%;border:1px solid var(--dsw-alias-border-l2);font-weight:700}
 .fg-tip[open] .fg-tipMark{background:var(--dsw-alias-brand-primary);color:#fff;border-color:transparent}
-.fg-tipBody{margin-top:8px;padding:10px 14px;border-radius:12px;background:var(--dsw-alias-bg-layer-2);max-width:70ch}
-.fg-tipBody p{margin:0 0 6px;line-height:1.7}.fg-tipBody p:last-child{margin:0}
+.fg-tipBody{margin-top:8px;padding:10px 14px;border-radius:12px;background:var(--dsw-alias-bg-layer-2);max-inline-size:min(36em,100%);box-sizing:border-box;overflow-wrap:anywhere}
+.fg-tipBody p{margin:0;line-height:1.65}
+.fg-tipBody p+p{margin-top:.55em;padding-top:.55em;border-top:1px solid var(--dsw-alias-border-l1)}
 .fg-slotGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(78px,1fr));gap:8px;align-content:start}
 .fg-slot{appearance:none;position:relative;box-sizing:border-box;aspect-ratio:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:6px 4px 4px;border:2px solid var(--fg-r-base);border-radius:14px;background:linear-gradient(160deg,var(--dsw-alias-bg-layer-1),var(--dsw-alias-bg-layer-2));color:var(--dsw-alias-label-primary);font:inherit;box-shadow:inset 0 -6px 12px #0000000f}
 button.fg-slot{cursor:pointer;transition:transform .12s ease,box-shadow .12s ease}

@@ -9,7 +9,7 @@
     const EVENT_WINDOW_MS = 8 * 60 * 1000
     const EVENT_CHANCE = 0.35
     const BOOST_MS = 10 * 60 * 1000
-    const BOOST_SPIRIT = 0.1
+    const BOOST_SPIRIT = 0.02
     const BRIEF_REWARD = { coins: 60, ribbons: 1 }
 
     function companionRole(id) {

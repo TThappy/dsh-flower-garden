@@ -229,7 +229,10 @@ const REGION_SPECIES = [
     const XP_PER_LEVEL = 60
     const BASKET_CAPACITY = 12
     const SPRINKLER_MS = 30 * 60 * 1000
-    const CHARM_BONUS = 0.25
+    const CHARM_BONUS = 0.03
+    /** Ceiling of the spirit chance, without and with a lucky charm. */
+    const HIDDEN_CAP = 0.1
+    const CHARM_CAP = 0.15
 
     /** Shop goods: consumables sit in the bag, the basket upgrade has levels. */
     const ITEMS = [
@@ -403,7 +406,45 @@ const REGION_SPECIES = [
       { id: 'double', chance: 0.2, source: 'https://en.wikipedia.org/wiki/Double-flowered', specimen: 'rose' },
       { id: 'leafy', chance: 0.2, source: 'https://en.wikipedia.org/wiki/Phyllody', specimen: 'daisy' },
     ]
-    const TRAIT_BY_ID = new Map(TRAITS.map(trait => [trait.id, trait]))
+    const TRAIT_MAX = 4
+    /** Odds of a further curiosity on a flower that already has 0, 1, 2 or 3. */
+    const TRAIT_EXTRA = [1, 0.25, 0.15, 0.08]
+    const TRAIT_BASE = new Map(TRAITS.map(trait => [trait.id, trait]))
+    function traitParts(id) { return typeof id === 'string' && id !== '' ? id.split('+') : [] }
+    /** One curiosity id for several: known ones only, no repeats, in the book's order, four at most. */
+    function joinTraits(parts) {
+      const order = TRAITS.map(trait => trait.id)
+      return [...new Set(parts)].filter(id => TRAIT_BASE.has(id)).sort((a, b) => order.indexOf(a) - order.indexOf(b)).slice(0, TRAIT_MAX).join('+') || undefined
+    }
+    /** Several colour curiosities on one flower: each takes a band of the petal, and the base colours are mixed. */
+    function blendPaints(painted) {
+      const n = painted.length
+      const stops = painted.flatMap((part, k) => part.stops.map(([offset, color]) => [Math.round(((k + offset / 100) / n) * 100), color]))
+      const pal = {}
+      for (const key of ['petal', 'petalDeep', 'center', 'centerDeep']) {
+        const colors = painted.map(part => part.pal[key]).filter(Boolean)
+        if (colors.length > 0) pal[key] = colors.reduce((acc, color, i) => mix(acc, color, 1 / (i + 1)))
+      }
+      return { stops, pal }
+    }
+    /** Looks up one curiosity or a combination such as "twin+frost". */
+    const TRAIT_BY_ID = {
+      has(id) { const parts = traitParts(id); return parts.length > 0 && parts.length <= TRAIT_MAX && new Set(parts).size === parts.length && parts.every(part => TRAIT_BASE.has(part)) },
+      get(id) {
+        if (TRAIT_BASE.has(id)) return TRAIT_BASE.get(id)
+        if (!this.has(id)) return undefined
+        const parts = traitParts(id).map(part => TRAIT_BASE.get(part))
+        const painted = parts.filter(part => part.stops !== undefined), cited = parts.find(part => part.source !== undefined)
+        const paint = painted.length > 1 ? blendPaints(painted) : painted[0]
+        return { ...(paint ?? {}), id: traitParts(id).join('_'), parts: traitParts(id), chance: Math.min(...parts.map(part => part.chance)), source: cited?.source, specimen: cited?.specimen, factId: cited?.id }
+      },
+    }
+    function traitPrice(trait) { const n = traitParts(trait).length; return n === 0 ? 1 : TRAIT_PRICE + n - 1 }
+    function traitCountKeys(trait) { const parts = traitParts(trait); return parts.length > 1 ? [...parts, trait] : parts }
+    function traitLabel(trait, t) { return traitParts(trait).map(part => t(`trait.${part}`)).join('·') }
+    function traitCauseText(trait, t) { return traitParts(trait).map(part => t(`trait.${part}.cause`)).join(' · ') }
+    function traitFactId(trait) { return TRAIT_BY_ID.get(trait)?.factId ?? trait }
+    const TRAIT_API = { TRAIT_MAX, TRAIT_EXTRA, TRAIT_BY_ID, traitParts, joinTraits, traitPrice, traitLabel }
     /** The weather each ground turns into a curiosity: harvest in it for a chance. */
     const SCENE_TRAIT = {
       meadow: { trait: 'rainbow', weather: 'rain' },
@@ -508,14 +549,14 @@ const REGION_SPECIES = [
 
     /** Chance that a harvest turns up the gold bloom; the flower book lists these. */
     function hiddenChance(plot, weather, now, scene) {
-      let chance = 0.03
-      if (plot.dried !== true) chance += 0.07
+      let chance = 0.01
+      if (plot.dried !== true) chance += 0.01
       const favoured = scene.rainWets ? weather === 'rain' : weather === 'clear'
-      if (favoured) chance += 0.05
+      if (favoured) chance += 0.01
       const hour = new Date(now).getHours()
-      if (hour >= 22 || hour < 5) chance += 0.07
-      if (plot.moisture >= 80) chance += 0.08
+      if (hour >= 22 || hour < 5) chance += 0.01
+      if (plot.moisture >= 80) chance += 0.01
       chance += seasonalBonus(plot.species, now)
-      return Math.min(0.3, chance)
+      return Math.min(HIDDEN_CAP, chance)
     }
 

@@ -111,7 +111,7 @@
       // Variegated plants carry cream margins on every leaf.
       const across = { x1: '0', y1: '0.5', x2: '1', y2: '0.5' }
       const margin = (edge, heart) => [[0, edge], [20, edge], [34, heart], [66, heart], [80, edge], [100, edge]]
-      const striped = trait !== undefined && trait.id === 'variegated'
+      const striped = !hidden && traitParts(look?.trait).includes('variegated')
       lazy('leaf', () => (striped
         ? ink.lin('leaf', margin('#f6efc8', pal.leaf), across)
         : ink.lin('leaf', [[0, darken(pal.leaf, 0.22)], [100, lighten(pal.leaf, 0.14)]])))
@@ -1696,6 +1696,9 @@ const NEW_PLANTS = {
     }
 
     /** Small six-armed crystals for a frost bloom, or a heat glow for an ember one. */
+    function mergeLayers(list) { return { under: list.flatMap(layer => layer.under), over: list.flatMap(layer => layer.over) } }
+    function traitExtrasAll(traitId, headY) { return mergeLayers(traitParts(traitId).map(part => traitExtras(part, headY))) }
+    function specialTraitArtAll(ink, traitId, headY) { return mergeLayers(traitParts(traitId).map(part => specialTraitArt(ink, part, headY))) }
     function traitExtras(traitId, headY) {
       if (traitId === 'frost') {
         const arms = [[27, headY - 14, 2.6], [73, headY - 8, 2.2], [68, headY + 16, 1.8], [30, headY + 12, 2]]
@@ -1762,7 +1765,7 @@ const REGION_PLANTS = {
         : stage === 'sprout'
           ? sproutArt(ink, species)
           : PLANTS[species.head](ink, { bloom: stage === 'bloom', top: stage === 'bloom' ? HEAD_Y : 54, k: stage === 'bloom' ? 1 : 0.74 }))
-      const draw = () => { const layers = specialTraitArt(ink, traitId, headY); return [...layers.under, ...drawBase(), ...layers.over] }
+      const draw = () => { const layers = specialTraitArtAll(ink, traitId, headY); return [...layers.under, ...drawBase(), ...layers.over] }
       artSalt = genes === 0 ? 0 : (genes % 9973) / 97
       // Floating and pad plants do not sway on a stem.
       const sway = stage === 'seed' || floating ? undefined : 'fg-plant'
@@ -1771,11 +1774,11 @@ const REGION_PLANTS = {
       try {
         const grown = stage !== 'seed' && genes !== 0
         const lean = grown && !floating ? (hashUnit(genes, 4, 9) - 0.5) * 12 : 0
-        const big = traitId === 'giant' ? 1.2 : 1
+        const big = traitParts(traitId).includes('giant') ? 1.2 : 1
         const sy = (grown ? 0.84 + hashUnit(genes, 5, 9) * 0.25 : 1) * big
         const sx = (grown ? 0.9 + hashUnit(genes, 6, 9) * 0.2 : 1) * big
         const flip = grown && hashUnit(genes, 7, 9) < 0.5 ? -1 : 1
-        if (traitId === 'twin') {
+        if (traitParts(traitId).includes('twin')) {
           // Two flowers on one root: the second is the first one's mirror, a little smaller.
           const spread = floating ? 0 : 11
           bodies = [
@@ -1790,7 +1793,7 @@ const REGION_PLANTS = {
       } finally {
         artSalt = 0
       }
-      const extras = traitExtras(traitId, headY)
+      const extras = traitExtrasAll(traitId, headY)
       return h('svg', {...SVG_PROPS,className:presentation==='specimen'?'fg-flowerSpecimen':'fg-flowerLiving','data-presentation':presentation},
         h('defs', null, ...ink.defs, hidden ? hiddenAuraDef(`${species.id}-${paintId}`) : null),
         ...(hidden ? hiddenAura(`${species.id}-${paintId}`, headY) : []),
@@ -2177,7 +2180,7 @@ function specialTraitArt(ink, traitId, headY = HEAD_Y) {
     /** One flower detail card: drawing, name, variant, Latin, meaning, figures, actions. */
     function bloomName(item, t) {
       let name = item.tint ? t('hybrid.name', { form: t(`species.${item.species}`), tint: t(`species.${item.tint}`) }) : t(`species.${item.species}`)
-      if (item.trait) name = t('trait.named', { trait: t(`trait.${item.trait}`), flower: name })
+      if (item.trait) name = t('trait.named', { trait: traitLabel(item.trait, t), flower: name })
       return name
     }
 
@@ -2216,8 +2219,8 @@ function specialTraitArt(ink, traitId, headY = HEAD_Y) {
           h('div', { className: 'fg-previewMeaning' }, t(`codex.${species.id}`)),
           modal ? h('span', { className: 'fg-note' }, t(specimenMode?'card.specimenTitle':sample!==null?'card.example':'card.living')) : null,
           modal ? h('p', { className: 'fg-cardFact' }, t(`fact.${species.id}`)) : null,
-          trait ? h('p', { className: 'fg-note' }, t(`trait.${trait}.cause`)) : null,
-          trait && TRAIT_BY_ID.get(trait)?.source ? h('div', { className: 'fg-purpose' }, h('p',null,t(`trait.${trait}.fact`)), h('a',{href:TRAIT_BY_ID.get(trait).source,target:'_blank',rel:'noopener noreferrer'},t('trait.source'))) : null,
+          trait ? h('p', { className: 'fg-note' }, traitCauseText(trait, t)) : null,
+          trait && TRAIT_BY_ID.get(trait)?.source ? h('div', { className: 'fg-purpose' }, h('p',null,t(`trait.${traitFactId(trait)}.fact`)), h('a',{href:TRAIT_BY_ID.get(trait).source,target:'_blank',rel:'noopener noreferrer'},t('trait.source'))) : null,
           tint ? h('p', { className: 'fg-note' }, t('hybrid.how')) : null,
           modal ? h('div', { className: 'fg-previewStats' },
             h('span', null, `${t('card.ground')} · ${t(`scene.${SCENES.find(ground => ground.species.includes(species.id)).id}`)}`),
@@ -2278,7 +2281,7 @@ function specialTraitArt(ink, traitId, headY = HEAD_Y) {
         const name = item.tint === undefined
           ? t(`species.${item.species}`)
           : t('hybrid.name', { tint: t(`species.${item.tint}`), form: t(`species.${item.species}`) })
-        return [name, t(`variant.${item.variant}`), item.trait === undefined ? null : t(`trait.${item.trait}`)]
+        return [name, t(`variant.${item.variant}`), item.trait === undefined ? null : traitLabel(item.trait, t)]
           .filter(Boolean).join(' · ')
       }
       function enter(key, item) {

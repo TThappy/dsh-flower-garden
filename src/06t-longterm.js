@@ -45,11 +45,12 @@ function Workshop({ state, t, clock, onChange }) {
       (state.crafted ?? 0) > 0 ? h('span', { className: 'fg-sectionMeta' }, t('work.count', { n: state.crafted })) : null,
       benches < BENCH_PRICES.length ? h('button', { type: 'button', className: 'fg-btn fg-btnSmall', 'data-action': 'benchBuy', disabled: state.coins < BENCH_PRICES[benches], onClick: () => apply(buyBench) }, t('work.bench', { n: BENCH_PRICES[benches] })) : null,
       h(InfoTip, { t, lines: [t('work.rules')] })),
+    h(GoodsShelf, { state, t, clock, onChange }),
     benches === 0 ? h('p', { className: 'fg-empty' }, t('work.none')) : null,
     jobs.map((job, index) => h('div', { key: index, className: 'fg-tripRow', 'data-job': job.recipe },
       h('progress', { max: job.end - job.start, value: Math.max(0, Math.min(job.end - job.start, clock - job.start)), 'aria-label': t(`work.${job.recipe}`) }),
       clock >= job.end
-        ? h('button', { type: 'button', className: 'fg-btn fg-btnPrimary', 'data-action': 'jobClaim', onClick: () => apply((current, now) => claimJob(current, index, now)) }, t('work.claim', { name: t(`work.${job.recipe}`), n: job.coins }))
+        ? h(React.Fragment, null, h('strong', null, t(`work.${job.recipe}`)), h('button', { type: 'button', className: 'fg-btn fg-btnPrimary', 'data-action': 'jobKeep', onClick: () => apply((current, now) => claimJob(current, index, now, true)) }, t('goods.keep', { name: t(`item.${job.recipe}`) })), h('button', { type: 'button', className: 'fg-btn', 'data-action': 'jobClaim', onClick: () => apply((current, now) => claimJob(current, index, now)) }, t('goods.sell', { n: job.coins })))
         : h('span', { className: 'fg-note' }, t('work.busy', { name: t(`work.${job.recipe}`), time: formatDuration(job.end - clock, t) })),
       clock < job.end ? h('button', { type: 'button', className: 'fg-btn fg-btnSmall', 'data-action': 'jobRush', disabled: (state.ribbons ?? 0) < RUSH_RIBBONS, onClick: () => apply((current, now) => rushJob(current, index, now)) }, t('rush.go')) : null)),
     jobs.length < benches ? h('div', { className: 'fg-workNew' },

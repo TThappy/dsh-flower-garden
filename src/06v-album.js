@@ -1,7 +1,7 @@
 
 // Season chip, vases, keepsake album and seed expeditions.
 Object.assign(zh, {
-  'season.now':'{season} · 当季花 {n} 种 · 仙品率 +5%', 'season.night':'夜花 {n} 种 +8%',
+  'season.now':'{season} · 当季花 {n} 种 · 仙品率 +1%', 'season.night':'夜花 {n} 种 +1%',
   'vase.pick':'选花瓶', 'vase.classic':'青瓷瓶', 'vase.round':'圆肚瓶', 'vase.tall':'长颈瓶', 'vase.basket':'藤编篮', 'vase.moon':'月亮罐', 'vase.gold':'鎏金瓶',
   'vase.need':'再插 {n} 束解锁', 'vase.needStars':'插出一束五星解锁',
   'album.title':'收藏册', 'album.bouquets':'花束卡 {n}/{max}', 'album.cards':'花卡 {n}/{max}', 'album.empty':'完成的花束会自动留下一张卡；在背包里选一朵花，可以做成花卡留念。',
@@ -12,7 +12,7 @@ Object.assign(zh, {
   'trip.rules':'派一支小队去已解锁的花地，关掉页面也照常走。时间越长带回的东西越多：金币、那块地的杂交种子、肥料、堆肥，偶尔有绶带或幸运符。带回什么在出发时就定了。一次只能派一支。',
 })
 Object.assign(en, {
-  'season.now':'{season} · {n} flowers in season · spirit chance +5%', 'season.night':'{n} night flowers +8%',
+  'season.now':'{season} · {n} flowers in season · spirit chance +1%', 'season.night':'{n} night flowers +1%',
   'vase.pick':'Choose a vase', 'vase.classic':'Celadon vase', 'vase.round':'Round vase', 'vase.tall':'Tall vase', 'vase.basket':'Wicker basket', 'vase.moon':'Moon jar', 'vase.gold':'Gilded vase',
   'vase.need':'{n} more bouquets to unlock', 'vase.needStars':'Make one five-star bouquet to unlock',
   'album.title':'Keepsake album', 'album.bouquets':'Bouquet cards {n}/{max}', 'album.cards':'Flower cards {n}/{max}', 'album.empty':'Every finished bouquet leaves a card here. Pick a flower in the backpack to keep it as a flower card.',
@@ -34,29 +34,46 @@ function SeasonChip({ t, clock, sceneId }) {
     night.length > 0 ? ` · 🌙 ${t('season.night', { n: night.length })}` : null)
 }
 
-function VaseArt({ id }) {
-  const svg = (...kids) => h('svg', { viewBox: '0 0 80 76', width: 80, height: 76, 'aria-hidden': 'true', focusable: 'false', className: 'fg-vaseArt' }, ...kids)
-  const shine = h('path', { key: 'shine', d: 'M25 24c-3 10-3 22 1 34', fill: 'none', stroke: '#ffffff88', strokeWidth: 3, strokeLinecap: 'round' })
-  if (id === 'round') return svg(
-    h('path', { key: 'body', d: 'M30 6h20v9c14 6 22 17 22 31 0 16-14 28-32 28S8 62 8 46c0-14 8-25 22-31Z', fill: '#7fbf8f', stroke: '#4f8f63', strokeWidth: 2 }),
-    h('rect', { key: 'rim', x: 26, y: 2, width: 28, height: 7, rx: 3.5, fill: '#4f8f63' }), shine)
-  if (id === 'tall') return svg(
-    h('path', { key: 'body', d: 'M30 4h20l-2 18c9 10 10 32 4 52H28c-6-20-5-42 4-52Z', fill: '#a78bdc', stroke: '#7658b5', strokeWidth: 2 }),
-    h('rect', { key: 'rim', x: 27, y: 2, width: 26, height: 6, rx: 3, fill: '#7658b5' }),
-    h('path', { key: 'shine', d: 'M33 30c-3 12-3 26 0 38', fill: 'none', stroke: '#ffffff88', strokeWidth: 3, strokeLinecap: 'round' }))
-  if (id === 'basket') return svg(
-    h('path', { key: 'body', d: 'M9 14h62l-7 54a8 8 0 0 1-8 6H24a8 8 0 0 1-8-6Z', fill: '#c79a5b', stroke: '#8a6230', strokeWidth: 2 }),
-    h('path', { key: 'weave', d: 'M12 30h56M14 45h52M17 60h46M25 14l4 60M40 14v60M55 14l-4 60', fill: 'none', stroke: '#8a6230', strokeWidth: 1.6 }),
-    h('rect', { key: 'rim', x: 6, y: 10, width: 68, height: 8, rx: 4, fill: '#a87a3e' }))
-  if (id === 'moon') return svg(
-    h('path', { key: 'body', d: 'M30 6h20c2 7 22 15 22 37 0 19-14 31-32 31S8 62 8 43C8 21 28 13 30 6Z', fill: '#f6f3ea', stroke: '#cfc8b4', strokeWidth: 2 }),
-    h('rect', { key: 'rim', x: 27, y: 2, width: 26, height: 6, rx: 3, fill: '#cfc8b4' }),
-    h('path', { key: 'motif', d: 'M40 34c5 4 8 9 8 14a8 8 0 0 1-16 0c0-5 3-10 8-14Z', fill: '#7d9fd6', opacity: 0.75 }))
-  const gold = id === 'gold'
-  return svg(
-    h('path', { key: 'body', d: 'M14 6h52c2 0 3 2 3 4l-6 54c-1 6-5 10-11 10H28c-6 0-10-4-11-10L11 10c0-2 1-4 3-4Z', fill: gold ? '#e2b93b' : '#8fc0d6', stroke: gold ? '#a67c12' : '#5d94ad', strokeWidth: 2 }),
-    gold ? h('path', { key: 'star', d: 'M40 26l4 9 10 1-7.500 6.500 2.300 9.500L40 47l-8.800 5 2.300-9.500L26 36l10-1Z', fill: '#fff3c4' }) : null,
-    shine)
+const VASE_LOOKS = {
+  classic: { d: 'M30,8C30,14 14,20 14,36C14,54 24,66 28,70L52,70C56,66 66,54 66,36C66,20 50,14 50,8Z', ry0: 8, rx: 10, rr: 3, foot: 12, base: '#a9cdb8', light: '#e4f3ea', dark: '#6f9a84', line: '#5c8672', rim: '#c9e2d3', inside: '#4f6f60', shine: 'M22,28C19,38 21,50 27,60',
+    deco: V => [h('path', { key: 'crackle', d: 'M22,30l6,8l-4,9M34,22l5,10l8,4l-3,10M50,26l-4,9M56,40l-6,8l4,9M30,52l8,4l6,-5', fill: 'none', stroke: V.dark, strokeWidth: .5, opacity: .4 }), h('path', { key: 'band', d: 'M29,14Q40,18 51,14', fill: 'none', stroke: V.dark, strokeWidth: .8, opacity: .6 })] },
+  round: { d: 'M33,7C33,13 10,18 10,42C10,60 24,71 40,71C56,71 70,60 70,42C70,18 47,13 47,7Z', ry0: 7, rx: 7, rr: 2.4, foot: 10, base: '#f1f4f7', light: '#ffffff', dark: '#b9c4d0', line: '#8f9db0', rim: '#ffffff', inside: '#5a6678', shine: 'M19,30C15,40 17,54 25,63',
+    deco: () => { const blue = '#2f55a8'; return [
+      h('path', { key: 'bands', d: 'M10,28Q40,35 70,28M10,56Q40,64 70,56M30,13Q40,16 50,13', fill: 'none', stroke: blue, strokeWidth: 1.2 }),
+      ...[0, 72, 144, 216, 288].map(a => h('ellipse', { key: `p${a}`, cx: 40, cy: 37.5, rx: 2.4, ry: 4.6, fill: blue, opacity: .85, transform: `rotate(${a} 40 43)` })),
+      h('circle', { key: 'eye', cx: 40, cy: 43, r: 1.8, fill: '#f1f4f7', stroke: blue, strokeWidth: .8 }),
+      h('path', { key: 'scroll', d: 'M18,46q6,-9 13,-2M62,46q-6,-9 -13,-2M22,40q4,7 10,4M58,40q-4,7 -10,4M16,38q3,-4 6,-1M64,38q-3,-4 -6,-1', fill: 'none', stroke: blue, strokeWidth: 1, strokeLinecap: 'round' })] } },
+  tall: { d: 'M35,4L35,30C35,38 22,44 22,56C22,66 30,71 40,71C50,71 58,66 58,56C58,44 45,38 45,30L45,4Z', ry0: 4, rx: 5, rr: 1.8, foot: 9, base: '#7a5aa8', light: '#b9a0dc', dark: '#4a3470', line: '#3f2c60', rim: '#a48ad0', inside: '#2c1f44', shine: 'M38,8L38,28M28,50C27,58 31,65 35,67', shineW: 2,
+    deco: V => [h('path', { key: 'rings', d: 'M34,11Q40,13 46,11M34,27Q40,29 46,27', fill: 'none', stroke: V.light, strokeWidth: .8, opacity: .7 }), h('ellipse', { key: 'pool', cx: 40, cy: 68, rx: 20, ry: 6, fill: '#000', opacity: .16 })] },
+  basket: { d: 'M13,22L67,22L60,67Q40,73 20,67Z', ry0: 22, rx: 27, rr: 5, foot: 18, base: '#c79a5b', light: '#e6c48c', dark: '#8f6632', line: '#7a5526', rim: '#a87a3e', inside: '#5c3f1c',
+    deco: V => { const out = []; for (let row = 0; row < 8; row += 1) for (let col = 0; col < 9; col += 1) { const x = 8 + col * 8 + (row % 2) * 4, y = 30 + row * 5.6; out.push(h('path', { key: `w${row}-${col}`, d: `M${x},${y}q3,-2.6 6,0`, fill: 'none', stroke: row % 2 ? V.dark : V.light, strokeWidth: 2.2, strokeLinecap: 'round', opacity: .8 })) } out.push(h('path', { key: 'ribs', d: 'M24,24L28,69M40,24L40,71M56,24L52,69', fill: 'none', stroke: V.line, strokeWidth: .7, opacity: .5 })); return out } },
+  moon: { d: 'M32,8C14,12 8,26 8,40C8,58 22,71 40,71C58,71 72,58 72,40C72,26 66,12 48,8Z', ry0: 8, rx: 8, rr: 2.6, foot: 13, base: '#f4f1e8', light: '#ffffff', dark: '#cbc5b4', line: '#aaa390', rim: '#fffdf6', inside: '#6a6456', shine: 'M20,24C14,36 15,52 23,62', shineW: 4,
+    deco: () => [h('path', { key: 'seam', d: 'M8,40Q40,45 72,40', fill: 'none', stroke: '#8a8472', strokeWidth: .6, opacity: .25 }), h('ellipse', { key: 'shade', cx: 44, cy: 64, rx: 30, ry: 11, fill: '#8f9db0', opacity: .14 })] },
+  gold: { d: 'M33,6C33,12 26,14 22,22C16,34 20,52 30,62L28,70L52,70L50,62C60,52 64,34 58,22C54,14 47,12 47,6Z', ry0: 6, rx: 7, rr: 2.4, foot: 12, base: '#e2b93b', light: '#fff0b0', dark: '#9a7210', line: '#7a580a', rim: '#f6da7a', inside: '#5a4208', shine: 'M27,22C23,34 26,50 32,58', handles: 'M23,21C9,19 9,39 21,41M57,21C71,19 71,39 59,41',
+    deco: V => [h('path', { key: 'bands', d: 'M18,27Q40,32 62,27M18,47Q40,53 62,47', fill: 'none', stroke: V.line, strokeWidth: 1 }),
+      ...[0, 1, 2, 3, 4, 5, 6].map(i => i === 3 ? null : h('path', { key: `d${i}`, d: `M${21 + i * 6.3},38l2.4,-3.4l2.4,3.4l-2.4,3.4Z`, fill: V.light, stroke: V.line, strokeWidth: .5 })),
+      h('ellipse', { key: 'gem', cx: 40, cy: 38, rx: 3.6, ry: 4.6, fill: '#b8243a', stroke: V.line, strokeWidth: .8 }), h('ellipse', { key: 'glint', cx: 38.8, cy: 36.4, rx: 1, ry: 1.4, fill: '#fff', opacity: .7 })] },
+}
+
+/** A vase with a rounded body: glaze gradient, an open mouth you can see into, a highlight and a cast shadow. */
+function VaseArt({ id, tint }) {
+  const raw = typeof React.useId === 'function' ? React.useId() : 'v'
+  const own = VASE_LOOKS[id] ?? VASE_LOOKS.classic
+  const paint = cleanTint(tint)
+  const V = paint === null ? own : { ...own, base: paint, light: lighten(paint, 0.45), dark: darken(paint, 0.35), line: darken(paint, 0.55), rim: lighten(paint, 0.25), inside: darken(paint, 0.65) }
+  const u = `fgv-${VASE_LOOKS[id] ? id : 'classic'}-${String(raw).replace(/[^a-zA-Z0-9_-]/g, '')}`
+  return h('svg', { viewBox: '0 0 80 76', width: 80, height: 76, 'aria-hidden': 'true', focusable: 'false', className: 'fg-vaseArt' },
+    h('defs', null,
+      h('linearGradient', { id: `${u}-g`, x1: 0, y1: 0, x2: 1, y2: 0 },
+        h('stop', { offset: '0%', stopColor: V.dark }), h('stop', { offset: '28%', stopColor: V.light }), h('stop', { offset: '58%', stopColor: V.base }), h('stop', { offset: '100%', stopColor: V.dark })),
+      h('clipPath', { id: `${u}-c` }, h('path', { d: V.d }))),
+    h('ellipse', { cx: 42, cy: 72.6, rx: V.foot + 8, ry: 2.6, fill: '#000', opacity: .16 }),
+    V.handles ? h('path', { d: V.handles, fill: 'none', stroke: V.dark, strokeWidth: 2.6, strokeLinecap: 'round' }) : null,
+    h('path', { d: V.d, fill: `url(#${u}-g)`, stroke: V.line, strokeWidth: 1.1, strokeLinejoin: 'round' }),
+    h('g', { clipPath: `url(#${u}-c)` }, ...V.deco(V)),
+    V.shine ? h('path', { d: V.shine, fill: 'none', stroke: '#fff', strokeWidth: V.shineW ?? 3, strokeLinecap: 'round', opacity: .5 }) : null,
+    h('ellipse', { cx: 40, cy: V.ry0, rx: V.rx, ry: V.rr, fill: V.inside, stroke: V.rim, strokeWidth: 1.6 }),
+    h('path', { d: `M${40 - V.foot},70.6H${40 + V.foot}`, stroke: V.line, strokeWidth: 1.8, strokeLinecap: 'round' }))
 }
 
 function stemTilt(index, count) {
@@ -65,11 +82,11 @@ function stemTilt(index, count) {
 }
 
 /** A finished bouquet, drawn the way the arranging table shows it. */
-function BouquetArt({ items, vase }) {
+function BouquetArt({ items, vase, tint }) {
   return h('div', { className: 'fg-vase fg-vaseStill' },
     items.map((item, index) => h('span', { key: index, className: 'fg-vaseStem', style: { transform: stemTilt(index, items.length) } },
       h(FlowerArt, { speciesId: item.species, stage: 'bloom', variant: item.variant, dna: item.dna, trait: item.trait, tint: item.tint }))),
-    h('div', { className: 'fg-vasePot' }, h(VaseArt, { id: vase })))
+    h('div', { className: 'fg-vasePot' }, h(VaseArt, { id: vase, tint })))
 }
 
 function VasePicker({ state, t, vase, onPick }) {
@@ -91,15 +108,27 @@ function Album({ state, t, onChange }) {
   const cards = (state.cards ?? []).slice().reverse()
   function remove(kind, id) {
     const key = `${kind}:${id}`
-    if (armed !== key) { setArmed(key); return }
+    if (armed !== key) return
     setArmed(null)
     tick()
     const next = removeCard(getState(), kind, id)
     if (next !== null) onChange(next)
   }
+  React.useEffect(() => {
+    if (armed === null) return undefined
+    const id = window.setTimeout(() => setArmed(null), 6000)
+    return () => window.clearTimeout(id)
+  }, [armed])
   const del = (kind, id) => {
     const on = armed === `${kind}:${id}`
-    return h('button', { type: 'button', className: 'fg-cardDel', 'data-armed': on ? 'true' : 'false', title: t(on ? 'album.removeConfirm' : 'album.remove'), 'aria-label': t(on ? 'album.removeConfirm' : 'album.remove'), onClick: () => remove(kind, id) }, on ? '?' : '×')
+    return h(React.Fragment, null,
+      h('button', { type: 'button', className: 'fg-cardDel', 'data-armed': on ? 'true' : 'false', title: t('album.remove'), 'aria-label': t('album.remove'), onClick: () => setArmed(on ? null : `${kind}:${id}`) }, '×'),
+      on ? h('div', { className: 'fg-cardWarn', role: 'alert' },
+        h('strong', null, t('album.warnTitle')),
+        h('span', null, t(kind === 'cards' ? 'album.warnFlower' : 'album.warnBouquet')),
+        h('div', { className: 'fg-cardWarnActions' },
+          h('button', { type: 'button', className: 'fg-btn fg-btnSmall', 'data-action': 'cardKeep', autoFocus: true, onClick: () => setArmed(null) }, t('album.keepIt')),
+          h('button', { type: 'button', className: 'fg-btn fg-btnSmall fg-btnDanger', 'data-action': 'cardDelete', onClick: () => remove(kind, id) }, t('album.delete')))) : null)
   }
   const day = at => new Date(at).toLocaleDateString()
   return h('section', { className: 'fg-section fg-album', id: 'fg-album' },
@@ -114,7 +143,7 @@ function Album({ state, t, onChange }) {
     bouquets.length > 0 ? h('div', { className: 'fg-cardGrid' }, bouquets.map(card =>
       h('article', { key: card.id, className: 'fg-keepCard', 'data-card': `bouquet-${card.id}`, 'data-stars': card.stars },
         del('bouquets', card.id),
-        h('div', { className: 'fg-cardVase' }, h(BouquetArt, { items: card.items, vase: card.vase })),
+        h('div', { className: 'fg-cardVase' }, h(BouquetArt, { items: card.items, vase: card.vase, tint: card.tint })),
         h('span', { className: 'fg-vaseStars', 'data-stars': card.stars }, '★'.repeat(card.stars) + '☆'.repeat(5 - card.stars)),
         h('span', { className: 'fg-note' }, t(`vase.${card.vase}`), ' · ', t(`arrange.theme.${card.theme}`)),
         h('time', { className: 'fg-note', dateTime: new Date(card.at).toISOString() }, day(card.at)),
@@ -161,3 +190,10 @@ function ExpeditionBoard({ state, t, clock, onChange }) {
           onClick: () => run((current, now) => startExpedition(current, sceneId, entry.id, now)),
         }, t('trip.go', { time: t(`trip.${entry.id}`), n: entry.cost })))))
 }
+
+Object.assign(zh, {
+  'album.remove':'删除这张卡', 'album.warnTitle':'永久删除这张卡？', 'album.warnFlower':'花不会回到花篮，展示架加成和卡册进度也会跟着掉。', 'album.warnBouquet':'花束卡删掉就找不回来，展示架加成也会消失。', 'album.keepIt':'留着', 'album.delete':'删除',
+})
+Object.assign(en, {
+  'album.remove':'Delete this card', 'album.warnTitle':'Delete this card for good?', 'album.warnFlower':'The flower does not go back to the basket, and its shelf bonus and page progress go with it.', 'album.warnBouquet':'A deleted bouquet card cannot be recovered, and its shelf bonus goes with it.', 'album.keepIt':'Keep it', 'album.delete':'Delete',
+})

@@ -64,13 +64,14 @@ function bagEntries(state, t) {
     if (item.kind !== 'consumable' || count <= 0) continue
     entries.push({ kind: 'item', key: `item:${item.id}`, id: item.id, count, name: t(`item.${item.id}`), rarity: 'base' })
   }
+  for (const id of GOODS) if (goodsCount(state, id) > 0) entries.push({ kind: 'item', key: `item:${id}`, id, count: goodsCount(state, id), name: t(`item.${id}`), rarity: 'base' })
   return entries
 }
 
 function bagArt(entry) {
   if (entry.kind === 'bloom') return h(FlowerArt, { speciesId: entry.item.species, stage: 'bloom', variant: entry.item.variant, dna: entry.item.dna, trait: entry.item.trait, tint: entry.item.tint })
   if (entry.kind === 'seed') return h(SeedGlyph, { species: entry.species, tint: entry.tint })
-  return h(ItemIcon, { id: entry.id })
+  return GOODS.includes(entry.id) ? h('span', { className: 'fg-goodsIcon', 'aria-hidden': true }, GOODS_ICON[entry.id]) : h(ItemIcon, { id: entry.id })
 }
 
 function BagSlot({ entry, selected, onSelect }) {
@@ -122,7 +123,7 @@ function InventoryDialog({ state, t, clock = Date.now(), onClose, onGarden, onSh
     h('button', { key: 'keep', type: 'button', className: 'fg-btn', 'data-action': 'bagKeep', onClick: () => onKeep?.(current.groupKey) }, t('album.keep')),
   ] : current.kind === 'seed' ? [
     h('button', { key: 'plant', type: 'button', className: 'fg-btn fg-btnPrimary', onClick: onGarden }, t('bag.plant')),
-  ] : current.id === 'sprinkler' ? [
+  ] : GOODS.includes(current.id) ? (current.id === 'perfume' ? [h('button', { key: 'use', type: 'button', className: 'fg-btn fg-btnPrimary', onClick: () => onUse?.('perfume') }, t('goods.spray'))] : []) : current.id === 'sprinkler' ? [
     h('button', { key: 'use', type: 'button', className: 'fg-btn fg-btnPrimary', onClick: () => onUse?.('sprinkler') }, t('item.useGround')),
   ] : current.id === 'charm' ? [
     state.charm ? h('span', { key: 'on', className: 'fg-badge fg-badgeWarn' }, t('item.charmReady'))

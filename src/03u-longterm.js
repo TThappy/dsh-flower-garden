@@ -44,11 +44,11 @@
       return { ...state, coins: state.coins - recipe.fee, basket: state.basket.filter((_, index) => !used.has(index)), workshop: { benches: benchCount(state), jobs: [...jobs, job] } }
     }
 
-    function claimJob(state, index, now) {
+    function claimJob(state, index, now, keep = false) {
       const jobs = state.workshop?.jobs ?? []
       const job = jobs[index]
       if (job === undefined || now < job.end) return null
-      return { ...state, coins: state.coins + job.coins, crafted: (state.crafted ?? 0) + 1, workshop: { benches: benchCount(state), jobs: jobs.filter((_, at) => at !== index) } }
+      return { ...state, ...(keep ? { goods: { ...state.goods, [job.recipe]: goodsCount(state, job.recipe) + 1 } } : { coins: state.coins + job.coins }), crafted: (state.crafted ?? 0) + 1, workshop: { benches: benchCount(state), jobs: jobs.filter((_, at) => at !== index) } }
     }
 
     /** What the flower cards cover on one collection page. */
@@ -105,7 +105,7 @@
       const legacy = (state.legacy ?? 0) + 1
       const keep = {}
       for (const field of ['ui', 'discoveries', 'discoverySeq', 'seen', 'specimens', 'hybrids', 'exotics', 'visitors', 'affinity', 'study', 'claimed',
-        'daily', 'goalsDone', 'pagesDone', 'pedigree', 'bouquets', 'cards', 'cardSeq', 'vases', 'shelf', 'arranged', 'bouquetBest', 'trips', 'contest', 'contestWins', 'crafted', 'fund', 'companions', 'events', 'briefs', 'used', 'wantedDone']) {
+        'daily', 'goalsDone', 'pagesDone', 'pedigree', 'bouquets', 'cards', 'cardSeq', 'vases', 'shelf', 'arranged', 'bouquetBest', 'trips', 'contest', 'contestWins', 'crafted', 'fund', 'companions', 'events', 'briefs', 'used', 'wantedDone', 'vaseTints']) {
         if (state[field] !== undefined) keep[field] = state[field]
       }
       return {
