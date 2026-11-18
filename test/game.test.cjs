@@ -64,11 +64,11 @@ const night = new Date(2026, 0, 1, 23, 30, 0).getTime()
 const noon = new Date(2026, 0, 1, 12, 0, 0).getTime()
 
 console.log('scenes and species')
-check('six scenes', game.SCENES.length === 6)
-check('fifty-three species', game.SPECIES.length === 53)
+check('ten scenes', game.SCENES.length === 10)
+check('seventy species', game.SPECIES.length === 70)
 check('every species belongs to exactly one scene', game.SPECIES.every(species => game.SCENES.filter(scene => scene.species.includes(species.id)).length === 1))
 check('every scene has at least four species', game.SCENES.every(scene => scene.species.length >= 4))
-check('ids are unique', new Set(game.SPECIES.map(species => species.id)).size === 53)
+check('ids are unique', new Set(game.SPECIES.map(species => species.id)).size === 70)
 check('each species names a drawing and a foliage', game.SPECIES.every(species => typeof species.head === 'string' && typeof species.leaf === 'string'))
 check('each species has a palette', game.SPECIES.every(species => typeof species.pal.petal === 'string'))
 check('every species has positive prices and pays back its seed', game.SPECIES.every(species => species.cost > 0 && species.sell > 0 && species.sell > species.cost))
@@ -648,12 +648,12 @@ const sanitizedEcology = game.sanitizeEcology({ period: game.ecologyPeriod(ecolo
 check('ecology sanitization filters unknown observations and visitors', sanitizedEcology.observed.length === 1 && sanitizedEcology.visitors.length === 1)
 const nextPeriodEcology = game.sanitizeEcology({ period: game.ecologyPeriod(ecologyNow), observed: ['daisy'], visitors: ['bee'], claimed: ['eco-1'] }, ecologyNow + game.ECO_PERIOD_MS)
 check('cross-period ecology sanitization clears old progress', nextPeriodEcology.observed.length === 0 && nextPeriodEcology.visitors.length === 0 && nextPeriodEcology.claimed.length === 0)
-check('all species have valid ecology profiles', game.SPECIES.length === 53 && game.SPECIES.every(species => game.ecoProfile(species.id) !== null))
+check('all species have valid ecology profiles', game.SPECIES.length === 70 && game.SPECIES.every(species => game.ecoProfile(species.id) !== null))
 check('all thirteen visitors have complete field-guide metadata', game.VISITORS.length === 13 && game.VISITORS.every(visitor => ['latin', 'role', 'source', 'en', 'zh'].every(field => game.VISITOR_INFO[visitor.id]?.[field] !== undefined)))
 console.log('ui save and local garden clock')
-check('ui sanitizer preserves valid tab and display settings', JSON.stringify(game.sanitizeUi({ tab: 'basket', fontSize: 19, font: 'serif' })) === JSON.stringify({ tab: 'basket', fontSize: 19, font: 'serif' }))
-check('ui sanitizer falls back invalid values', JSON.stringify(game.sanitizeUi({ tab: 'nope', fontSize: 14, font: 'comic' })) === JSON.stringify({ tab: 'garden', fontSize: 15, font: 'system' }))
-check('garden tabs expose nine stable sections', game.GARDEN_TABS.length === 9 && game.GARDEN_TABS[0] === 'garden' && game.GARDEN_TABS[8] === 'settings')
+check('ui sanitizer preserves valid tab and display settings', JSON.stringify(game.sanitizeUi({ tab: 'basket', fontSize: 19, font: 'serif' })) === JSON.stringify({ tab: 'basket', fontSize: 19, font: 'serif', sound: false }))
+check('ui sanitizer falls back invalid values', JSON.stringify(game.sanitizeUi({ tab: 'nope', fontSize: 14, font: 'comic' })) === JSON.stringify({ tab: 'garden', fontSize: 15, font: 'system', sound: false }))
+check('garden tabs expose nine stable sections', game.GARDEN_TABS.length === 11 && game.GARDEN_TABS[0] === 'garden' && game.GARDEN_TABS[10] === 'settings')
 check('day periods honor every boundary', [0, 4, 5, 6, 7, 10, 11, 13, 14, 16, 17, 18, 19, 23].map(hour => game.dayPeriod(new Date(2026, 0, 1, hour).getTime())).join(',') === 'night,night,dawn,dawn,morning,morning,noon,noon,afternoon,afternoon,dusk,dusk,night,night')
 const localClockAt = new Date(2026, 6, 8, 17, 23, 41).getTime()
 const localClock = game.gardenClock(localClockAt)
@@ -827,6 +827,309 @@ check('a delivery is counted', deliveredMixed.delivered === 1 && game.achievemen
 check('spirit kinds are counted', game.achievementValue(gold, 'spiritKinds') === 1)
 check('claims survive a reload', game.sanitize(JSON.parse(JSON.stringify(claimedFirst)), 5).claimed.firstBloom === true)
 check('every goal is reachable', game.ACHIEVEMENTS.every(entry => entry.target > 0 && entry.coins > 0))
+
+console.log('daily play')
+{
+const DAY = 86400000
+const noon = new Date(2026, 10, 18, 12).getTime()
+const playStart = game.freshState(noon)
+check('check-in is open on a fresh garden', game.dailyStatus(playStart, noon).available && game.dailyStatus(playStart, noon).index === 0)
+const day1 = game.claimDaily(playStart, noon)
+check('check-in pays the first reward', day1.coins === playStart.coins + game.DAILY_REWARDS[0].coins && day1.daily.streak === 1)
+check('check-in pays once a day', game.claimDaily(day1, noon + 3600000) === null)
+const day2 = game.claimDaily(day1, noon + DAY)
+check('the next day continues the streak', day2.daily.streak === 2 && day2.bag.fertilizer === 1)
+check('a missed day restarts the streak', game.claimDaily(day2, noon + 3 * DAY).daily.streak === 1)
+check('check-in survives a reload', game.sanitize(JSON.parse(JSON.stringify(day2)), noon + DAY).daily.streak === 2)
+check('a check-in dated in the future is clamped', game.sanitize({ ...JSON.parse(JSON.stringify(day2)), daily: { claimedDay: 9e9, streak: 3 } }, noon).daily.claimedDay === game.localDay(noon))
+const questDay = game.advanceState(playStart, noon + 1000)
+check('ticking pins today\'s wishes', questDay.quests !== null && questDay.quests.day === game.localDay(noon))
+check('an idle tick keeps the same wish record', game.advanceState(questDay, noon + 2000).quests === questDay.quests)
+check('three wishes a day, all unstarted', game.dailyQuests(questDay, noon + 1000).length === game.QUEST_SLOTS && game.dailyQuests(questDay, noon + 1000).every(quest => quest.progress === 0))
+const busy = { ...questDay, harvested: questDay.harvested + 6, planted: questDay.planted + 5, delivered: questDay.delivered + 1, pollinated: questDay.pollinated + 2, visitors: { bee: 3 } }
+const wishes = game.dailyQuests(busy, noon + 5000)
+check('wishes follow the day\'s counters', wishes.every(quest => quest.done && !quest.claimed))
+check('an unfinished wish cannot be collected', game.claimQuest(questDay, wishes[0].id, noon + 5000) === null)
+let wished = busy
+for (const quest of wishes) wished = game.claimQuest(wished, quest.id, noon + 5000)
+check('wishes pay their coins', wished.coins === busy.coins + wishes.reduce((sum, quest) => sum + quest.coins, 0))
+check('clearing all three adds the bonus once', wished.bag.fertilizer === busy.bag.fertilizer + 2 && wished.quests.bonus === true)
+check('a wish is collected once', game.claimQuest(wished, wishes[0].id, noon + 5000) === null)
+check('wishes start over the next day', game.dailyQuests(wished, noon + DAY).every(quest => quest.progress === 0 && !quest.claimed))
+let giftTime = noon
+while (game.giftAt(playStart, giftTime) === null) giftTime += game.GIFT_MS
+const opened = game.openGift(playStart, giftTime)
+check('a surprise box pays something', opened.coins > playStart.coins || Object.values(opened.bag).some(n => n > 0))
+check('a surprise box opens once', game.openGift(opened, giftTime) === null && game.giftAt(opened, giftTime) === null)
+check('rarity ranks spirit above curiosity above hybrid', game.rarityOf({ variant: 'hidden' }) === 'spirit' && game.rarityOf({ variant: 'base', trait: 'twin' }) === 'curio' && game.rarityOf({ variant: 'base', tint: 'rose' }) === 'hybrid' && game.rarityOf({ variant: 'alt' }) === 'alt')
+const sown = game.plantAt(playStart, 'meadow', 0, 'daisy')
+const later = game.advanceState(sown, noon + 6 * 3600000)
+check('a short absence makes no report', game.awaySummary(sown, game.advanceState(sown, noon + 60000), noon + 60000) === null)
+const report = game.awaySummary(sown, later, noon + 6 * 3600000)
+check('a long absence reports blooms and thirst', report !== null && report.awayMs === 6 * 3600000 && report.bloomed + report.thirsty === 1)
+}
+
+console.log('bouquets and visitor bonds')
+{
+const at = new Date(2026, 10, 18, 12).getTime()
+const bloom = (species, extra = {}) => ({ species, variant: 'base', ...extra })
+check('two flowers are not a bouquet', game.arrangeScore([bloom('daisy'), bloom('rose')], at) === null)
+const fine = game.arrangeScore([bloom('daisy'), bloom('tulip'), bloom('rose')], at)
+check('neighbouring colours, three kinds and a star bloom score well', fine.checks.harmony && fine.checks.variety && fine.checks.focal && fine.stars >= 4)
+const dull = game.arrangeScore([bloom('daisy'), bloom('daisy'), bloom('daisy')], at)
+check('three of the same flower score lower', !dull.checks.variety && !dull.checks.focal && dull.stars < fine.stars)
+check('clashing colours lose the harmony star', game.arrangeScore([bloom('sunflower'), bloom('forgetmenot'), bloom('tulip')], at).checks.harmony === false)
+check('opposite colours still agree', game.huesHarmonise([40, 225]) && game.huesHarmonise([10, 30, 60]) && !game.huesHarmonise([0, 120, 240]))
+check('a bouquet pays more than its list value', fine.coins > fine.value && fine.coins === Math.round(fine.value * (1 + game.BOUQUET_STAR_BONUS * fine.stars)))
+check('exactly one special bloom is the focal flower', game.arrangeScore([bloom('daisy'), bloom('tulip'), bloom('rose', { variant: 'hidden' })], at).checks.focal && !game.arrangeScore([bloom('daisy', { trait: 'twin' }), bloom('tulip'), bloom('rose', { variant: 'hidden' })], at).checks.focal)
+const stockedBasket = { ...game.freshState(at), basket: [bloom('daisy'), bloom('tulip'), bloom('rose'), bloom('poppy')] }
+const made = game.arrangeBouquet(stockedBasket, [0, 1, 2], at)
+check('finishing a bouquet uses the flowers and pays', made.basket.length === 1 && made.basket[0].species === 'poppy' && made.coins === stockedBasket.coins + fine.coins && made.xp === fine.xp && made.arranged === 1 && made.bouquetBest === fine.stars)
+check('a bouquet refuses repeats and unknown slots', game.arrangeBouquet(stockedBasket, [0, 0, 1], at) === null && game.arrangeBouquet(stockedBasket, [0, 1, 9], at) === null)
+check('every visitor has favourite flowers', game.VISITORS.every(visitor => game.visitorFavourites(visitor.id).length > 0))
+check('a stranger takes no gifts', game.giftVisitor(stockedBasket, 'bee', 1) === null)
+const friend = { ...stockedBasket, visitors: { bee: 1 } }
+const gifted = game.giftVisitor(friend, 'bee', 1)
+check('a favourite flower is worth more', game.giftPoints('bee', bloom('tulip')) === 6 && game.giftPoints('bee', bloom('daisy')) === 2 && game.giftPoints('bee', bloom('daisy', { variant: 'hidden' })) === 5)
+check('a gift uses the flower and raises the bond', gifted.basket.length === 3 && gifted.affinity.bee === 6 && game.affinityLevel(gifted, 'bee') === 1)
+check('reaching a level pays its reward once', gifted.coins === friend.coins + game.AFFINITY_REWARDS[0].coins && game.giftVisitor(gifted, 'bee', 0).coins === gifted.coins)
+check('four levels cap the bond', game.affinityLevel({ affinity: { bee: 999 } }, 'bee') === game.AFFINITY_LEVELS.length)
+check('greeting a visitor adds to the bond', Object.values(greeted.affinity ?? {}).reduce((sum, n) => sum + n, 0) >= 1)
+const reloaded = game.sanitize(JSON.parse(JSON.stringify({ ...made, affinity: { bee: 7, dragon: 3 } })), at)
+check('bonds and bouquet records survive a reload', reloaded.affinity.bee === 7 && reloaded.affinity.dragon === undefined && reloaded.arranged === 1 && reloaded.bouquetBest === fine.stars)
+}
+
+console.log('genes, lineage and breeding goals')
+{
+const grades = Object.values(game.genesOf(12345))
+check('every plant shows four genes graded one to five', grades.length === 4 && grades.every(n => n >= 1 && n <= 5))
+const kid = game.breedDna(12345, 54321, 3)
+check('a cross is deterministic', kid === game.breedDna(12345, 54321, 3) && kid > 0 && kid !== game.breedDna(12345, 54321, 4))
+const near = [[12345, 54321], [111, 999999], [4242, 31337], [2026, 1118]].every(([m, f]) => {
+  const a = game.geneValues(m), b = game.geneValues(f), c = game.geneValues(game.breedDna(m, f, 1))
+  return c.every((v, i) => v >= Math.min(a[i], b[i]) - 0.25 && v <= Math.max(a[i], b[i]) + 0.25)
+})
+check('offspring genes fall between the parents, give or take', near)
+check('a cross predicts a range for each gene', Object.values(game.predictGenes(12345, 54321)).length === 4 && Object.values(game.predictGenes(12345, 54321)).every(([lo, hi]) => lo <= hi))
+const at = new Date(2026, 10, 18, 12).getTime()
+const crossBase = { ...game.freshState(at), seeds: { 'daisy~tulip': 1 } }
+const crossed = { ...crossBase, ...game.recordCross(crossBase, 'daisy~tulip', { species: 'daisy', dna: 12345 }, { species: 'tulip', dna: 54321 }) }
+check('a hybrid seed remembers its parents', crossed.lineage['daisy~tulip'][0].join() === '12345,54321' && crossed.pedigree[12345].s === 'daisy' && crossed.pedigree[54321].s === 'tulip')
+const grownCross = game.plantAt(crossed, 'meadow', 0, 'daisy', 'tulip')
+const child = grownCross.scenes.meadow.plots[0]
+check('planting it grows the bred child', child.dna === game.breedDna(12345, 54321, crossed.planted) && child.tint === 'tulip')
+check('the child joins the family tree as generation one', grownCross.pedigree[child.dna].m === 12345 && grownCross.pedigree[child.dna].f === 54321 && grownCross.pedigree[child.dna].g === 1 && grownCross.lineage['daisy~tulip'] === undefined)
+check('a seed without a record still grows', game.plantAt(crossBase, 'meadow', 0, 'daisy', 'tulip').scenes.meadow.plots[0].dna > 0)
+check('the earlier hybrid harvest recorded its cross', hybridHarvest.lineage['daisy~tulip'][0].join() === '12345,54321')
+let tallDna = 1
+while (game.genesOf(tallDna).height !== 5) tallDna += 1
+const breeder = { ...crossBase, pedigree: { [tallDna]: { s: 'daisy', g: 1 } } }
+const wonGoal = game.goalPatch(breeder, { species: 'daisy', variant: 'base', dna: tallDna })
+check('a bred plant that meets a goal pays it once', wonGoal.goalsDone.tall === true && wonGoal.coins >= breeder.coins + 80 && game.goalPatch({ ...breeder, ...wonGoal }, { dna: tallDna }).goalsDone === undefined)
+check('a bought plant cannot claim a breeding goal', Object.keys(game.goalPatch(crossBase, { dna: tallDna })).length === 0)
+check('three generations finish the dynasty goal', game.goalPatch({ ...crossBase, pedigree: { 5: { s: 'daisy', g: 3 } } }, { dna: 5 }).goalsDone.dynasty === true)
+const kept = game.sanitize(JSON.parse(JSON.stringify({ ...grownCross, goalsDone: { tall: true, nope: true }, pedigree: { ...grownCross.pedigree, 9: { s: 'nope', g: 1 } } })), at)
+check('family tree and goals survive a reload', kept.pedigree[child.dna].m === 12345 && kept.pedigree[9] === undefined && kept.goalsDone.tall === true && kept.goalsDone.nope === undefined)
+}
+
+console.log('seasons, expeditions and keepsake cards')
+{
+const HOUR = 3600000
+const spring = new Date(2026, 3, 10, 12).getTime(), summer = new Date(2026, 6, 10, 12).getTime()
+const autumnNight = new Date(2026, 9, 10, 23).getTime(), winter = new Date(2026, 0, 10, 12).getTime()
+check('seasons follow the calendar', game.realSeason(spring) === 0 && game.realSeason(summer) === 1 && game.realSeason(autumnNight) === 2 && game.realSeason(winter) === 3)
+const dryPlot = species => ({ species, moisture: 10, dried: true })
+check('a flower in its own season has a better spirit chance', near(game.hiddenChance(dryPlot('daisy'), 'overcast', spring, meadow) - game.hiddenChance(dryPlot('daisy'), 'overcast', summer, meadow), game.SEASON_BONUS))
+check('a night flower shines after dark', near(game.hiddenChance(dryPlot('lily'), 'overcast', autumnNight, meadow) - game.hiddenChance(dryPlot('daisy'), 'overcast', autumnNight, meadow), game.NIGHT_BONUS))
+check('out of season is never a penalty', game.seasonalBonus('daisy', winter) === 0 && game.hiddenChance(dryPlot('daisy'), 'overcast', winter, meadow) >= 0.03)
+const rich = { ...game.freshState(spring), coins: 500 }
+check('an expedition needs coins and an opened ground', game.startExpedition({ ...rich, coins: 0 }, 'meadow', 'short', spring) === null && game.startExpedition(rich, 'snow', 'short', spring) === null && game.startExpedition(rich, 'meadow', 'nope', spring) === null)
+const away = game.startExpedition(rich, 'meadow', 'day', spring)
+check('setting out costs coins and sets a return time', away.coins === 440 && away.expedition.end === spring + 4 * HOUR)
+check('one party at a time', game.startExpedition(away, 'meadow', 'short', spring) === null)
+check('the party cannot be welcomed early', game.claimExpedition(away, spring + 1000) === null)
+const back = game.claimExpedition(away, away.expedition.end)
+const count = bag => Object.values(bag ?? {}).reduce((sum, n) => sum + n, 0)
+check('the party brings something back', back.expedition === null && back.trips === 1 && (back.coins - away.coins) + count(back.bag) - count(away.bag) + count(back.seeds) + back.ribbons - away.ribbons > 0)
+check('the haul is fixed at departure', JSON.stringify(game.expeditionLoot(away.expedition)) === JSON.stringify(game.expeditionLoot(away.expedition)))
+check('expedition seeds can be sown in that ground', [0, 1, 2, 3, 4, 5, 6, 7].every(n => Object.keys(game.expeditionLoot({ scene: 'meadow', kind: 'long', start: spring + n * 977000 }).seeds).every(key => meadow.species.includes(key.split('~')[0]) && key.split('~')[0] !== key.split('~')[1])))
+check('an expedition survives a reload', game.sanitize(JSON.parse(JSON.stringify(away)), spring + 1000).expedition.end === away.expedition.end)
+const cardBase = { ...game.freshState(spring), basket: [{ species: 'daisy', variant: 'base', dna: 5 }, { species: 'tulip', variant: 'base' }, { species: 'rose', variant: 'hidden', dna: 9 }, { species: 'poppy', variant: 'base' }] }
+const withCard = game.arrangeBouquet(cardBase, [0, 1, 2], spring, 'classic')
+check('a finished bouquet leaves a card', withCard.bouquets.length === 1 && withCard.bouquets[0].items.length === 3 && withCard.bouquets[0].vase === 'classic' && withCard.bouquets[0].stars === withCard.bouquetBest && withCard.bouquets[0].items[2].variant === 'hidden')
+check('a locked vase falls back to the first one', game.arrangeBouquet(cardBase, [0, 1, 2], spring, 'gold').bouquets[0].vase === 'classic')
+check('vases unlock with practice', !game.vaseUnlocked(cardBase, 'round') && game.vaseUnlocked({ arranged: 2 }, 'round') && !game.vaseUnlocked({ arranged: 99 }, 'gold') && game.vaseUnlocked({ bouquetBest: 5 }, 'gold'))
+let many = { ...cardBase, arranged: 2, vases: ['round'] }
+for (let i = 0; i < game.BOUQUET_CARD_CAP + 3; i += 1) many = game.arrangeBouquet({ ...many, basket: cardBase.basket }, [0, 1, 2], spring + i, 'round')
+check('the album keeps the newest bouquet cards', many.bouquets.length === game.BOUQUET_CARD_CAP && many.bouquets[0].id === 4 && many.bouquets[0].vase === 'round')
+const pressed = game.pressCard(cardBase, 2, spring)
+check('keeping a flower as a card takes it out of the basket', pressed.basket.length === 3 && pressed.cards[0].item.variant === 'hidden' && pressed.cards[0].item.dna === 9 && pressed.coins === cardBase.coins)
+check('a card can be taken down', game.removeCard(pressed, 'cards', pressed.cards[0].id).cards.length === 0 && game.removeCard(pressed, 'cards', 999) === null && game.removeCard(pressed, 'coins', 1) === null)
+check('a full album refuses another flower card', game.pressCard({ ...cardBase, cards: Array.from({ length: game.FLOWER_CARD_CAP }, (_, i) => ({ id: i + 1, at: 1, item: { species: 'daisy', variant: 'base' } })) }, 0, spring) === null)
+const albumReload = game.sanitize(JSON.parse(JSON.stringify({ ...withCard, cards: [{ id: 7, at: spring, item: { species: 'rose', variant: 'hidden', dna: 9 } }, { id: 8, at: spring, item: { species: 'nope' } }] })), spring)
+check('the album survives a reload', albumReload.bouquets.length === 1 && albumReload.bouquets[0].items[0].dna === 5 && albumReload.cards.length === 1 && albumReload.cardSeq === 7)
+}
+
+console.log('economy sinks and long-term loops')
+{
+const at = new Date(2026, 10, 18, 12).getTime()
+const b = (species, extra = {}) => ({ species, variant: 'base', ...extra })
+const rich = { ...game.freshState(at), coins: 50000, arranged: 6 }
+check('a vase must be earned and affordable before it is bought', game.buyVase(rich, 'gold') === null && game.buyVase({ ...rich, coins: 10 }, 'round') === null)
+const potted = game.buyVase(rich, 'round')
+check('buying a vase spends coins once', potted.coins === 50000 - game.VASE_PRICE.round && game.vaseOwned(potted, 'round') && game.buyVase(potted, 'round') === null)
+check('an unowned vase falls back to the first one', game.arrangeBouquet({ ...rich, basket: [b('daisy'), b('tulip'), b('rose')] }, [0, 1, 2], at, 'round').bouquets[0].vase === 'classic')
+const whites = [b('daisy'), b('lily'), b('rose')]
+check('each vase suits a kind of flower', game.vaseMatch('moon', whites) && !game.vaseMatch('moon', [b('rose'), b('tulip'), b('daisy')]) && !game.vaseMatch('classic', whites) && game.vaseMatch('gold', [b('rose', { variant: 'hidden' }), b('daisy')]) && !game.vaseMatch('basket', whites))
+const loose = game.arrangeScore(whites, at), suited = game.arrangeScore(whites, at, 'moon')
+check('a suiting vase adds ten percent', suited.match === true && loose.match === false && suited.coins === Math.round(suited.value * (1 + game.BOUQUET_STAR_BONUS * suited.stars + game.VASE_MATCH_BONUS)) && suited.coins > loose.coins)
+const album = { ...rich, cards: [{ id: 1, at, item: b('rose', { variant: 'hidden' }) }, { id: 2, at, item: b('daisy') }], bouquets: [{ id: 3, at, stars: 4, theme: 'warm', vase: 'classic', coins: 1, items: [b('daisy'), b('tulip'), b('rose')] }] }
+check('a shelf without slots holds nothing', game.toggleShelf(album, 'cards', 1) === null)
+const oneSlot = game.buyShelfSlot(album)
+check('a shelf slot costs coins', oneSlot.coins === 50000 - game.SHELF_PRICES[0] && game.shelfSlots(oneSlot) === 1)
+const shown = game.toggleShelf(oneSlot, 'cards', 1)
+check('a displayed spirit card raises the spirit chance', near(game.shelfBonus(shown).spirit, 0.01) && game.toggleShelf(shown, 'cards', 2) === null)
+check('taking a card off the shelf removes its bonus', game.shelfBonus(game.toggleShelf(shown, 'cards', 1)).spirit === 0)
+const two = game.toggleShelf(game.buyShelfSlot(shown), 'bouquets', 3)
+check('a displayed bouquet card raises sale prices', near(game.shelfBonus(two).sale, 0.04) && game.quoteSale(two, [b('rose')], undefined).coins === Math.round((1 + 0.04) * 88))
+check('a card taken out of the album stops counting', game.shelfBonus(game.removeCard(two, 'cards', 1)).spirit === 0)
+const named = game.nameBouquet(two, 3, '  Spring   song  ', 'x'.repeat(99))
+check('a bouquet card can be named and inscribed', named.bouquets[0].title === 'Spring song' && named.bouquets[0].note.length === 60 && game.nameBouquet(two, 99, 'a', 'b') === null)
+const kept = game.sanitize(JSON.parse(JSON.stringify({ ...named, vases: ['round', 'nope'] })), at)
+check('vases, shelf and inscriptions survive a reload', kept.bouquets[0].title === 'Spring song' && kept.shelf.slots === 2 && kept.shelf.cards.length === 2 && kept.vases.join() === 'round')
+const shop = { ...rich, basket: [b('rose'), b('rose'), b('rose'), b('daisy')] }
+check('the workshop needs a bench', game.startJob(shop, 'dried', [0], at) === null)
+const benched = game.buyBench(shop)
+const job = game.startJob(benched, 'tea', [0, 1, 2], at)
+check('a job takes the flowers and the fee', job.basket.length === 1 && job.coins === benched.coins - 20 && job.workshop.jobs[0].coins === Math.round(88 * 3 * 1) && game.startJob(job, 'dried', [0], at) === null)
+check('a recipe needs its exact number of flowers', game.startJob(benched, 'tea', [0, 1], at) === null && game.startJob(benched, 'tea', [0, 0, 1], at) === null)
+check('a job cannot be collected early', game.claimJob(job, 0, at + 1000) === null)
+const made = game.claimJob(job, 0, at + 30 * 60000)
+check('a finished job pays its worth', made.coins === job.coins + Math.round(88 * 3 * 1) && made.crafted === 1 && made.workshop.jobs.length === 0)
+check('a running job survives a reload', game.sanitize(JSON.parse(JSON.stringify(job)), at + 1000).workshop.jobs[0].end === at + 30 * 60000)
+const meadowCards = ['daisy', 'tulip', 'rose', 'poppy'].map((species, index) => ({ id: index + 1, at, item: b(species) }))
+const paged = { ...rich, cards: meadowCards }
+check('a card page counts different species of its ground', game.pageProgress(paged, game.PAGES[0]).count === 4)
+const pageDone = game.claimPage(paged, 'scene-meadow')
+check('a complete page pays once', pageDone.coins === 50300 && game.claimPage(pageDone, 'scene-meadow') === null && game.claimPage(paged, 'scene-snow') === null)
+const entry = { ...rich, bouquets: [{ id: 3, at, stars: 5, theme: 'warm', vase: 'classic', coins: 1, match: true, items: [b('daisy'), b('tulip'), b('rose'), b('poppy'), b('lily')] }, { id: 4, at, stars: 1, theme: 'warm', vase: 'classic', coins: 1, items: [b('daisy'), b('daisy'), b('daisy')] }] }
+check('a bouquet scores by stars, size and vase', game.bouquetScore(entry.bouquets[0]) === 60 && game.bouquetScore(entry.bouquets[1]) === 13)
+const ran = game.enterContest(entry, 3, at)
+check('the best bouquet wins the week', ran.contest.rank === 1 && ran.coins === 50000 - game.CONTEST_FEE + 300 && ran.ribbons === 3 && ran.contestWins === 1)
+check('a weak bouquet pays the fee and places last', game.enterContest(entry, 4, at).contest.rank === 4 && game.enterContest(entry, 4, at).coins === 50000 - game.CONTEST_FEE)
+check('one entry a week', game.enterContest(ran, 3, at + 3600000) === null && game.enterContest(ran, 3, at + 7 * 86400000) !== null)
+check('a young garden cannot start over', game.startLegacy(rich, at) === null)
+const elder = { ...rich, xp: 60 * 14, cards: meadowCards, vases: ['round'], seeds: { 'daisy~tulip': 2, 'rose~daisy': 1, 'tulip~rose': 1, 'poppy~rose': 1 }, scenes: Object.fromEntries(game.SCENES.map(scene => [scene.id, { ...rich.scenes[scene.id], unlocked: 3 }])) }
+const heir = game.startLegacy(elder, at)
+check('a legacy resets the garden and keeps the collection', heir.legacy === 1 && heir.coins === game.START_COINS + 100 && heir.xp === 0 && heir.scenes.snow.unlocked === 0 && Object.keys(heir.seeds).length === 3 && heir.cards.length === 4 && heir.vases[0] === 'round')
+check('each generation adds a little spirit chance', near(game.shelfBonus(heir).spirit, 0.01))
+}
+
+console.log('garden fund and tightened faucets')
+{
+const at = new Date(2026, 10, 18, 12).getTime()
+const flush = { ...game.freshState(at), coins: 50000 }
+check('the fund refuses a short purse', game.donateFund({ ...flush, coins: 100 }) === null)
+const given = game.donateFund(flush)
+check('a contribution spends coins and pays a ribbon', given.coins === 50000 - game.fundCost(0) && given.fund === 1 && given.ribbons === 1 && given.ribbonsEarned === 1)
+check('every level costs more, without a cap', game.fundCost(10) > game.fundCost(9) && game.fundCost(60) > 1000000)
+check('every fifth level adds a charm', game.donateFund({ ...flush, fund: 4 }).bag.charm === 1 && given.bag.charm === 0)
+check('standing rises every five levels', game.fundRank(0) === 0 && game.fundRank(5) === 1 && game.fundRank(999) === 5)
+check('the fund survives a reload', game.sanitize(JSON.parse(JSON.stringify(given)), at).fund === 1)
+check('bouquets and the workshop no longer print money', game.BOUQUET_STAR_BONUS <= 0.06 && game.VASE_MATCH_BONUS <= 0.05 && game.RECIPES.every(recipe => recipe.mult <= 1.1))
+}
+
+console.log('a use for every material')
+{
+const at = new Date(2026, 10, 18, 12).getTime()
+const rich = { ...game.freshState(at), coins: 5000, ribbons: 2, patronage: 25 }
+const out = game.startExpedition(rich, 'meadow', 'long', at)
+check('reputation sends a bigger expedition', out.expedition.bonus === 2 && game.patronBonus({ patronage: 999 }) === game.PATRON_MAX && game.patronBonus({}) === 0)
+check('the extra finds change the haul', JSON.stringify(game.expeditionLoot(out.expedition)) !== JSON.stringify(game.expeditionLoot({ ...out.expedition, bonus: 0 })))
+check('rushing needs a ribbon and a party on the road', game.rushExpedition({ ...out, ribbons: 0 }, at + 1000) === null && game.rushExpedition(rich, at) === null)
+const rushed = game.rushExpedition(out, at + 1000)
+check('a ribbon brings the party back at once', rushed.ribbons === 1 && rushed.expedition.end === at + 1000 && game.claimExpedition(rushed, at + 1000) !== null)
+check('rushing does not change the haul', JSON.stringify(game.expeditionLoot(rushed.expedition)) === JSON.stringify(game.expeditionLoot(out.expedition)))
+const reloaded = game.sanitize(JSON.parse(JSON.stringify(rushed)), at + 2000)
+check('a rushed expedition survives a reload', reloaded.expedition.end === at + 1000 && reloaded.expedition.bonus === 2)
+const job = game.startJob({ ...rich, basket: [{ species: 'rose', variant: 'base' }], workshop: { benches: 1, jobs: [] } }, 'dried', [0], at)
+const rushedJob = game.rushJob(job, 0, at + 1000)
+check('a ribbon finishes a workshop job at once', rushedJob.ribbons === 1 && game.claimJob(rushedJob, 0, at + 1000) !== null && game.rushJob({ ...job, ribbons: 0 }, 0, at + 1000) === null)
+check('a rushed job survives a reload', game.sanitize(JSON.parse(JSON.stringify(rushedJob)), at + 2000).workshop.jobs[0].end === at + 1000)
+check('knowing a species raises its spirit chance', near(game.studyBonus({ study: { daisy: { observations: 6 } } }, 'daisy'), 0.03) && near(game.studyBonus({ study: { daisy: { observations: 1 } } }, 'daisy'), 0.01) && game.studyBonus({}, 'daisy') === 0)
+const counted = { ...rich, arranged: 3, trips: 4, crafted: 5, contestWins: 2, fund: 6, affinity: { bee: 999, robin: 1 }, goalsDone: { tall: true }, cards: [{ id: 1 }] }
+check('the new counters feed achievements', ['arranged', 'trips', 'crafted', 'contestWins', 'fund', 'bondsMax', 'goalsDone', 'cards'].map(metric => game.achievementValue(counted, metric)).join() === '3,4,5,2,6,1,1,1')
+check('every achievement metric is known', game.ACHIEVEMENTS.every(entry => game.achievementValue({ ...counted, seen: { 'daisy:base': 1, 'daisy:hidden': 1 }, visitors: { bee: 1 }, hybrids: { 'a~b': 1 }, exotics: { 'daisy:twin': 1 }, ribbonsEarned: 1, harvested: 1, delivered: 1, pollinated: 1 }, entry.metric) > 0))
+}
+
+console.log('companions, garden events and the daily brief')
+{
+const at = new Date(2026, 10, 18, 12).getTime()
+const HOUR = 3600000
+const host = { ...game.freshState(at), coins: 5000, visitors: { bee: 9 }, affinity: { bee: 999 } }
+check('only a best friend with coins to spare moves in', game.inviteCompanion({ ...host, affinity: { bee: 1 } }, 'bee') === null && game.inviteCompanion({ ...host, coins: 10 }, 'bee') === null)
+const housed = game.inviteCompanion(host, 'bee')
+check('inviting costs coins once', housed.coins === 5000 - game.COMPANION_COST && housed.companions.join() === 'bee' && game.inviteCompanion(housed, 'bee') === null)
+const planted = game.plantAt(housed, 'meadow', 0, 'daisy')
+const first = game.companionTick(planted, at)
+check('a companion starts counting from now', first.companionHour === Math.floor(at / HOUR) && !first.scenes.meadow.plots[0].pollinated)
+check('nothing happens within the hour', game.companionTick(first, at + 60000) === first)
+check('a pollinator companion pollinates a plant each hour', game.companionTick(first, at + HOUR).scenes.meadow.plots[0].pollinated === true)
+check('ticking the garden lets companions work', game.advanceState(game.advanceState(planted, at + 1000), at + HOUR + 2000).scenes.meadow.plots[0].pollinated === true)
+check('a companion can be sent home', game.dismissCompanion(housed, 'bee').companions.length === 0 && game.dismissCompanion(host, 'bee') === null)
+let when = at
+while (game.eventAt(host, when) === null) when += game.EVENT_MS
+const event = game.eventAt(host, when)
+const joined = game.joinEvent(planted, when)
+check('a passing event can be caught once', joined.events === 1 && game.eventAt(joined, when) === null && game.joinEvent(joined, when) === null)
+check('the event leaves its mark', event.type === 'rainbow' ? game.boostBonus(joined, when + 1000) === game.BOOST_SPIRIT : event.type === 'meteor' ? joined.charm === true : event.type === 'swarm' ? joined.scenes.meadow.plots[0].pollinated === true : joined.scenes.meadow.plots[0].moisture === 100)
+check('the event is gone after its window', game.eventAt(host, when + game.EVENT_WINDOW_MS) === null)
+check('a rainbow fades', game.boostBonus({ boost: { type: 'rainbow', until: at } }, at + 1) === 0)
+const brief = game.briefAt(at)
+const good = { stars: 5, coins: 100, checks: { theme: true } }
+const items = Array.from({ length: 5 }, () => ({ species: 'daisy', variant: 'base' }))
+const paid = game.briefPatch(host, items, good, at)
+check('the daily brief pays coins and a ribbon once', brief.stars >= 3 && brief.count >= 3 && paid.coins === 5000 + 100 + game.BRIEF_REWARD.coins && paid.ribbons === 1 && Object.keys(game.briefPatch({ ...host, ...paid }, items, good, at)).length === 0)
+check('a bouquet off the brief earns nothing extra', Object.keys(game.briefPatch(host, items.slice(0, 2), good, at)).length === 0 && Object.keys(game.briefPatch(host, items, { ...good, checks: { theme: false } }, at)).length === 0)
+check('companions survive a reload', game.sanitize(JSON.parse(JSON.stringify(housed)), at).companions.join() === 'bee')
+check('the garden has studio and album tabs', game.GARDEN_TABS.includes('studio') && game.GARDEN_TABS.includes('album'))
+}
+
+console.log('every flower has a use')
+{
+const at = new Date(2026, 10, 18, 12).getTime()
+const b = (species, extra = {}) => ({ species, variant: 'base', ...extra })
+check('every species has a use', game.SPECIES.every(species => game.flowerUse(species.id) !== null))
+const plot = { species: 'daisy', growthMs: 0, moisture: 10, dried: false, dna: 5 }
+const fresh = game.freshState(at)
+const bed = { ...fresh, scenes: { ...fresh.scenes, meadow: { ...fresh.scenes.meadow, plots: [plot, null, null, null, null, null], soil: [50, 50, 50, 100, 100, 100] } } }
+const use = (species, extra) => game.useBloom({ ...bed, basket: [b(species, extra)] }, 0, at)
+check('a waterside flower waters the ground', use('iris').scenes.meadow.plots[0].moisture === 100 && use('iris').basket.length === 0 && use('iris').used === 1)
+check('a pollen flower pollinates a plant', use('dandelion').scenes.meadow.plots[0].pollinated === true)
+check('a seed flower becomes fertiliser, a special one twice', use('sunflower').bag.fertilizer === 1 && use('sunflower', { variant: 'hidden' }).bag.fertilizer === 2)
+check('a shelter flower feeds the open plots', use('rose').scenes.meadow.soil.join() === '70,70,70,100,100,100')
+check('a nectar flower pleases the visitor that loves it', use('daisy').affinity.butterfly === game.USE_BOND)
+check('a night flower raises the spirit chance for a while', game.boostBonus(use('lily'), at + 1000) > 0 && game.boostBonus(use('lily'), at + game.USE_BOOST_MS + 1) === 0)
+check('a flower is not wasted when it cannot help', game.useBloom({ ...fresh, basket: [b('dandelion')] }, 0, at) === null && game.useBloom({ ...fresh, basket: [b('iris')] }, 0, at) === null && game.useBloom(fresh, 0, at) === null)
+const open = { ...fresh, coins: 0, scenes: Object.fromEntries(game.SCENES.map(scene => [scene.id, { ...fresh.scenes[scene.id], unlocked: 3 }])) }
+const today = game.wantedAt(open, at)
+check('three different flowers are wanted each day', today.length === 3 && new Set(today).size === 3)
+const seenWanted = new Set()
+for (let day = 0; day < 24; day += 1) for (const id of game.wantedAt(open, at + day * 86400000)) seenWanted.add(id)
+check('every flower is wanted within twenty-four days', seenWanted.size === game.SPECIES.length)
+check('a closed ground is never asked for', game.wantedAt(fresh, at).every(id => meadow.species.includes(id)))
+check('nothing to hand in without the flower', game.deliverWanted(open, today[0], at) === null && game.deliverWanted({ ...open, basket: [b('daisy')] }, 'nope', at) === null)
+const stockedWant = { ...open, basket: today.map(id => b(id)) }
+const one = game.deliverWanted(stockedWant, today[0], at)
+check('a wanted flower pays double and a little more', one.coins === byId(today[0]).sell * 2 + 10 && one.basket.length === 2 && game.deliverWanted(one, today[0], at) === null)
+const all = game.deliverWanted(game.deliverWanted(one, today[1], at), today[2], at)
+check('handing in all three adds a ribbon', all.ribbons === 1 && all.wantedDone === 3 && one.ribbons === 0)
+check('wanted progress survives a reload and resets the next day', game.sanitize(JSON.parse(JSON.stringify(one)), at).wanted.done.join() === today[0] && game.wantedState(one, at + 86400000).done.length === 0)
+}
+
+console.log('four more grounds')
+check('the new grounds hold seventeen species with profiles and sources', ['alpine','rainforest','coast','garden'].reduce((n, id) => n + game.sceneOf(id).species.length, 0) === 17 && ['alpine','rainforest','coast','garden'].every(id => game.sceneOf(id).species.every(s => game.ecoProfile(s) !== null && typeof byId(s).source === 'string')))
+check('new grounds cost more than the old ones and have visitors', game.sceneOf('alpine').cost > game.sceneOf('desert').cost && ['alpine','rainforest','coast','garden'].every(id => game.VISITORS.some(v => v.scenes.includes(id))))
 
 console.log(failures === 0 ? '\nall checks passed' : `\n${failures} check(s) failed`)
 process.exit(failures === 0 ? 0 : 1)

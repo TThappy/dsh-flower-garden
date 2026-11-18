@@ -1,7 +1,7 @@
 {
   "name": "dsh-flower-garden",
   "version": "2.9.0",
-  "description": "A living flower garden with six regions, 53 flowers, persistent discovery cards, special visitors and commissions, and a regional flower guide.",
+  "description": "A living flower garden with ten regions, 70 flowers, persistent discovery cards, special visitors and commissions, and a regional flower guide.",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/TThappy/dsh-flower-garden.git"
@@ -44,12 +44,16 @@
     }
   },
   "scripts": {
-    "test": "npm run test:game && npm run test:render",
+    "build": "node tools/build.cjs",
+    "test": "node tools/build.cjs --check && npm run test:game && npm run test:render",
     "test:game": "node test/game.test.cjs",
     "test:render": "node test/render.test.cjs",
-    "preview": "node tools/preview.cjs"
+    "preview": "node tools/preview.cjs",
+    "lint": "eslint ."
   },
   "devDependencies": {
+    "eslint": "^9.39.5",
+    "globals": "^17.14.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   }

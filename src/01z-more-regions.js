@@ -1,0 +1,87 @@
+
+// Four more grounds and seventeen more species. Morphology follows the Wikipedia page named in `source`;
+// growth times, prices and weather multipliers are game settings.
+const MORE_SCENES = [
+  {id:'alpine',cost:3200,tint:'rgba(96,140,196,.12)',edge:'rgba(96,140,196,.4)',weather:{clear:1.15,overcast:1,rain:.95},rainWets:true,species:[]},
+  {id:'rainforest',cost:3800,tint:'rgba(38,128,92,.12)',edge:'rgba(38,128,92,.4)',weather:{clear:1,overcast:1.1,rain:1.25},rainWets:true,species:[]},
+  {id:'coast',cost:4500,tint:'rgba(70,150,190,.12)',edge:'rgba(70,150,190,.4)',weather:{clear:1.2,overcast:1.05,rain:.9},rainWets:true,species:[]},
+  {id:'garden',cost:5200,tint:'rgba(190,96,120,.12)',edge:'rgba(190,96,120,.4)',weather:{clear:1.1,overcast:1.1,rain:1.05},rainWets:true,species:[]},
+]
+const G = '#6f9460', L = '#8aad72'
+const MORE_SPECIES = [
+  {id:'alpineaster',scene:'alpine',cost:16,growSec:140,sell:34,xp:6,head:'alpineaster',leaf:'strap',pal:{petal:'#9a86dc',petalDeep:'#6a55b0',center:'#f2c94c',centerDeep:'#b98a1e',stem:G,leaf:L},alt:{petal:'#f1a9c8',petalDeep:'#c4708f'},source:'https://en.wikipedia.org/wiki/Aster_alpinus'},
+  {id:'pasqueflower',scene:'alpine',cost:26,growSec:230,sell:60,xp:11,head:'pasqueflower',leaf:'fern',pal:{petal:'#f7f4ea',petalDeep:'#d6d0bf',center:'#f0c648',centerDeep:'#a9801f',stem:'#7d9a6a',leaf:'#93b07c'},source:'https://en.wikipedia.org/wiki/Pulsatilla_alpina'},
+  {id:'gentian',scene:'alpine',cost:44,growSec:360,sell:108,xp:20,head:'gentian',leaf:'lance',pal:{petal:'#2f55c8',petalDeep:'#1b327f',center:'#bfe0a8',centerDeep:'#6f9a58',stem:G,leaf:L},source:'https://en.wikipedia.org/wiki/Gentiana_acaulis'},
+  {id:'alpinecolumbine',scene:'alpine',cost:66,growSec:560,sell:176,xp:32,head:'alpinecolumbine',leaf:'palmate',pal:{petal:'#6f8fe6',petalDeep:'#4560b4',center:'#f4f1e2',centerDeep:'#cfc48f',stem:G,leaf:L},source:'https://en.wikipedia.org/wiki/Aquilegia_alpina'},
+  {id:'anthurium',scene:'rainforest',cost:30,growSec:250,sell:72,xp:13,head:'anthurium',leaf:'heart',pal:{petal:'#e23b3b',petalDeep:'#a01f28',center:'#f3dc8a',centerDeep:'#c9a23a',stem:'#4f8a5c',leaf:'#3f7d55'},alt:{petal:'#f6b8c4',petalDeep:'#d77f93'},source:'https://en.wikipedia.org/wiki/Anthurium_andraeanum'},
+  {id:'heliconia',scene:'rainforest',cost:48,growSec:400,sell:122,xp:22,head:'heliconia',leaf:'paddle',pal:{petal:'#e5432f',petalDeep:'#a82a1c',center:'#f6d44a',centerDeep:'#7fa03c',stem:'#4f8a5c',leaf:'#4a8a58'},source:'https://en.wikipedia.org/wiki/Heliconia_rostrata'},
+  {id:'passionflower',scene:'rainforest',cost:62,growSec:520,sell:160,xp:29,head:'passionflower',leaf:'palmate',pal:{petal:'#eef0fb',petalDeep:'#5a63c8',center:'#d9e6a0',centerDeep:'#7c5a9c',stem:'#5c8f5a',leaf:'#6ea163'},source:'https://en.wikipedia.org/wiki/Passiflora_caerulea'},
+  {id:'moonorchid',scene:'rainforest',cost:88,growSec:680,sell:236,xp:42,head:'moonorchid',leaf:'paddle',pal:{petal:'#fbfaf6',petalDeep:'#dcd7ca',center:'#f1c93f',centerDeep:'#c2414f',stem:'#5c8f5a',leaf:'#4f8f5c'},source:'https://en.wikipedia.org/wiki/Phalaenopsis_amabilis'},
+  {id:'seathrift',scene:'coast',cost:14,growSec:125,sell:30,xp:5,head:'seathrift',leaf:'grass',pal:{petal:'#f08cb4',petalDeep:'#c2587f',center:'#fbe3ec',centerDeep:'#d78aa6',stem:'#7a9a66',leaf:'#7fa06a'},alt:{petal:'#f8f4f6',petalDeep:'#d9cfd4'},source:'https://en.wikipedia.org/wiki/Armeria_maritima'},
+  {id:'spanishlavender',scene:'coast',cost:24,growSec:200,sell:54,xp:10,head:'spanishlavender',leaf:'silver',pal:{petal:'#b07fdc',petalDeep:'#5d3f93',center:'#e9d9f6',centerDeep:'#8a68b8',stem:'#8a9a78',leaf:'#a9b59a'},source:'https://en.wikipedia.org/wiki/Lavandula_stoechas'},
+  {id:'rockrose',scene:'coast',cost:38,growSec:310,sell:92,xp:17,head:'rockrose',leaf:'ovate',pal:{petal:'#ee86c0',petalDeep:'#bf4f8f',center:'#f6cf4a',centerDeep:'#b3861c',stem:'#7c9468',leaf:'#93a97c'},source:'https://en.wikipedia.org/wiki/Cistus_creticus'},
+  {id:'oleander',scene:'coast',cost:56,growSec:450,sell:140,xp:26,head:'oleander',leaf:'lance',pal:{petal:'#f59ab0',petalDeep:'#cf5f7c',center:'#fbe8c4',centerDeep:'#d19a52',stem:'#6a8a5c',leaf:'#5f8a5a'},alt:{petal:'#fbf7f0',petalDeep:'#ddd3c2'},source:'https://en.wikipedia.org/wiki/Nerium'},
+  {id:'bougainvillea',scene:'coast',cost:74,growSec:600,sell:192,xp:35,head:'bougainvillea',leaf:'ovate',pal:{petal:'#d53f9d',petalDeep:'#972268',center:'#fdf8e4',centerDeep:'#d9c66a',stem:'#7a7a58',leaf:'#5f9058'},source:'https://en.wikipedia.org/wiki/Bougainvillea_glabra'},
+  {id:'azalea',scene:'garden',cost:28,growSec:240,sell:66,xp:12,head:'azalea',leaf:'ovate',pal:{petal:'#ec5a78',petalDeep:'#b02f4c',center:'#fbd9de',centerDeep:'#8f2540',stem:'#77705a',leaf:'#6c9a60'},alt:{petal:'#fbf3f4',petalDeep:'#e2c9cf'},source:'https://en.wikipedia.org/wiki/Rhododendron_simsii'},
+  {id:'chrysanthemum',scene:'garden',cost:42,growSec:340,sell:102,xp:19,head:'chrysanthemum',leaf:'lobed',pal:{petal:'#f4c23a',petalDeep:'#c98a16',center:'#d79a22',centerDeep:'#8f5f10',stem:G,leaf:'#789f66'},alt:{petal:'#f6eef0',petalDeep:'#d6bfc8'},source:'https://en.wikipedia.org/wiki/Chrysanthemum_×_morifolium'},
+  {id:'wisteria',scene:'garden',cost:64,growSec:540,sell:168,xp:30,head:'wisteria',leaf:'pinnate',pal:{petal:'#a78be0',petalDeep:'#6f55b4',center:'#f3ecfb',centerDeep:'#c9b4ea',stem:'#7b6a50',leaf:'#7fa868'},source:'https://en.wikipedia.org/wiki/Wisteria_sinensis'},
+  {id:'treepeony',scene:'garden',cost:96,growSec:720,sell:260,xp:46,head:'treepeony',leaf:'lobed',pal:{petal:'#e76a9a',petalDeep:'#a8336a',center:'#f6d04c',centerDeep:'#b98a1e',stem:'#7b6a50',leaf:'#6f9a62'},alt:{petal:'#fbf4f2',petalDeep:'#e3cdd0'},source:'https://en.wikipedia.org/wiki/Paeonia_×_suffruticosa'},
+]
+for (const [id,role,season,visitor] of [
+  ['alpineaster','seed',1,'butterfly'],['pasqueflower','pollen',0,'bee'],['gentian','nectar',1,'bumblebee'],['alpinecolumbine','nectar',1,'bumblebee'],
+  ['anthurium','shelter',1,'firefly'],['heliconia','nectar',1,'honeycreeper'],['passionflower','pollen',1,'bee'],['moonorchid','night',0,'moth'],
+  ['seathrift','pollen',0,'bee'],['spanishlavender','nectar',0,'bee'],['rockrose','pollen',0,'hoverfly'],['oleander','shelter',1,'hawkmoth'],['bougainvillea','shelter',1,'swallowtail'],
+  ['azalea','nectar',0,'swallowtail'],['chrysanthemum','seed',2,'hoverfly'],['wisteria','nectar',0,'bumblebee'],['treepeony','pollen',0,'bee'],
+]) ECO_PROFILES[id] = { role, season, visitor }
+const MORE_VISITORS = {
+  alpine:['bee','butterfly','ladybug','robin','moth','bumblebee'], rainforest:['bee','butterfly','firefly','moth','honeycreeper','hawkmoth','ladybug'],
+  coast:['bee','butterfly','ladybug','moth','swallowtail','hoverfly','hawkmoth'], garden:['bee','butterfly','ladybug','firefly','moth','robin','swallowtail','bumblebee','hoverfly'],
+}
+Object.assign(zh, {
+  'scene.alpine':'高山草甸','scene.rainforest':'雨林','scene.coast':'海岸','scene.garden':'东方庭园',
+  'weather.alpine.clear':'高山晴','weather.alpine.overcast':'云海','weather.alpine.rain':'山雨',
+  'weather.rainforest.clear':'林隙日光','weather.rainforest.overcast':'湿雾','weather.rainforest.rain':'热带暴雨',
+  'weather.coast.clear':'海风晴','weather.coast.overcast':'海雾','weather.coast.rain':'海雨',
+  'weather.garden.clear':'晴','weather.garden.overcast':'薄阴','weather.garden.rain':'梅雨',
+  'species.alpineaster':'高山紫菀','latin.alpineaster':'Aster alpinus','codex.alpineaster':'山巅的问候','fact.alpineaster':'菊科多年生草本，夏季开紫、粉、白或蓝色的头状花，原生于欧洲山地。',
+  'species.pasqueflower':'高山白头翁','latin.pasqueflower':'Pulsatilla alpina','codex.pasqueflower':'雪线上的第一朵','fact.pasqueflower':'毛茛科多年生草本，高 15–30 厘米，生长在海拔 1200–2700 米的欧洲山地。',
+  'species.gentian':'无茎龙胆','latin.gentian':'Gentiana acaulis','codex.gentian':'高山的一抹深蓝','fact.gentian':'龙胆科，深蓝色喇叭状花几乎贴地而开，生长在阿尔卑斯和比利牛斯海拔 800–3000 米处。',
+  'species.alpinecolumbine':'高山耧斗菜','latin.alpinecolumbine':'Aquilegia alpina','codex.alpinecolumbine':'带着五只小角的蓝','fact.alpinecolumbine':'毛茛科多年生草本，花浅蓝至蓝紫色，原生于阿尔卑斯西部和中部，在原产地较为少见。',
+  'species.anthurium':'红掌','latin.anthurium':'Anthurium andraeanum','codex.anthurium':'热情与真诚的心','fact.anthurium':'天南星科，原生于哥伦比亚和厄瓜多尔；鲜艳的心形部分是佛焰苞，真正的小花长在中间的肉穗上。',
+  'species.heliconia':'垂花蝎尾蕉','latin.heliconia':'Heliconia rostrata','codex.heliconia':'雨林里垂下的灯串','fact.heliconia':'多年生草本，生于热带雨林；与多数向上开的蝎尾蕉不同，它的花序下垂，苞片红色带黄边。',
+  'species.passionflower':'西番莲','latin.passionflower':'Passiflora caerulea','codex.passionflower':'一圈细丝围成的钟面','fact.passionflower':'西番莲科藤本，原生于南美；花瓣内有一圈蓝紫色的丝状副花冠。',
+  'species.moonorchid':'蝴蝶兰','latin.moonorchid':'Phalaenopsis amabilis','codex.moonorchid':'月光下停着的白蝶','fact.moonorchid':'兰科附生草本，根粗长，叶肥厚，分枝的花茎上开近乎平展、花期很长的白花。',
+  'species.seathrift':'海石竹','latin.seathrift':'Armeria maritima','codex.seathrift':'海崖上的粉色绒球','fact.seathrift':'白花丹科常绿多年生草本，低矮丛生，细长花茎顶着球形的粉色花序，也有紫、白、红色。',
+  'species.spanishlavender':'西班牙薰衣草','latin.spanishlavender':'Lavandula stoechas','codex.spanishlavender':'戴着兔耳朵的薰衣草','fact.spanishlavender':'原生于地中海沿岸的常绿灌木；约 2 厘米的花穗顶端有几片大得多的紫色不育苞片。',
+  'species.rockrose':'岩蔷薇','latin.rockrose':'Cistus creticus','codex.rockrose':'皱纸一样的一日花','fact.rockrose':'半日花科灌木，花通常粉色，直径 4.5–5 厘米，形态变化很大。',
+  'species.oleander':'夹竹桃','latin.oleander':'Nerium oleander','codex.oleander':'美丽，但只可远观','fact.oleander':'灌木或小乔木，花簇生枝顶，花冠五深裂；叶厚革质、狭披针形。全株有毒，游戏里只作观赏。',
+  'species.bougainvillea':'光叶子花','latin.bougainvillea':'Bougainvillea glabra','codex.bougainvillea':'纸做的热烈','fact.bougainvillea':'真正的花很小，白色或淡黄色，约 0.4 厘米；醒目的紫红色部分是纸质的苞片。',
+  'species.azalea':'杜鹃','latin.azalea':'Rhododendron simsii','codex.azalea':'满山的思念','fact.azalea':'原生于东亚，在长江以南海拔 500–2700 米处生长；花白色至深红色，叶卵形至倒披针形。',
+  'species.chrysanthemum':'菊花','latin.chrysanthemum':'Chrysanthemum × morifolium','codex.chrysanthemum':'秋日里的从容','fact.chrysanthemum':'菊科多年生的杂交种，是秋季最具代表性的花之一。',
+  'species.wisteria':'紫藤','latin.wisteria':'Wisteria sinensis','codex.wisteria':'春天垂下的紫色帘子','fact.wisteria':'豆科落叶藤本，原生于中国；15–20 厘米的总状花序在春季先叶开放，羽状复叶有 9–13 片小叶。',
+  'species.treepeony':'牡丹','latin.treepeony':'Paeonia × suffruticosa','codex.treepeony':'花中之王，富贵与圆满','fact.treepeony':'人工杂交的栽培类群，起源于中国；花瓣紫红、粉或白色，传统品种多为重瓣。',
+})
+Object.assign(en, {
+  'scene.alpine':'Alpine meadow','scene.rainforest':'Rainforest','scene.coast':'Coast','scene.garden':'Eastern garden',
+  'weather.alpine.clear':'Mountain sun','weather.alpine.overcast':'Sea of cloud','weather.alpine.rain':'Mountain rain',
+  'weather.rainforest.clear':'Canopy light','weather.rainforest.overcast':'Humid mist','weather.rainforest.rain':'Downpour',
+  'weather.coast.clear':'Sea breeze','weather.coast.overcast':'Sea fog','weather.coast.rain':'Sea rain',
+  'weather.garden.clear':'Clear','weather.garden.overcast':'Soft cloud','weather.garden.rain':'Plum rain',
+  'species.alpineaster':'Alpine aster','latin.alpineaster':'Aster alpinus','codex.alpineaster':'A greeting from the summit','fact.alpineaster':'A perennial in the daisy family with purple, pink, white or blue flowers in summer, native to the mountains of Europe.',
+  'species.pasqueflower':'Alpine pasqueflower','latin.pasqueflower':'Pulsatilla alpina','codex.pasqueflower':'First above the snowline','fact.pasqueflower':'A buttercup-family perennial 15–30 cm tall, found at 1,200–2,700 m in the mountains of central and southern Europe.',
+  'species.gentian':'Stemless gentian','latin.gentian':'Gentiana acaulis','codex.gentian':'The deep blue of the heights','fact.gentian':'Deep blue trumpets open almost at ground level; it grows at 800–3,000 m in ranges such as the Alps and Pyrenees.',
+  'species.alpinecolumbine':'Alpine columbine','latin.alpinecolumbine':'Aquilegia alpina','codex.alpinecolumbine':'Blue with five little horns','fact.alpinecolumbine':'A buttercup-family perennial with light blue to blue-purple flowers, native to the western and central Alps and rare in much of its range.',
+  'species.anthurium':'Flamingo flower','latin.anthurium':'Anthurium andraeanum','codex.anthurium':'A warm and open heart','fact.anthurium':'An arum native to Colombia and Ecuador; the bright heart is a spathe, and the true flowers sit on the spadix.',
+  'species.heliconia':'Hanging lobster claw','latin.heliconia':'Heliconia rostrata','codex.heliconia':'A string of lanterns in the forest','fact.heliconia':'A rainforest perennial; unlike most heliconias, which face up, its inflorescence hangs down, with red bracts edged in yellow.',
+  'species.passionflower':'Blue passionflower','latin.passionflower':'Passiflora caerulea','codex.passionflower':'A clock face ringed with threads','fact.passionflower':'A South American vine whose petals frame a corona of blue-purple filaments.',
+  'species.moonorchid':'Moon orchid','latin.moonorchid':'Phalaenopsis amabilis','codex.moonorchid':'White moths resting in moonlight','fact.moonorchid':'An epiphytic orchid with long thick roots, fleshy leaves, and nearly flat, long-lasting white flowers on a branching stem.',
+  'species.seathrift':'Sea thrift','latin.seathrift':'Armeria maritima','codex.seathrift':'Pink pompoms on the cliff','fact.seathrift':'A compact evergreen perennial in low clumps, sending up long stems with globes of pink flowers; purple, white and red also occur.',
+  'species.spanishlavender':'Spanish lavender','latin.spanishlavender':'Lavandula stoechas','codex.spanishlavender':'Lavender with rabbit ears','fact.spanishlavender':'An evergreen Mediterranean shrub; spikes about 2 cm long are crowned by much larger sterile purple bracts.',
+  'species.rockrose':'Pink rock-rose','latin.rockrose':'Cistus creticus','codex.rockrose':'A crumpled-paper flower for a day','fact.rockrose':'A shrub in the rock-rose family, usually with pink flowers 4.5–5 cm across, and very variable.',
+  'species.oleander':'Oleander','latin.oleander':'Nerium oleander','codex.oleander':'Lovely, and best admired from afar','fact.oleander':'A shrub or small tree with clustered, deeply five-lobed flowers and thick, narrow, leathery leaves. Every part is poisonous; here it is only for looking at.',
+  'species.bougainvillea':'Paperflower','latin.bougainvillea':'Bougainvillea glabra','codex.bougainvillea':'Passion made of paper','fact.bougainvillea':'The true flowers are tiny and white or yellowish, about 0.4 cm; the showy magenta parts are papery bracts.',
+  'species.azalea':'Azalea','latin.azalea':'Rhododendron simsii','codex.azalea':'Longing across the hillside','fact.azalea':'Native to East Asia, growing at 500–2,700 m south of the Yangtze; flowers range from white to dark red.',
+  'species.chrysanthemum':'Chrysanthemum','latin.chrysanthemum':'Chrysanthemum × morifolium','codex.chrysanthemum':'Composure in autumn','fact.chrysanthemum':'A hybrid perennial in the daisy family, and one of the signature flowers of autumn.',
+  'species.wisteria':'Chinese wisteria','latin.wisteria':'Wisteria sinensis','codex.wisteria':'A violet curtain let down in spring','fact.wisteria':'A deciduous vine in the pea family native to China; 15–20 cm racemes open in spring before the leaves, which have 9–13 leaflets.',
+  'species.treepeony':'Tree peony','latin.treepeony':'Paeonia × suffruticosa','codex.treepeony':'King of flowers, wealth and fullness','fact.treepeony':'A man-made hybrid group originating in China; petals are reddish-purple, pink or white, often double in traditional cultivars.',
+})
