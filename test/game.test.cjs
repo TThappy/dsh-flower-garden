@@ -653,6 +653,8 @@ check('all thirteen visitors have complete field-guide metadata', game.VISITORS.
 console.log('ui save and local garden clock')
 check('ui sanitizer preserves valid tab and display settings', JSON.stringify(game.sanitizeUi({ tab: 'basket', fontSize: 19, font: 'serif' })) === JSON.stringify({ tab: 'basket', fontSize: 19, font: 'serif', sound: false }))
 check('ui sanitizer falls back invalid values', JSON.stringify(game.sanitizeUi({ tab: 'nope', fontSize: 14, font: 'comic' })) === JSON.stringify({ tab: 'garden', fontSize: 15, font: 'system', sound: false }))
+check('today tasks start with an unclaimed check-in', (() => { const list = game.todayTasks(game.createState ? game.createState(Date.now()) : game.getState(), Date.now()); return list[0].id === 'daily' && list.some(task => task.id === 'wanted') })())
+check('tab groups cover every section except settings', game.TAB_GROUP_IDS.flatMap(g => game.TAB_GROUPS[g]).length === 10 && game.tabGroupOf('settings') === null && game.tabGroupOf('shop') === 'bag')
 check('garden tabs expose nine stable sections', game.GARDEN_TABS.length === 11 && game.GARDEN_TABS[0] === 'garden' && game.GARDEN_TABS[10] === 'settings')
 check('day periods honor every boundary', [0, 4, 5, 6, 7, 10, 11, 13, 14, 16, 17, 18, 19, 23].map(hour => game.dayPeriod(new Date(2026, 0, 1, hour).getTime())).join(',') === 'night,night,dawn,dawn,morning,morning,noon,noon,afternoon,afternoon,dusk,dusk,night,night')
 const localClockAt = new Date(2026, 6, 8, 17, 23, 41).getTime()

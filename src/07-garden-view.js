@@ -59,16 +59,27 @@
         updateUi({tab:id})
         setArmed(null);setPicker(null);setConfirmReset(false)
         if(id==='flowers')setCodexOpen(true)
-        window.setTimeout(()=>{if(scrollRef.current)scrollRef.current.scrollTop=scrollPositions.current[id]??0;if(keyboard)rootRef.current?.querySelector(`#fg-tab-${id}`)?.focus({preventScroll:true})},0)
+        window.setTimeout(()=>{if(scrollRef.current)scrollRef.current.scrollTop=scrollPositions.current[id]??0;if(keyboard)(rootRef.current?.querySelector(`#fg-tab-${id}`)??rootRef.current?.querySelector(`#fg-group-${tabGroupOf(id)}`))?.focus({preventScroll:true})},0)
       }
-      function tabKeys(event,id) {
-        const index=GARDEN_TABS.indexOf(id)
-        const next=event.key==='ArrowRight'?(index+1)%GARDEN_TABS.length:event.key==='ArrowLeft'?(index+GARDEN_TABS.length-1)%GARDEN_TABS.length:event.key==='Home'?0:event.key==='End'?GARDEN_TABS.length-1:null
+      // The last section opened in each group, so switching groups returns to it.
+      const lastSection = React.useRef({})
+      const activeGroup = tabGroupOf(activeTab)
+      if (activeGroup !== null) lastSection.current[activeGroup] = activeTab
+      function selectGroup(group, keyboard = false) { selectTab(lastSection.current[group] ?? TAB_GROUPS[group][0], keyboard) }
+      function cycleKeys(event, list, current, pick) {
+        const index=list.indexOf(current)
+        const next=event.key==='ArrowRight'?(index+1)%list.length:event.key==='ArrowLeft'?(index+list.length-1)%list.length:event.key==='Home'?0:event.key==='End'?list.length-1:null
         if(next===null)return
-        event.preventDefault();selectTab(GARDEN_TABS[next],true)
+        event.preventDefault();pick(list[next])
       }
+      function tabKeys(event,group) { cycleKeys(event,TAB_GROUP_IDS,group,next=>{selectGroup(next);window.setTimeout(()=>rootRef.current?.querySelector(`#fg-group-${next}`)?.focus({preventScroll:true}),0)}) }
+      function subKeys(event,id) { cycleKeys(event,TAB_GROUPS[activeGroup],id,next=>selectTab(next,true)) }
       function panel(id,...children) {
-        return h('div',{key:id,id:`fg-panel-${id}`,role:'tabpanel','aria-labelledby':`fg-tab-${id}`,hidden:activeTab!==id,tabIndex:0,className:'fg-tabPanel'},...children)
+        const group=tabGroupOf(id), sections=group===null?[]:TAB_GROUPS[group]
+        const subTabs=sections.length>1?h('div',{className:'fg-subTabs',role:'tablist','aria-label':t(`tabs.group.${group}`)},sections.map(section=>h('button',{
+          key:section,id:`fg-tab-${section}`,type:'button',role:'tab','aria-selected':section===id,'aria-controls':`fg-panel-${section}`,tabIndex:section===id?0:-1,
+          className:'fg-subTab',onClick:()=>selectTab(section),onKeyDown:event=>subKeys(event,section)},h('span',{className:'fg-tabIcon','aria-hidden':true},TAB_ICONS[section]),t(`tabs.${section}`)))):null
+        return h('div',{key:id,id:`fg-panel-${id}`,role:'tabpanel','aria-labelledby':sections.length>1?`fg-tab-${id}`:group!==null?`fg-group-${group}`:'fg-tab-settings',hidden:activeTab!==id,tabIndex:0,className:'fg-tabPanel'},subTabs,...children)
       }
 
 
@@ -1094,9 +1105,10 @@
           ),
 
           h('div',{className:'fg-toolbar'},
-            h('div',{className:'fg-tabs',role:'tablist','aria-label':t('tabs.label')},GARDEN_TABS.map(id=>h('button',{
-              key:id,id:`fg-tab-${id}`,type:'button',role:'tab','aria-selected':activeTab===id,'aria-controls':`fg-panel-${id}`,tabIndex:activeTab===id?0:-1,
-              className:'fg-tab',onClick:()=>selectTab(id),onKeyDown:event=>tabKeys(event,id)},h('span',{className:'fg-tabIcon','aria-hidden':true},TAB_ICONS[id]),t(`tabs.${id}`),id==='basket'?` ${state.basket.length}/${capacity}`:id==='orders'&&state.orders.some(order=>orderReady(state,order))?' •':null))),
+            h('div',{className:'fg-tabs',role:'tablist','aria-label':t('tabs.label')},TAB_GROUP_IDS.map(group=>h('button',{
+              key:group,id:`fg-group-${group}`,type:'button',role:'tab','aria-selected':activeGroup===group,'aria-controls':`fg-panel-${lastSection.current[group]??TAB_GROUPS[group][0]}`,tabIndex:activeGroup===group?0:-1,
+              className:'fg-tab',onClick:()=>selectGroup(group),onKeyDown:event=>tabKeys(event,group)},h('span',{className:'fg-tabIcon','aria-hidden':true},TAB_ICONS[group]),t(`tabs.group.${group}`),group==='bag'?` ${state.basket.length}/${capacity}`:group==='tasks'&&state.orders.some(order=>orderReady(state,order))?' •':null))),
+            h('button',{type:'button',className:activeTab==='settings'?'fg-btn fg-btnSmall fg-gear fg-btnPrimary':'fg-btn fg-btnSmall fg-gear',id:'fg-tab-settings','aria-pressed':activeTab==='settings','aria-label':t('tabs.settings'),title:t('tabs.settings'),onClick:()=>selectTab(activeTab==='settings'?(lastSection.current.garden??'garden'):'settings')},'⚙️'),
             h('button',{type:'button',className:'fg-btn fg-btnSmall',title:t('mini.note'),onClick:openMini},t('mini.open')),
             h('button',{type:'button',className:'fg-btn fg-btnSmall fg-bagButton',onClick:()=>{rememberOpener();setInventoryOpen(true)}},t('inventory.open',{n:inventoryCount(state)+state.basket.length})),
             (state.discoveries??[]).length?h('button',{type:'button',className:'fg-btn fg-btnSmall fg-latestDiscovery',onClick:()=>{rememberOpener();setDiscovery(state.discoveries[state.discoveries.length-1])}},t('discovery.return')):null,
@@ -1105,7 +1117,7 @@
           away && activeTab === 'garden' ? h(AwayCard, { report: away, t, onClose: () => { clearAway(); setAway(null) } }) : null,
           activeTab === 'garden' ? h(Shelf, { state, t, compact: true }) : null,
           h(EventBanner, { state, t, clock, hidden: activeTab !== 'garden', onJoin: (next, text) => { commit(next, true); playSound('gold'); announce(text, 'gold') } }),
-          h(PlayStrip, { state, t, clock, hidden: activeTab !== 'garden', onChange: commitReward }),
+          h(TodayCard, { state, t, clock, hidden: activeTab !== 'garden', onChange: commitReward, onJump: id => selectTab(id) }),
           h('div', { className: 'fg-scenes', hidden: activeTab !== 'garden', role: 'group', 'aria-label': t('plot.section') },
             sceneOrder.map(id => {
               const target = sceneOf(id)

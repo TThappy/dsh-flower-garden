@@ -2,6 +2,11 @@
     // §6 View.
     // ---------------------------------------------------------------------
 const GARDEN_TABS = ['garden','basket','studio','album','orders','ecology','show','shop','flowers','visitors','settings']
+// The tab bar shows five groups; each saved section id still names one panel, so old saves open where they left off.
+// Settings sits behind the gear button instead of taking a tab.
+const TAB_GROUPS = { garden: ['garden'], bag: ['basket', 'shop'], studio: ['studio', 'album'], tasks: ['orders', 'ecology', 'show'], book: ['flowers', 'visitors'] }
+const TAB_GROUP_IDS = Object.keys(TAB_GROUPS)
+function tabGroupOf(id) { return TAB_GROUP_IDS.find(group => TAB_GROUPS[group].includes(id)) ?? null }
 function sanitizeUi(raw) {
   return { tab: GARDEN_TABS.includes(raw?.tab) ? raw.tab : 'garden', fontSize: [13,15,17,19].includes(raw?.fontSize) ? raw.fontSize : 15,
     font: ['system','serif','rounded'].includes(raw?.font) ? raw.font : 'system', sound: raw?.sound === true }

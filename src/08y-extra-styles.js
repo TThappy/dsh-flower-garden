@@ -138,7 +138,7 @@
 .fg-goal progress{width:100%;height:8px;accent-color:var(--fg-accent)}
 .fg-fund{padding:18px;border-radius:20px;border:1px solid #d4af3766;background:linear-gradient(180deg,#d4af3714,var(--dsw-alias-bg-layer-1))}
 .fg-view .fg-tabs{gap:6px;padding:8px 0;flex-wrap:wrap;overflow-x:visible}
-.fg-view .fg-toolbar{align-items:flex-start;flex-wrap:wrap}
+.fg-view .fg-toolbar{align-items:center;flex-wrap:wrap}
 .fg-view .fg-topbar{max-height:none}
 @media(max-width:650px){.fg-view .fg-tabs{flex-wrap:nowrap;overflow-x:auto}.fg-view .fg-topbar{max-height:48%}}
 .fg-view .fg-tab{display:inline-flex;align-items:center;gap:.4em;padding:.45em .95em;border:1px solid transparent;border-radius:999px;transition:background .12s ease,color .12s ease}

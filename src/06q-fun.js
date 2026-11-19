@@ -2,6 +2,7 @@
 // Companions, garden events, the daily bouquet brief, flower-language greeting cards and the two new tabs.
 Object.assign(zh, {
   'tabs.studio':'工坊', 'tabs.album':'收藏册',
+  'tabs.group.garden':'花园', 'tabs.group.bag':'背包', 'tabs.group.studio':'工坊', 'tabs.group.tasks':'任务', 'tabs.group.book':'图鉴', 'tabs.basket.short':'花篮',
   'pal.title':'常驻伙伴', 'pal.count':'{n}/{max}', 'pal.none':'和一位访客的好感升满后，可以邀请它住下来帮忙。',
   'pal.invite':'邀请住下 · {n} 金币', 'pal.confirm':'确认 · {n} 金币', 'pal.leave':'请它回去', 'pal.home':'已住下',
   'pal.do.pollinator':'每小时给一株花授粉', 'pal.do.waterside':'每小时把最干的一株浇透', 'pal.do.guardian':'每小时给最瘦的花圃 +15 地力',
@@ -14,6 +15,7 @@ Object.assign(zh, {
 })
 Object.assign(en, {
   'tabs.studio':'Studio', 'tabs.album':'Album',
+  'tabs.group.garden':'Garden', 'tabs.group.bag':'Bag', 'tabs.group.studio':'Studio', 'tabs.group.tasks':'Tasks', 'tabs.group.book':'Guide', 'tabs.basket.short':'Basket',
   'pal.title':'Companions', 'pal.count':'{n}/{max}', 'pal.none':'Complete the bond with a visitor and you can invite it to stay and help.',
   'pal.invite':'Invite to stay · {n} coins', 'pal.confirm':'Confirm · {n} coins', 'pal.leave':'Send home', 'pal.home':'Living here',
   'pal.do.pollinator':'Pollinates one plant an hour', 'pal.do.waterside':'Waters the driest plant every hour', 'pal.do.guardian':'Adds 15 soil to the poorest plot every hour',
@@ -85,4 +87,4 @@ function GreetingEditor({ t, card }) {
     h('button', { type: 'button', className: 'fg-btn fg-btnSmall fg-btnPrimary', 'data-action': 'greetSave', onClick: event => saveCard(event.currentTarget.closest('.fg-keepCard'), [head, ...meanings], `flower-garden-greeting-${card.id}`) }, t('greet.save')))
 }
 
-const TAB_ICONS = { garden: '🌱', basket: '🧺', studio: '💐', album: '📔', orders: '✉️', ecology: '🔬', show: '🎀', shop: '🛒', flowers: '📖', visitors: '🦋', settings: '⚙️' }
+const TAB_ICONS = { garden: '🌱', basket: '🧺', studio: '💐', album: '📔', orders: '✉️', ecology: '🔬', show: '🎀', shop: '🛒', flowers: '📖', visitors: '🦋', settings: '⚙️', bag: '🎒', tasks: '📋', book: '📖' }

@@ -30,3 +30,42 @@ function MiniToday({ state, t, clock, run }) {
     trip ? (clock >= trip.end ? btn('trip', `🧺 ${t('trip.claim')}`, current => claimExpedition(current, now())) : chip('trip', `🧺 ${t('mini.trip', { n: formatDuration(trip.end - clock, t) })}`)) : null,
     jobs.map((job, index) => (clock >= job.end ? btn(`job-${index}`, t('work.claim', { name: t(`work.${job.recipe}`), n: job.coins }), current => claimJob(current, index, now())) : null)))
 }
+
+// The garden's "today" card: one lit cell per daily thing, a click does it or jumps to where it lives.
+Object.assign(zh, { 'today.title':'今日', 'today.daily':'签到', 'today.wish':'心愿', 'today.gift':'礼盒', 'today.wanted':'征花', 'today.brief':'花束订单', 'today.event':'奇遇' })
+Object.assign(en, { 'today.title':'Today', 'today.daily':'Check-in', 'today.wish':'Wishes', 'today.gift':'Gift', 'today.wanted':'Wanted', 'today.brief':'Bouquet brief', 'today.event':'Event' })
+
+function todayTasks(state, now) {
+  const daily = dailyStatus(state, now), quests = dailyQuests(state, now), gift = giftAt(state, now), event = eventAt(state, now)
+  const wantList = wantedAt(state, now), wanted = wantedState(state, now), brief = briefAt(now)
+  const wish = quests.find(quest => quest.done && !quest.claimed)
+  const give = wantList.find(id => !wanted.done.includes(id) && state.basket.some(item => item.species === id))
+  return [
+    { id: 'daily', icon: '🗓', done: !daily.available, run: daily.available ? current => claimDaily(current, Date.now()) : null },
+    { id: 'wish', icon: '⭐', done: quests.every(quest => quest.claimed), progress: `${quests.filter(quest => quest.claimed).length}/${quests.length}`,
+      run: wish ? current => claimQuest(current, wish.id, Date.now()) : null },
+    gift ? { id: 'gift', icon: '🎁', done: false, run: current => openGift(current, Date.now()) } : null,
+    { id: 'wanted', icon: '💐', done: wanted.done.length >= wantList.length, progress: `${wanted.done.length}/${wantList.length}`,
+      run: give ? current => deliverWanted(current, give, Date.now()) : null, jump: 'basket' },
+    { id: 'brief', icon: '📋', done: (state.briefDay ?? -1) >= brief.day, run: null, jump: 'studio' },
+    event ? { id: 'event', icon: EVENT_ICON[event.type], done: false, run: current => joinEvent(current, Date.now()) } : null,
+  ].filter(Boolean)
+}
+
+function TodayCard({ state, t, clock, hidden, onChange, onJump }) {
+  const tasks = todayTasks(state, clock)
+  return h('section', { className: 'fg-today', hidden, 'aria-label': t('today.title') },
+    h('strong', { className: 'fg-todayTitle' }, t('today.title'), ' ', h('span', { className: 'fg-note' }, `${tasks.filter(task => task.done).length}/${tasks.length}`)),
+    tasks.map(task => {
+      const ready = !task.done && task.run !== null
+      return h('button', { key: task.id, type: 'button', className: 'fg-todayCell', 'data-today': task.id,
+        'data-state': task.done ? 'done' : ready ? 'ready' : 'open', disabled: task.done && !task.jump,
+        title: t(`today.${task.id}`),
+        onClick: () => {
+          if (ready) { tick(); const next = task.run(getState()); if (next !== null) onChange(next) }
+          else if (task.jump) onJump(task.jump)
+        } },
+        h('span', { className: 'fg-todayIcon', 'aria-hidden': true }, task.done ? '✓' : task.icon),
+        h('span', { className: 'fg-todayLabel' }, t(`today.${task.id}`), task.progress && !task.done ? ` ${task.progress}` : ''))
+    }))
+}

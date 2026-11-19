@@ -54,6 +54,20 @@ button.fg-slot[aria-pressed="true"]{outline:3px solid var(--dsw-alias-brand-prim
 .fg-rarityTag[data-rarity="alt"]{background:var(--fg-r-alt)}.fg-rarityTag[data-rarity="hybrid"]{background:var(--fg-r-hybrid)}.fg-rarityTag[data-rarity="curio"]{background:var(--fg-r-curio)}.fg-rarityTag[data-rarity="spirit"]{background:var(--fg-r-spirit);color:#241b07}
 .fg-bagActions{display:flex;flex-direction:column;gap:8px;width:100%;margin-top:auto}
 .fg-inventoryContents .fg-slotGrid{grid-template-columns:repeat(auto-fill,minmax(72px,84px))}
+.fg-scroll>:empty{display:none}
+.fg-tabPanel>.fg-subTabs{margin:-10px 0 -8px}
+.fg-subTabs{display:flex;gap:6px;flex-wrap:wrap}
+.fg-subTab{border:1px solid var(--dsw-alias-border-secondary,#0002);background:transparent;color:var(--dsw-alias-label-secondary);border-radius:999px;padding:5px 12px;font-size:.88em;cursor:pointer}
+.fg-subTab[aria-selected=true]{background:var(--fg-accent,#2f9e5b);border-color:transparent;color:#fff;font-weight:600}
+.fg-subTab:focus-visible{outline:2px solid var(--dsw-alias-brand-primary);outline-offset:2px}
+.fg-gear{font-size:1.05em;padding-inline:8px}
+.fg-today{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:8px 12px;border-radius:16px;border:1px solid var(--fg-accent-soft,#0001);background:var(--dsw-alias-bg-layer-1)}
+.fg-todayTitle{margin-right:4px}
+.fg-todayCell{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--dsw-alias-border-l1);background:transparent;border-radius:999px;padding:4px 10px;font-size:.88em;color:var(--dsw-alias-label-secondary);cursor:pointer}
+.fg-todayCell[data-state=done]{background:var(--fg-accent-soft);border-color:var(--fg-accent);color:var(--dsw-alias-label-primary);cursor:default}
+.fg-todayCell[data-state=ready]{border-color:#d4af37;color:var(--dsw-alias-label-primary);font-weight:600;animation:fg-todayPulse 1.6s ease-in-out infinite}
+@keyframes fg-todayPulse{50%{transform:translateY(-2px);box-shadow:0 3px 8px #d4af3755}}
+@media(prefers-reduced-motion:reduce){.fg-todayCell[data-state=ready]{animation:none}}
 .fg-play{display:flex;gap:12px;flex-wrap:wrap;align-items:stretch}
 .fg-playCard{flex:1 1 260px;min-width:0;display:flex;flex-direction:column;gap:8px;padding:12px 14px;border-radius:16px;border:1px solid var(--dsw-alias-border-l1);background:linear-gradient(150deg,var(--dsw-alias-bg-layer-1),var(--dsw-alias-bg-layer-2))}
 .fg-playHead{display:flex;align-items:baseline;justify-content:space-between;gap:8px}

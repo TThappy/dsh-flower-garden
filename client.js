@@ -7525,6 +7525,11 @@ Object.assign(PLANTS, {
     // §6 View.
     // ---------------------------------------------------------------------
 const GARDEN_TABS = ['garden','basket','studio','album','orders','ecology','show','shop','flowers','visitors','settings']
+// The tab bar shows five groups; each saved section id still names one panel, so old saves open where they left off.
+// Settings sits behind the gear button instead of taking a tab.
+const TAB_GROUPS = { garden: ['garden'], bag: ['basket', 'shop'], studio: ['studio', 'album'], tasks: ['orders', 'ecology', 'show'], book: ['flowers', 'visitors'] }
+const TAB_GROUP_IDS = Object.keys(TAB_GROUPS)
+function tabGroupOf(id) { return TAB_GROUP_IDS.find(group => TAB_GROUPS[group].includes(id)) ?? null }
 function sanitizeUi(raw) {
   return { tab: GARDEN_TABS.includes(raw?.tab) ? raw.tab : 'garden', fontSize: [13,15,17,19].includes(raw?.fontSize) ? raw.fontSize : 15,
     font: ['system','serif','rounded'].includes(raw?.font) ? raw.font : 'system', sound: raw?.sound === true }
@@ -8055,6 +8060,45 @@ function MiniToday({ state, t, clock, run }) {
     jobs.map((job, index) => (clock >= job.end ? btn(`job-${index}`, t('work.claim', { name: t(`work.${job.recipe}`), n: job.coins }), current => claimJob(current, index, now())) : null)))
 }
 
+// The garden's "today" card: one lit cell per daily thing, a click does it or jumps to where it lives.
+Object.assign(zh, { 'today.title':'今日', 'today.daily':'签到', 'today.wish':'心愿', 'today.gift':'礼盒', 'today.wanted':'征花', 'today.brief':'花束订单', 'today.event':'奇遇' })
+Object.assign(en, { 'today.title':'Today', 'today.daily':'Check-in', 'today.wish':'Wishes', 'today.gift':'Gift', 'today.wanted':'Wanted', 'today.brief':'Bouquet brief', 'today.event':'Event' })
+
+function todayTasks(state, now) {
+  const daily = dailyStatus(state, now), quests = dailyQuests(state, now), gift = giftAt(state, now), event = eventAt(state, now)
+  const wantList = wantedAt(state, now), wanted = wantedState(state, now), brief = briefAt(now)
+  const wish = quests.find(quest => quest.done && !quest.claimed)
+  const give = wantList.find(id => !wanted.done.includes(id) && state.basket.some(item => item.species === id))
+  return [
+    { id: 'daily', icon: '🗓', done: !daily.available, run: daily.available ? current => claimDaily(current, Date.now()) : null },
+    { id: 'wish', icon: '⭐', done: quests.every(quest => quest.claimed), progress: `${quests.filter(quest => quest.claimed).length}/${quests.length}`,
+      run: wish ? current => claimQuest(current, wish.id, Date.now()) : null },
+    gift ? { id: 'gift', icon: '🎁', done: false, run: current => openGift(current, Date.now()) } : null,
+    { id: 'wanted', icon: '💐', done: wanted.done.length >= wantList.length, progress: `${wanted.done.length}/${wantList.length}`,
+      run: give ? current => deliverWanted(current, give, Date.now()) : null, jump: 'basket' },
+    { id: 'brief', icon: '📋', done: (state.briefDay ?? -1) >= brief.day, run: null, jump: 'studio' },
+    event ? { id: 'event', icon: EVENT_ICON[event.type], done: false, run: current => joinEvent(current, Date.now()) } : null,
+  ].filter(Boolean)
+}
+
+function TodayCard({ state, t, clock, hidden, onChange, onJump }) {
+  const tasks = todayTasks(state, clock)
+  return h('section', { className: 'fg-today', hidden, 'aria-label': t('today.title') },
+    h('strong', { className: 'fg-todayTitle' }, t('today.title'), ' ', h('span', { className: 'fg-note' }, `${tasks.filter(task => task.done).length}/${tasks.length}`)),
+    tasks.map(task => {
+      const ready = !task.done && task.run !== null
+      return h('button', { key: task.id, type: 'button', className: 'fg-todayCell', 'data-today': task.id,
+        'data-state': task.done ? 'done' : ready ? 'ready' : 'open', disabled: task.done && !task.jump,
+        title: t(`today.${task.id}`),
+        onClick: () => {
+          if (ready) { tick(); const next = task.run(getState()); if (next !== null) onChange(next) }
+          else if (task.jump) onJump(task.jump)
+        } },
+        h('span', { className: 'fg-todayIcon', 'aria-hidden': true }, task.done ? '✓' : task.icon),
+        h('span', { className: 'fg-todayLabel' }, t(`today.${task.id}`), task.progress && !task.done ? ` ${task.progress}` : ''))
+    }))
+}
+
 // Backdrops and colours for the alpine, rainforest, coast and eastern-garden grounds.
 Object.assign(PANORAMA_GROUND, { alpine: '#5f8a63', rainforest: '#234f3a', coast: '#c9b58a', garden: '#6f8f62' })
 const MORE_PANORAMA = {
@@ -8131,6 +8175,7 @@ function WantedBoard({ state, t, clock, onChange }) {
 // Companions, garden events, the daily bouquet brief, flower-language greeting cards and the two new tabs.
 Object.assign(zh, {
   'tabs.studio':'工坊', 'tabs.album':'收藏册',
+  'tabs.group.garden':'花园', 'tabs.group.bag':'背包', 'tabs.group.studio':'工坊', 'tabs.group.tasks':'任务', 'tabs.group.book':'图鉴', 'tabs.basket.short':'花篮',
   'pal.title':'常驻伙伴', 'pal.count':'{n}/{max}', 'pal.none':'和一位访客的好感升满后，可以邀请它住下来帮忙。',
   'pal.invite':'邀请住下 · {n} 金币', 'pal.confirm':'确认 · {n} 金币', 'pal.leave':'请它回去', 'pal.home':'已住下',
   'pal.do.pollinator':'每小时给一株花授粉', 'pal.do.waterside':'每小时把最干的一株浇透', 'pal.do.guardian':'每小时给最瘦的花圃 +15 地力',
@@ -8143,6 +8188,7 @@ Object.assign(zh, {
 })
 Object.assign(en, {
   'tabs.studio':'Studio', 'tabs.album':'Album',
+  'tabs.group.garden':'Garden', 'tabs.group.bag':'Bag', 'tabs.group.studio':'Studio', 'tabs.group.tasks':'Tasks', 'tabs.group.book':'Guide', 'tabs.basket.short':'Basket',
   'pal.title':'Companions', 'pal.count':'{n}/{max}', 'pal.none':'Complete the bond with a visitor and you can invite it to stay and help.',
   'pal.invite':'Invite to stay · {n} coins', 'pal.confirm':'Confirm · {n} coins', 'pal.leave':'Send home', 'pal.home':'Living here',
   'pal.do.pollinator':'Pollinates one plant an hour', 'pal.do.waterside':'Waters the driest plant every hour', 'pal.do.guardian':'Adds 15 soil to the poorest plot every hour',
@@ -8214,7 +8260,7 @@ function GreetingEditor({ t, card }) {
     h('button', { type: 'button', className: 'fg-btn fg-btnSmall fg-btnPrimary', 'data-action': 'greetSave', onClick: event => saveCard(event.currentTarget.closest('.fg-keepCard'), [head, ...meanings], `flower-garden-greeting-${card.id}`) }, t('greet.save')))
 }
 
-const TAB_ICONS = { garden: '🌱', basket: '🧺', studio: '💐', album: '📔', orders: '✉️', ecology: '🔬', show: '🎀', shop: '🛒', flowers: '📖', visitors: '🦋', settings: '⚙️' }
+const TAB_ICONS = { garden: '🌱', basket: '🧺', studio: '💐', album: '📔', orders: '✉️', ecology: '🔬', show: '🎀', shop: '🛒', flowers: '📖', visitors: '🦋', settings: '⚙️', bag: '🎒', tasks: '📋', book: '📖' }
 
 // Copy for the new uses of reputation, study notes and ribbons, and the added achievements.
 Object.assign(zh, {
@@ -9321,16 +9367,27 @@ function AwayCard({ report, t, onClose }) {
         updateUi({tab:id})
         setArmed(null);setPicker(null);setConfirmReset(false)
         if(id==='flowers')setCodexOpen(true)
-        window.setTimeout(()=>{if(scrollRef.current)scrollRef.current.scrollTop=scrollPositions.current[id]??0;if(keyboard)rootRef.current?.querySelector(`#fg-tab-${id}`)?.focus({preventScroll:true})},0)
+        window.setTimeout(()=>{if(scrollRef.current)scrollRef.current.scrollTop=scrollPositions.current[id]??0;if(keyboard)(rootRef.current?.querySelector(`#fg-tab-${id}`)??rootRef.current?.querySelector(`#fg-group-${tabGroupOf(id)}`))?.focus({preventScroll:true})},0)
       }
-      function tabKeys(event,id) {
-        const index=GARDEN_TABS.indexOf(id)
-        const next=event.key==='ArrowRight'?(index+1)%GARDEN_TABS.length:event.key==='ArrowLeft'?(index+GARDEN_TABS.length-1)%GARDEN_TABS.length:event.key==='Home'?0:event.key==='End'?GARDEN_TABS.length-1:null
+      // The last section opened in each group, so switching groups returns to it.
+      const lastSection = React.useRef({})
+      const activeGroup = tabGroupOf(activeTab)
+      if (activeGroup !== null) lastSection.current[activeGroup] = activeTab
+      function selectGroup(group, keyboard = false) { selectTab(lastSection.current[group] ?? TAB_GROUPS[group][0], keyboard) }
+      function cycleKeys(event, list, current, pick) {
+        const index=list.indexOf(current)
+        const next=event.key==='ArrowRight'?(index+1)%list.length:event.key==='ArrowLeft'?(index+list.length-1)%list.length:event.key==='Home'?0:event.key==='End'?list.length-1:null
         if(next===null)return
-        event.preventDefault();selectTab(GARDEN_TABS[next],true)
+        event.preventDefault();pick(list[next])
       }
+      function tabKeys(event,group) { cycleKeys(event,TAB_GROUP_IDS,group,next=>{selectGroup(next);window.setTimeout(()=>rootRef.current?.querySelector(`#fg-group-${next}`)?.focus({preventScroll:true}),0)}) }
+      function subKeys(event,id) { cycleKeys(event,TAB_GROUPS[activeGroup],id,next=>selectTab(next,true)) }
       function panel(id,...children) {
-        return h('div',{key:id,id:`fg-panel-${id}`,role:'tabpanel','aria-labelledby':`fg-tab-${id}`,hidden:activeTab!==id,tabIndex:0,className:'fg-tabPanel'},...children)
+        const group=tabGroupOf(id), sections=group===null?[]:TAB_GROUPS[group]
+        const subTabs=sections.length>1?h('div',{className:'fg-subTabs',role:'tablist','aria-label':t(`tabs.group.${group}`)},sections.map(section=>h('button',{
+          key:section,id:`fg-tab-${section}`,type:'button',role:'tab','aria-selected':section===id,'aria-controls':`fg-panel-${section}`,tabIndex:section===id?0:-1,
+          className:'fg-subTab',onClick:()=>selectTab(section),onKeyDown:event=>subKeys(event,section)},h('span',{className:'fg-tabIcon','aria-hidden':true},TAB_ICONS[section]),t(`tabs.${section}`)))):null
+        return h('div',{key:id,id:`fg-panel-${id}`,role:'tabpanel','aria-labelledby':sections.length>1?`fg-tab-${id}`:group!==null?`fg-group-${group}`:'fg-tab-settings',hidden:activeTab!==id,tabIndex:0,className:'fg-tabPanel'},subTabs,...children)
       }
 
 
@@ -10356,9 +10413,10 @@ function AwayCard({ report, t, onClose }) {
           ),
 
           h('div',{className:'fg-toolbar'},
-            h('div',{className:'fg-tabs',role:'tablist','aria-label':t('tabs.label')},GARDEN_TABS.map(id=>h('button',{
-              key:id,id:`fg-tab-${id}`,type:'button',role:'tab','aria-selected':activeTab===id,'aria-controls':`fg-panel-${id}`,tabIndex:activeTab===id?0:-1,
-              className:'fg-tab',onClick:()=>selectTab(id),onKeyDown:event=>tabKeys(event,id)},h('span',{className:'fg-tabIcon','aria-hidden':true},TAB_ICONS[id]),t(`tabs.${id}`),id==='basket'?` ${state.basket.length}/${capacity}`:id==='orders'&&state.orders.some(order=>orderReady(state,order))?' •':null))),
+            h('div',{className:'fg-tabs',role:'tablist','aria-label':t('tabs.label')},TAB_GROUP_IDS.map(group=>h('button',{
+              key:group,id:`fg-group-${group}`,type:'button',role:'tab','aria-selected':activeGroup===group,'aria-controls':`fg-panel-${lastSection.current[group]??TAB_GROUPS[group][0]}`,tabIndex:activeGroup===group?0:-1,
+              className:'fg-tab',onClick:()=>selectGroup(group),onKeyDown:event=>tabKeys(event,group)},h('span',{className:'fg-tabIcon','aria-hidden':true},TAB_ICONS[group]),t(`tabs.group.${group}`),group==='bag'?` ${state.basket.length}/${capacity}`:group==='tasks'&&state.orders.some(order=>orderReady(state,order))?' •':null))),
+            h('button',{type:'button',className:activeTab==='settings'?'fg-btn fg-btnSmall fg-gear fg-btnPrimary':'fg-btn fg-btnSmall fg-gear',id:'fg-tab-settings','aria-pressed':activeTab==='settings','aria-label':t('tabs.settings'),title:t('tabs.settings'),onClick:()=>selectTab(activeTab==='settings'?(lastSection.current.garden??'garden'):'settings')},'⚙️'),
             h('button',{type:'button',className:'fg-btn fg-btnSmall',title:t('mini.note'),onClick:openMini},t('mini.open')),
             h('button',{type:'button',className:'fg-btn fg-btnSmall fg-bagButton',onClick:()=>{rememberOpener();setInventoryOpen(true)}},t('inventory.open',{n:inventoryCount(state)+state.basket.length})),
             (state.discoveries??[]).length?h('button',{type:'button',className:'fg-btn fg-btnSmall fg-latestDiscovery',onClick:()=>{rememberOpener();setDiscovery(state.discoveries[state.discoveries.length-1])}},t('discovery.return')):null,
@@ -10367,7 +10425,7 @@ function AwayCard({ report, t, onClose }) {
           away && activeTab === 'garden' ? h(AwayCard, { report: away, t, onClose: () => { clearAway(); setAway(null) } }) : null,
           activeTab === 'garden' ? h(Shelf, { state, t, compact: true }) : null,
           h(EventBanner, { state, t, clock, hidden: activeTab !== 'garden', onJoin: (next, text) => { commit(next, true); playSound('gold'); announce(text, 'gold') } }),
-          h(PlayStrip, { state, t, clock, hidden: activeTab !== 'garden', onChange: commitReward }),
+          h(TodayCard, { state, t, clock, hidden: activeTab !== 'garden', onChange: commitReward, onJump: id => selectTab(id) }),
           h('div', { className: 'fg-scenes', hidden: activeTab !== 'garden', role: 'group', 'aria-label': t('plot.section') },
             sceneOrder.map(id => {
               const target = sceneOf(id)
@@ -11290,7 +11348,7 @@ function GoodsShelf({ state, t, clock, onChange }) {
 .fg-goal progress{width:100%;height:8px;accent-color:var(--fg-accent)}
 .fg-fund{padding:18px;border-radius:20px;border:1px solid #d4af3766;background:linear-gradient(180deg,#d4af3714,var(--dsw-alias-bg-layer-1))}
 .fg-view .fg-tabs{gap:6px;padding:8px 0;flex-wrap:wrap;overflow-x:visible}
-.fg-view .fg-toolbar{align-items:flex-start;flex-wrap:wrap}
+.fg-view .fg-toolbar{align-items:center;flex-wrap:wrap}
 .fg-view .fg-topbar{max-height:none}
 @media(max-width:650px){.fg-view .fg-tabs{flex-wrap:nowrap;overflow-x:auto}.fg-view .fg-topbar{max-height:48%}}
 .fg-view .fg-tab{display:inline-flex;align-items:center;gap:.4em;padding:.45em .95em;border:1px solid transparent;border-radius:999px;transition:background .12s ease,color .12s ease}
@@ -11408,6 +11466,20 @@ button.fg-slot[aria-pressed="true"]{outline:3px solid var(--dsw-alias-brand-prim
 .fg-rarityTag[data-rarity="alt"]{background:var(--fg-r-alt)}.fg-rarityTag[data-rarity="hybrid"]{background:var(--fg-r-hybrid)}.fg-rarityTag[data-rarity="curio"]{background:var(--fg-r-curio)}.fg-rarityTag[data-rarity="spirit"]{background:var(--fg-r-spirit);color:#241b07}
 .fg-bagActions{display:flex;flex-direction:column;gap:8px;width:100%;margin-top:auto}
 .fg-inventoryContents .fg-slotGrid{grid-template-columns:repeat(auto-fill,minmax(72px,84px))}
+.fg-scroll>:empty{display:none}
+.fg-tabPanel>.fg-subTabs{margin:-10px 0 -8px}
+.fg-subTabs{display:flex;gap:6px;flex-wrap:wrap}
+.fg-subTab{border:1px solid var(--dsw-alias-border-secondary,#0002);background:transparent;color:var(--dsw-alias-label-secondary);border-radius:999px;padding:5px 12px;font-size:.88em;cursor:pointer}
+.fg-subTab[aria-selected=true]{background:var(--fg-accent,#2f9e5b);border-color:transparent;color:#fff;font-weight:600}
+.fg-subTab:focus-visible{outline:2px solid var(--dsw-alias-brand-primary);outline-offset:2px}
+.fg-gear{font-size:1.05em;padding-inline:8px}
+.fg-today{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:8px 12px;border-radius:16px;border:1px solid var(--fg-accent-soft,#0001);background:var(--dsw-alias-bg-layer-1)}
+.fg-todayTitle{margin-right:4px}
+.fg-todayCell{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--dsw-alias-border-l1);background:transparent;border-radius:999px;padding:4px 10px;font-size:.88em;color:var(--dsw-alias-label-secondary);cursor:pointer}
+.fg-todayCell[data-state=done]{background:var(--fg-accent-soft);border-color:var(--fg-accent);color:var(--dsw-alias-label-primary);cursor:default}
+.fg-todayCell[data-state=ready]{border-color:#d4af37;color:var(--dsw-alias-label-primary);font-weight:600;animation:fg-todayPulse 1.6s ease-in-out infinite}
+@keyframes fg-todayPulse{50%{transform:translateY(-2px);box-shadow:0 3px 8px #d4af3755}}
+@media(prefers-reduced-motion:reduce){.fg-todayCell[data-state=ready]{animation:none}}
 .fg-play{display:flex;gap:12px;flex-wrap:wrap;align-items:stretch}
 .fg-playCard{flex:1 1 260px;min-width:0;display:flex;flex-direction:column;gap:8px;padding:12px 14px;border-radius:16px;border:1px solid var(--dsw-alias-border-l1);background:linear-gradient(150deg,var(--dsw-alias-bg-layer-1),var(--dsw-alias-bg-layer-2))}
 .fg-playHead{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
@@ -11474,7 +11546,7 @@ button.fg-slot[aria-pressed="true"]{outline:3px solid var(--dsw-alias-brand-prim
       __dicts: { zh, en },
       /** Pure game transitions and tuning, exported for unit tests only. */
       __game: {
-        ...ECOLOGY_API, ...PLAY_API, ...CRAFT_API, ...GENE_API, ...ALBUM_API, ...ECONOMY_API, ...LONGTERM_API, ...FUND_API, ...USES_API, ...FUN_API, ...FLOWER_API, ...GOODS_API, ...TINT_API, ...BULK_API, ...TRAIT_API, HIDDEN_CAP, CHARM_CAP, bagEntries, getAway, adoptStored, getState, playSound, miniGeometry, revealBloom, revealGarden, inventoryCount, rewardForChange, RESEARCH_BRANCHES, RESEARCH_OFFERS, sanitizeResearch, researchLevel, researchFee, researchCost, upgradeResearch, exchangeResearch, hybridChance, ECO_PROFILES, VISITOR_INFO, studyLevel, GARDEN_TABS, sanitizeUi, dayPeriod, gardenClock,
+        ...ECOLOGY_API, ...PLAY_API, ...CRAFT_API, ...GENE_API, ...ALBUM_API, ...ECONOMY_API, ...LONGTERM_API, ...FUND_API, ...USES_API, ...FUN_API, ...FLOWER_API, ...GOODS_API, ...TINT_API, ...BULK_API, ...TRAIT_API, HIDDEN_CAP, CHARM_CAP, bagEntries, getAway, adoptStored, getState, playSound, miniGeometry, revealBloom, revealGarden, inventoryCount, rewardForChange, RESEARCH_BRANCHES, RESEARCH_OFFERS, sanitizeResearch, researchLevel, researchFee, researchCost, upgradeResearch, exchangeResearch, hybridChance, ECO_PROFILES, VISITOR_INFO, studyLevel, GARDEN_TABS, TAB_GROUPS, TAB_GROUP_IDS, todayTasks, tabGroupOf, sanitizeUi, dayPeriod, gardenClock,
         discoveryItems, recordDiscoveries, sanitizeDiscoveries, specialCommissions, commissionState, acceptCommission, commissionProgress, completeCommission, sanitizeCommissions, specialVisitorEligible,
         SCENES, SPECIES, CODEX_ENTRIES, HIDDEN_PAL, UNLOCK_COSTS, XP_PER_LEVEL, PLOT_COUNT,
         START_COINS, DRY_SHARE, BASKET_CAPACITY, ORDER_SLOTS, WEATHER_MS, ITEMS, SPRINKLER_MS, CHARM_BONUS,
