@@ -322,7 +322,7 @@ function FloatingGarden() {
     h('style',null,CSS,MINI_CSS),
     h('header',{className:'fg-floatingBar',onPointerDown:start,onPointerMove:move,onPointerUp:end,onPointerCancel:end,onLostPointerCapture:end},
       h('span',{className:'fg-floatingMove',tabIndex:0,role:'button','aria-label':t('mini.move'),onKeyDown:event=>keys(event)},'✿ ',t('mini.title')),
-      h('button',{type:'button',className:'fg-desktopPin',disabled:desktop.phase==='opening'||(mini.minimized&&desktop.phase==='idle'),onClick:desktop.toggle},t(desktop.phase==='idle'?'desktop.pin':desktop.phase==='opening'?'desktop.opening':'desktop.unpin')),
+      h('button',{type:'button',className:'fg-desktopPin',disabled:desktop.phase==='opening'||(mini.minimized&&desktop.phase==='idle'),onClick:desktop.toggle},t(desktop.phase==='idle'?'desktop.pin':desktop.phase==='opening'?'desktop.opening':desktop.phase==='preparing'?'desktop.cancelWait':'desktop.unpin')),
       h('button',{type:'button',title:t(mini.minimized?'mini.restore':'mini.minimize'),'aria-label':t(mini.minimized?'mini.restore':'mini.minimize'),onClick:()=>updateMini({minimized:!mini.minimized})},mini.minimized?'▢':'−'),
       h('button',{type:'button',title:t('mini.close'),'aria-label':t('mini.close'),onClick:()=>{if(desktop.phase!=='idle')desktop.toggle();updateMini({open:false})}},'×')),
     desktop.message?h('p',{className:'fg-miniNotice',role:'status'},t(desktop.message)):null,

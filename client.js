@@ -7845,7 +7845,7 @@ function FloatingGarden() {
     h('style',null,CSS,MINI_CSS),
     h('header',{className:'fg-floatingBar',onPointerDown:start,onPointerMove:move,onPointerUp:end,onPointerCancel:end,onLostPointerCapture:end},
       h('span',{className:'fg-floatingMove',tabIndex:0,role:'button','aria-label':t('mini.move'),onKeyDown:event=>keys(event)},'✿ ',t('mini.title')),
-      h('button',{type:'button',className:'fg-desktopPin',disabled:desktop.phase==='opening'||(mini.minimized&&desktop.phase==='idle'),onClick:desktop.toggle},t(desktop.phase==='idle'?'desktop.pin':desktop.phase==='opening'?'desktop.opening':'desktop.unpin')),
+      h('button',{type:'button',className:'fg-desktopPin',disabled:desktop.phase==='opening'||(mini.minimized&&desktop.phase==='idle'),onClick:desktop.toggle},t(desktop.phase==='idle'?'desktop.pin':desktop.phase==='opening'?'desktop.opening':desktop.phase==='preparing'?'desktop.cancelWait':'desktop.unpin')),
       h('button',{type:'button',title:t(mini.minimized?'mini.restore':'mini.minimize'),'aria-label':t(mini.minimized?'mini.restore':'mini.minimize'),onClick:()=>updateMini({minimized:!mini.minimized})},mini.minimized?'▢':'−'),
       h('button',{type:'button',title:t('mini.close'),'aria-label':t('mini.close'),onClick:()=>{if(desktop.phase!=='idle')desktop.toggle();updateMini({open:false})}},'×')),
     desktop.message?h('p',{className:'fg-miniNotice',role:'status'},t(desktop.message)):null,
@@ -7964,14 +7964,29 @@ function toggleBloomPin(id, svg, title) {
   })
 }
 
+function cancelArtOpen(id) {
+  const entry = bouquetPins.get(id)
+  if (!entry?.controller) return
+  entry.controller.abort()
+  updateBouquetPin(id, null)
+  bouquetRequest(id, 'close').catch(() => {})
+}
+
 async function toggleArtPin(id, capture) {
   const previous = bouquetPins.get(id)
   if (previous?.phase === 'pending') return
+  if (previous?.phase === 'preparing') { cancelArtOpen(id); return }
   const closing = previous?.phase === 'open'
   window.clearTimeout(previous?.timer)
-  updateBouquetPin(id, {phase:'pending'})
+  const controller = closing ? null : new AbortController()
+  updateBouquetPin(id, {phase:'pending', controller})
   try {
-    const result = await bouquetRequest(id, closing ? 'close' : 'open', closing ? undefined : capture())
+    const snapshot = closing ? undefined : capture()
+    const result = closing ? await bouquetRequest(id, 'close') : await waitForDesktopOpen(
+      () => bouquetRequest(id, 'open', snapshot), controller.signal,
+      () => updateBouquetPin(id, {phase:'preparing', controller, status:'desktop.downloading'}),
+    )
+    if (controller?.signal.aborted) return
     if (!result.ok || closing === !!result.open) throw new Error(result.error || 'unavailable')
     if (closing) updateBouquetPin(id, null)
     else {
@@ -7980,7 +7995,9 @@ async function toggleArtPin(id, capture) {
       watchBouquet(id, entry)
     }
   } catch (error) {
-    const message = closing ? 'desktop.unpinFailed' : ({'Bloom artwork missing':'desktop.artMissing','render-failed':'desktop.artMissing','Bouquet artwork missing':'desktop.artMissing','Invalid bouquet drawing':'desktop.artMissing','launch-failed':'desktop.launchFailed','invalid-snapshot':'desktop.tooLarge','too-large':'desktop.tooLarge','route-unavailable':'desktop.route',busy:'desktop.busy','runtime-unavailable':'desktop.unavailable'}[error.message] || 'desktop.error')
+    if (controller?.signal.aborted) return
+    if (controller && (error.message === 'runtime-wait-expired' || error.name === 'TimeoutError')) bouquetRequest(id, 'close').catch(() => {})
+    const message = closing ? 'desktop.unpinFailed' : desktopSetupError(error.message) ?? ({'Bloom artwork missing':'desktop.artMissing','render-failed':'desktop.artMissing','Bouquet artwork missing':'desktop.artMissing','Invalid bouquet drawing':'desktop.artMissing','launch-failed':'desktop.launchFailed','invalid-snapshot':'desktop.tooLarge','too-large':'desktop.tooLarge','route-unavailable':'desktop.route',busy:'desktop.busy','runtime-unavailable':'desktop.unavailable'}[error.message] || 'desktop.error')
     const bloomErrors = {'desktop.artMissing':'bag.pinArtError','desktop.launchFailed':'bag.pinLaunchError','desktop.unpinFailed':'bag.unpinError','desktop.tooLarge':'bag.pinSizeError'}
     const pinError = typeof id === 'string' ? bloomErrors[message] ?? message : message
     const failed = {phase:closing ? 'open' : 'idle', error:pinError}
@@ -7996,12 +8013,18 @@ Object.assign(en, { 'bulk.greet':'Greet all · {n}', 'bulk.greeted':'Greeted {n}
 // The desktop window mirrors this mounted MiniGarden. All commands resolve against
 // current, connected controls here, where React and the garden store live.
 Object.assign(zh, {
+  'desktop.downloading':'正在下载桌面组件。完成后会自动打开。', 'desktop.cancelWait':'取消等待',
+  'desktop.installFailed':'桌面组件安装失败。请检查网络连接和可用磁盘空间，然后点按钮重试。',
+  'desktop.waitExpired':'等待桌面组件超时，请点按钮再试一次。',
   'desktop.pin':'放到桌面', 'desktop.unpin':'收回桌面小窗', 'desktop.opening':'正在打开…',
   'desktop.error':'桌面小窗未连接。请确认桌面运行环境可用后重试。',
   'desktop.busy':'另一扇窗口正在控制桌面花园。请先在那里收回小窗。', 'desktop.close':'关闭桌面小窗',
   'desktop.unavailable':'当前环境无法启动桌面窗口。你可以继续使用随身花园。',
 })
 Object.assign(en, {
+  'desktop.downloading':'Downloading the desktop runtime. Your window will open when it is ready.', 'desktop.cancelWait':'Cancel wait',
+  'desktop.installFailed':'Desktop setup failed. Check your connection and free disk space, then try the button again.',
+  'desktop.waitExpired':'Timed out waiting for desktop setup. Try the button again.',
   'desktop.pin':'Pin to desktop', 'desktop.unpin':'Bring garden back', 'desktop.opening':'Opening…',
   'desktop.error':'Desktop garden disconnected. Check the desktop runtime and try again.',
   'desktop.unavailable':'This environment cannot open a desktop window. Your pocket garden is still available.',
@@ -8098,6 +8121,35 @@ async function desktopGardenRequest(payload) {
 let desktopOwnerId
 function desktopOwner() { return desktopOwnerId ??= crypto.randomUUID() }
 
+// The host prepares one shared runtime. Re-submit an open only while its original
+// control is active, using the same owner, key and artwork on every request.
+async function waitForDesktopOpen(open, signal, preparing) {
+  const deadline = Date.now() + 600000
+  for (let attempt = 0; attempt < 150 && Date.now() < deadline; attempt++) {
+    if (signal.aborted) throw new Error('cancelled')
+    const result = await open()
+    if (signal.aborted) throw new Error('cancelled')
+    if (result?.error !== 'runtime-preparing') return result
+    if (attempt === 0) preparing()
+    await new Promise(resolve => {
+      function resume() {
+        window.clearTimeout(timer)
+        signal.removeEventListener('abort', resume)
+        resolve()
+      }
+      const timer = window.setTimeout(resume, 4000)
+      signal.addEventListener('abort', resume, {once:true})
+      if (signal.aborted) resume()
+    })
+  }
+  return {ok:false, open:false, error:'runtime-wait-expired'}
+}
+
+function desktopSetupError(error) {
+  if (error === 'runtime-install-failed') return 'desktop.installFailed'
+  if (error === 'runtime-wait-expired') return 'desktop.waitExpired'
+}
+
 function useDesktopGarden(body, t) {
   const [phase, setPhase] = React.useState('idle')
   const [message, setMessage] = React.useState('')
@@ -8106,6 +8158,7 @@ function useDesktopGarden(body, t) {
     const active = session.current
     if (!active) return
     session.current = null
+    active.controller.abort()
     window.clearTimeout(active.timer)
     window.removeEventListener('pagehide',active.cleanup)
     desktopGardenRequest({op:'close',owner:active.owner}).catch(()=>{})
@@ -8113,7 +8166,7 @@ function useDesktopGarden(body, t) {
   React.useEffect(()=>()=>stop(),[])
   async function toggle() {
     if (session.current) { stop(); setPhase('idle'); setMessage(''); return }
-    const active = {owner:desktopOwner(), timer:0, cleanup:stop, previous:null}
+    const active = {owner:desktopOwner(), controller:new AbortController(), timer:0, cleanup:stop, previous:null}
     const mirror = createDesktopMirror(body,t)
     session.current = active
     window.addEventListener('pagehide',stop)
@@ -8123,17 +8176,20 @@ function useDesktopGarden(body, t) {
       try {
         const snapshot = mirror.snapshot()
         const encoded = JSON.stringify(snapshot)
-        const result = await desktopGardenRequest({op,owner:active.owner,snapshot:encoded===active.previous ? undefined : snapshot})
+        const payload = {op,owner:active.owner,snapshot:encoded===active.previous ? undefined : snapshot}
+        const result = op === 'open'
+          ? await waitForDesktopOpen(() => desktopGardenRequest(payload), active.controller.signal, () => { setPhase('preparing'); setMessage('desktop.downloading') })
+          : await desktopGardenRequest(payload)
         active.previous = encoded
         if (session.current !== active) return
         if (!result?.ok || !result.open) {
           stop()
           setPhase('idle')
           const errors = {busy:'desktop.busy', 'runtime-unavailable':'desktop.unavailable'}
-          setMessage(result?.ok ? '' : errors[result?.error] ?? 'desktop.error')
+          setMessage(result?.ok ? '' : desktopSetupError(result?.error) ?? errors[result?.error] ?? 'desktop.error')
           return
         }
-        setPhase('open')
+        setPhase('open'); setMessage('')
         for (const action of result.actions ?? []) mirror.act(action)
         active.timer = window.setTimeout(()=>sync('sync'), 450)
       } catch {
@@ -8686,7 +8742,8 @@ function CardTools({ state, t, kind, card, onChange }) {
   const [greeting, setGreeting] = React.useState(false)
   const [title, setTitle] = React.useState(card.title ?? ''), [note, setNote] = React.useState(card.note ?? '')
   const pin = useSyncExternalStore(subscribeBouquetPins, () => bouquetPins.get(card.id) ?? noBouquetPin, () => noBouquetPin)
-  const pinLabel = t(pin.phase === 'pending' ? 'desktop.working' : pin.phase === 'open' ? 'desktop.unpinBouquet' : 'desktop.pinBouquet')
+  React.useEffect(() => () => { if (kind === 'bouquets') cancelArtOpen(card.id) }, [kind, card.id])
+  const pinLabel = t(pin.phase === 'preparing' ? 'desktop.cancelWait' : pin.phase === 'pending' ? 'desktop.working' : pin.phase === 'open' ? 'desktop.unpinBouquet' : 'desktop.pinBouquet')
   const onShelf = shelfCards(state).some(ref => ref.kind === kind && ref.id === card.id)
   const room = shelfCards(state).length < shelfSlots(state)
   const apply = transition => { tick(); const next = transition(getState()); if (next !== null) onChange(next) }
@@ -8700,7 +8757,7 @@ function CardTools({ state, t, kind, card, onChange }) {
       kind === 'bouquets' ? h('button', { type:'button', className:'fg-btn fg-btnSmall', 'data-action':'cardPinDesktop', disabled:pin.phase==='pending', 'aria-pressed':pin.phase==='open', onClick:event=>toggleBouquetPin(card,event.currentTarget.closest('.fg-keepCard'),t) }, pinLabel) : null,
       kind === 'bouquets' ? h('button', { type: 'button', className: 'fg-cardTool', 'data-action': 'cardGreet', 'aria-pressed': greeting ? 'true' : 'false', title: t('greet.open'), 'aria-label': t('greet.open'), onClick: () => setGreeting(!greeting) }, '💌') : null,
       kind === 'bouquets' ? h('button', { type: 'button', className: 'fg-cardTool', 'data-action': 'cardName', 'aria-pressed': editing ? 'true' : 'false', title: t('keep.name'), 'aria-label': t('keep.name'), onClick: () => setEditing(!editing) }, '✎') : null),
-    kind === 'bouquets' && pin.error ? h('p', {className:'fg-note', role:'status'}, t(pin.error)) : null,
+    kind === 'bouquets' && (pin.status || pin.error) ? h('p', {className:'fg-note', role:'status'}, t(pin.status || pin.error)) : null,
     greeting ? h(GreetingEditor, { t, card }) : null,
     editing ? h('div', { className: 'fg-cardEdit' },
       h('input', { type: 'text', maxLength: 20, value: title, placeholder: t('keep.titlePh'), 'aria-label': t('keep.titlePh'), onChange: event => setTitle(event.target.value) }),
@@ -9356,6 +9413,8 @@ function InventoryDialog({ state, t, clock = Date.now(), onClose, onGarden, onSh
   const individual = individuals.find(bloom => bloom.key === pickedBloom) ?? individuals[0]
   const displayed = individual ? {...current,item:individual.item} : current
   const pin = useSyncExternalStore(subscribeBouquetPins, () => bouquetPins.get(individual?.key) ?? noBouquetPin, () => noBouquetPin)
+  const pinId = individual?.key
+  React.useEffect(() => () => cancelArtOpen(pinId), [pinId])
   const worth = current?.kind === 'bloom' ? quoteSale(state, current.items, clock).coins : 0
   function pick(key) { setPicked(key); setArmed(null) }
   function sell() {
@@ -9364,7 +9423,7 @@ function InventoryDialog({ state, t, clock = Date.now(), onClose, onGarden, onSh
   }
   const actions = current === null ? [] : current.kind === 'bloom' ? [
     h('button', { key: 'sell', type: 'button', className: armed === current.key ? 'fg-btn fg-btnDanger' : 'fg-btn fg-btnPrimary', 'data-action': 'bagSell', onClick: sell }, t(armed === current.key ? 'bag.sellConfirm' : 'bag.sell', { n: worth })),
-    h('button', { key:'pin', type:'button', className:'fg-btn', 'data-action':'bagPinDesktop', disabled:pin.phase==='pending', 'aria-pressed':pin.phase==='open', onClick:()=>toggleBloomPin(individual.key, artRef.current?.querySelector('svg'), current.name) }, t(pin.phase==='pending' ? 'desktop.working' : pin.phase==='open' ? 'bag.unpinBloom' : 'bag.pinBloom')),
+    h('button', { key:'pin', type:'button', className:'fg-btn', 'data-action':'bagPinDesktop', disabled:pin.phase==='pending', 'aria-pressed':pin.phase==='open', onClick:()=>toggleBloomPin(individual.key, artRef.current?.querySelector('svg'), current.name) }, t(pin.phase==='preparing' ? 'desktop.cancelWait' : pin.phase==='pending' ? 'desktop.working' : pin.phase==='open' ? 'bag.unpinBloom' : 'bag.pinBloom')),
     h('button', { key: 'view', type: 'button', className: 'fg-btn', onClick: () => onOpenBloom?.(current.groupKey) }, t('bag.view')),
     h('button', { key: 'use', type: 'button', className: 'fg-btn', 'data-action': 'bagUse', onClick: () => onUseBloom?.(current.groupKey) }, t('use.' + flowerUse(current.item.species))),
     h('button', { key: 'keep', type: 'button', className: 'fg-btn', 'data-action': 'bagKeep', onClick: () => onKeep?.(current.groupKey) }, t('album.keep')),
@@ -9404,7 +9463,7 @@ function InventoryDialog({ state, t, clock = Date.now(), onClose, onGarden, onSh
           individual && Number.isFinite(individual.item.dna) ? h(GeneBars, { key: 'genes', dna: individual.item.dna, t }) : null,
           current.kind === 'item' ? h('p', { key: 'note', className: 'fg-note' }, t(`item.${current.id}.note`)) : null,
           h('div', { key: 'actions', className: 'fg-bagActions' }, actions),
-           individual && pin.error ? h('p', {key:'pinError',className:'fg-note',role:'status'}, t(pin.error)) : null,
+           individual && (pin.status || pin.error) ? h('p', {key:'pinError',className:'fg-note',role:'status'}, t(pin.status || pin.error)) : null,
         ])),
     h('footer', { className: 'fg-rewardActions' },
       h('button', { type: 'button', className: 'fg-btn', onClick: onShop }, t('tabs.shop')),

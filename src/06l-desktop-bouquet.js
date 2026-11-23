@@ -86,14 +86,29 @@ function toggleBloomPin(id, svg, title) {
   })
 }
 
+function cancelArtOpen(id) {
+  const entry = bouquetPins.get(id)
+  if (!entry?.controller) return
+  entry.controller.abort()
+  updateBouquetPin(id, null)
+  bouquetRequest(id, 'close').catch(() => {})
+}
+
 async function toggleArtPin(id, capture) {
   const previous = bouquetPins.get(id)
   if (previous?.phase === 'pending') return
+  if (previous?.phase === 'preparing') { cancelArtOpen(id); return }
   const closing = previous?.phase === 'open'
   window.clearTimeout(previous?.timer)
-  updateBouquetPin(id, {phase:'pending'})
+  const controller = closing ? null : new AbortController()
+  updateBouquetPin(id, {phase:'pending', controller})
   try {
-    const result = await bouquetRequest(id, closing ? 'close' : 'open', closing ? undefined : capture())
+    const snapshot = closing ? undefined : capture()
+    const result = closing ? await bouquetRequest(id, 'close') : await waitForDesktopOpen(
+      () => bouquetRequest(id, 'open', snapshot), controller.signal,
+      () => updateBouquetPin(id, {phase:'preparing', controller, status:'desktop.downloading'}),
+    )
+    if (controller?.signal.aborted) return
     if (!result.ok || closing === !!result.open) throw new Error(result.error || 'unavailable')
     if (closing) updateBouquetPin(id, null)
     else {
@@ -102,7 +117,9 @@ async function toggleArtPin(id, capture) {
       watchBouquet(id, entry)
     }
   } catch (error) {
-    const message = closing ? 'desktop.unpinFailed' : ({'Bloom artwork missing':'desktop.artMissing','render-failed':'desktop.artMissing','Bouquet artwork missing':'desktop.artMissing','Invalid bouquet drawing':'desktop.artMissing','launch-failed':'desktop.launchFailed','invalid-snapshot':'desktop.tooLarge','too-large':'desktop.tooLarge','route-unavailable':'desktop.route',busy:'desktop.busy','runtime-unavailable':'desktop.unavailable'}[error.message] || 'desktop.error')
+    if (controller?.signal.aborted) return
+    if (controller && (error.message === 'runtime-wait-expired' || error.name === 'TimeoutError')) bouquetRequest(id, 'close').catch(() => {})
+    const message = closing ? 'desktop.unpinFailed' : desktopSetupError(error.message) ?? ({'Bloom artwork missing':'desktop.artMissing','render-failed':'desktop.artMissing','Bouquet artwork missing':'desktop.artMissing','Invalid bouquet drawing':'desktop.artMissing','launch-failed':'desktop.launchFailed','invalid-snapshot':'desktop.tooLarge','too-large':'desktop.tooLarge','route-unavailable':'desktop.route',busy:'desktop.busy','runtime-unavailable':'desktop.unavailable'}[error.message] || 'desktop.error')
     const bloomErrors = {'desktop.artMissing':'bag.pinArtError','desktop.launchFailed':'bag.pinLaunchError','desktop.unpinFailed':'bag.unpinError','desktop.tooLarge':'bag.pinSizeError'}
     const pinError = typeof id === 'string' ? bloomErrors[message] ?? message : message
     const failed = {phase:closing ? 'open' : 'idle', error:pinError}

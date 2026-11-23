@@ -135,6 +135,8 @@ function InventoryDialog({ state, t, clock = Date.now(), onClose, onGarden, onSh
   const individual = individuals.find(bloom => bloom.key === pickedBloom) ?? individuals[0]
   const displayed = individual ? {...current,item:individual.item} : current
   const pin = useSyncExternalStore(subscribeBouquetPins, () => bouquetPins.get(individual?.key) ?? noBouquetPin, () => noBouquetPin)
+  const pinId = individual?.key
+  React.useEffect(() => () => cancelArtOpen(pinId), [pinId])
   const worth = current?.kind === 'bloom' ? quoteSale(state, current.items, clock).coins : 0
   function pick(key) { setPicked(key); setArmed(null) }
   function sell() {
@@ -143,7 +145,7 @@ function InventoryDialog({ state, t, clock = Date.now(), onClose, onGarden, onSh
   }
   const actions = current === null ? [] : current.kind === 'bloom' ? [
     h('button', { key: 'sell', type: 'button', className: armed === current.key ? 'fg-btn fg-btnDanger' : 'fg-btn fg-btnPrimary', 'data-action': 'bagSell', onClick: sell }, t(armed === current.key ? 'bag.sellConfirm' : 'bag.sell', { n: worth })),
-    h('button', { key:'pin', type:'button', className:'fg-btn', 'data-action':'bagPinDesktop', disabled:pin.phase==='pending', 'aria-pressed':pin.phase==='open', onClick:()=>toggleBloomPin(individual.key, artRef.current?.querySelector('svg'), current.name) }, t(pin.phase==='pending' ? 'desktop.working' : pin.phase==='open' ? 'bag.unpinBloom' : 'bag.pinBloom')),
+    h('button', { key:'pin', type:'button', className:'fg-btn', 'data-action':'bagPinDesktop', disabled:pin.phase==='pending', 'aria-pressed':pin.phase==='open', onClick:()=>toggleBloomPin(individual.key, artRef.current?.querySelector('svg'), current.name) }, t(pin.phase==='preparing' ? 'desktop.cancelWait' : pin.phase==='pending' ? 'desktop.working' : pin.phase==='open' ? 'bag.unpinBloom' : 'bag.pinBloom')),
     h('button', { key: 'view', type: 'button', className: 'fg-btn', onClick: () => onOpenBloom?.(current.groupKey) }, t('bag.view')),
     h('button', { key: 'use', type: 'button', className: 'fg-btn', 'data-action': 'bagUse', onClick: () => onUseBloom?.(current.groupKey) }, t('use.' + flowerUse(current.item.species))),
     h('button', { key: 'keep', type: 'button', className: 'fg-btn', 'data-action': 'bagKeep', onClick: () => onKeep?.(current.groupKey) }, t('album.keep')),
@@ -183,7 +185,7 @@ function InventoryDialog({ state, t, clock = Date.now(), onClose, onGarden, onSh
           individual && Number.isFinite(individual.item.dna) ? h(GeneBars, { key: 'genes', dna: individual.item.dna, t }) : null,
           current.kind === 'item' ? h('p', { key: 'note', className: 'fg-note' }, t(`item.${current.id}.note`)) : null,
           h('div', { key: 'actions', className: 'fg-bagActions' }, actions),
-           individual && pin.error ? h('p', {key:'pinError',className:'fg-note',role:'status'}, t(pin.error)) : null,
+           individual && (pin.status || pin.error) ? h('p', {key:'pinError',className:'fg-note',role:'status'}, t(pin.status || pin.error)) : null,
         ])),
     h('footer', { className: 'fg-rewardActions' },
       h('button', { type: 'button', className: 'fg-btn', onClick: onShop }, t('tabs.shop')),

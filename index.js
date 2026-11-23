@@ -1,30 +1,18 @@
 import { spawn } from 'node:child_process'
-import { createRequire } from 'node:module'
+import { createRuntimeSetup, locateElectron } from './runtime/setup.js'
 import { fileURLToPath } from 'node:url'
-import { dirname, join } from 'node:path'
-import { existsSync } from 'node:fs'
 import { setTimeout, clearTimeout } from 'node:timers'
 /* global Response, URL */
 import { Buffer } from 'node:buffer'
 import process from 'node:process'
 
-const require = createRequire(import.meta.url)
 const OWNER = /^[\da-f]{8}(?:-[\da-f]{4}){3}-[\da-f]{12}$/i
 const LIMIT = 1024 * 1024
 const failure = error => ({ok: false, open: false, error})
 const closed = () => ({ok: true, open: false, actions: []})
 
 function launchElectron() {
-  let executable
-  // Electron's npm entry performs a blocking download on require when dist is absent.
-  // Resolve the installed distribution without running its installer in the Host.
-  try {
-    const dist = join(dirname(require.resolve('electron/package.json')), 'dist')
-    const binary = {darwin: 'Electron.app/Contents/MacOS/Electron', win32: 'electron.exe', linux: 'electron'}[process.platform]
-    if (!binary) throw new Error()
-    executable = join(dist, binary)
-    if (!existsSync(executable)) throw new Error()
-  } catch { throw new Error('runtime-unavailable') }
+  const {executable} = locateElectron()
   // Only forward OS/desktop integration settings. The companion needs no DSH credentials.
   const env = {}
   for (const [key, value] of Object.entries(process.env)) {
@@ -35,7 +23,7 @@ function launchElectron() {
   })
 }
 
-export function createDesktopBroker({launch = launchElectron, renderTimeoutMs = 5000} = {}) {
+export function createDesktopBroker({launch = launchElectron, renderTimeoutMs = 5000, runtimeSetup = launch === launchElectron ? createRuntimeSetup() : null} = {}) {
   let current = null, disposed = false, renderSequence = 0
   function end(session, terminate) {
     if (current !== session) return
@@ -98,11 +86,14 @@ export function createDesktopBroker({launch = launchElectron, renderTimeoutMs = 
       if (current && current.owner !== input.owner) return failure('busy')
       let session = current
       if (input.op === 'close') {
+        runtimeSetup?.cancel(input.owner, key)
         if (session) { const window = session.windows.get(key); if (window) { clearTimeout(window.startTimer); window.render?.finish(false); window.resolve(false); send(session,{type:'close-window',windowKey:key}); session.windows.delete(key) } if (!session.windows.size) end(session,true) }
         return closed()
       }
       if (!session) {
         if (input.op !== 'open') return closed()
+        const runtimeStatus = runtimeSetup?.check(input.owner, key)
+        if (runtimeStatus) return failure(runtimeStatus)
         try { session = start(input.owner) } catch (error) { return failure(error.message === 'runtime-unavailable' ? error.message : 'launch-failed') }
       }
       const window = getWindow(session,key,input.op === 'open')
@@ -136,7 +127,7 @@ export function createDesktopBroker({launch = launchElectron, renderTimeoutMs = 
       } else if (input.snapshot !== undefined) send(session,{type:'snapshot',windowKey:key,snapshot:input.snapshot})
       return {ok:true,open:true,actions:window.actions.splice(0)}
     },
-    dispose() { disposed=true; if(current) end(current,true) },
+    dispose() { disposed=true; runtimeSetup?.dispose(); if(current) end(current,true) },
   }
 }
 

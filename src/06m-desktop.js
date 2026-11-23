@@ -1,12 +1,18 @@
 // The desktop window mirrors this mounted MiniGarden. All commands resolve against
 // current, connected controls here, where React and the garden store live.
 Object.assign(zh, {
+  'desktop.downloading':'正在下载桌面组件。完成后会自动打开。', 'desktop.cancelWait':'取消等待',
+  'desktop.installFailed':'桌面组件安装失败。请检查网络连接和可用磁盘空间，然后点按钮重试。',
+  'desktop.waitExpired':'等待桌面组件超时，请点按钮再试一次。',
   'desktop.pin':'放到桌面', 'desktop.unpin':'收回桌面小窗', 'desktop.opening':'正在打开…',
   'desktop.error':'桌面小窗未连接。请确认桌面运行环境可用后重试。',
   'desktop.busy':'另一扇窗口正在控制桌面花园。请先在那里收回小窗。', 'desktop.close':'关闭桌面小窗',
   'desktop.unavailable':'当前环境无法启动桌面窗口。你可以继续使用随身花园。',
 })
 Object.assign(en, {
+  'desktop.downloading':'Downloading the desktop runtime. Your window will open when it is ready.', 'desktop.cancelWait':'Cancel wait',
+  'desktop.installFailed':'Desktop setup failed. Check your connection and free disk space, then try the button again.',
+  'desktop.waitExpired':'Timed out waiting for desktop setup. Try the button again.',
   'desktop.pin':'Pin to desktop', 'desktop.unpin':'Bring garden back', 'desktop.opening':'Opening…',
   'desktop.error':'Desktop garden disconnected. Check the desktop runtime and try again.',
   'desktop.unavailable':'This environment cannot open a desktop window. Your pocket garden is still available.',
@@ -103,6 +109,35 @@ async function desktopGardenRequest(payload) {
 let desktopOwnerId
 function desktopOwner() { return desktopOwnerId ??= crypto.randomUUID() }
 
+// The host prepares one shared runtime. Re-submit an open only while its original
+// control is active, using the same owner, key and artwork on every request.
+async function waitForDesktopOpen(open, signal, preparing) {
+  const deadline = Date.now() + 600000
+  for (let attempt = 0; attempt < 150 && Date.now() < deadline; attempt++) {
+    if (signal.aborted) throw new Error('cancelled')
+    const result = await open()
+    if (signal.aborted) throw new Error('cancelled')
+    if (result?.error !== 'runtime-preparing') return result
+    if (attempt === 0) preparing()
+    await new Promise(resolve => {
+      function resume() {
+        window.clearTimeout(timer)
+        signal.removeEventListener('abort', resume)
+        resolve()
+      }
+      const timer = window.setTimeout(resume, 4000)
+      signal.addEventListener('abort', resume, {once:true})
+      if (signal.aborted) resume()
+    })
+  }
+  return {ok:false, open:false, error:'runtime-wait-expired'}
+}
+
+function desktopSetupError(error) {
+  if (error === 'runtime-install-failed') return 'desktop.installFailed'
+  if (error === 'runtime-wait-expired') return 'desktop.waitExpired'
+}
+
 function useDesktopGarden(body, t) {
   const [phase, setPhase] = React.useState('idle')
   const [message, setMessage] = React.useState('')
@@ -111,6 +146,7 @@ function useDesktopGarden(body, t) {
     const active = session.current
     if (!active) return
     session.current = null
+    active.controller.abort()
     window.clearTimeout(active.timer)
     window.removeEventListener('pagehide',active.cleanup)
     desktopGardenRequest({op:'close',owner:active.owner}).catch(()=>{})
@@ -118,7 +154,7 @@ function useDesktopGarden(body, t) {
   React.useEffect(()=>()=>stop(),[])
   async function toggle() {
     if (session.current) { stop(); setPhase('idle'); setMessage(''); return }
-    const active = {owner:desktopOwner(), timer:0, cleanup:stop, previous:null}
+    const active = {owner:desktopOwner(), controller:new AbortController(), timer:0, cleanup:stop, previous:null}
     const mirror = createDesktopMirror(body,t)
     session.current = active
     window.addEventListener('pagehide',stop)
@@ -128,17 +164,20 @@ function useDesktopGarden(body, t) {
       try {
         const snapshot = mirror.snapshot()
         const encoded = JSON.stringify(snapshot)
-        const result = await desktopGardenRequest({op,owner:active.owner,snapshot:encoded===active.previous ? undefined : snapshot})
+        const payload = {op,owner:active.owner,snapshot:encoded===active.previous ? undefined : snapshot}
+        const result = op === 'open'
+          ? await waitForDesktopOpen(() => desktopGardenRequest(payload), active.controller.signal, () => { setPhase('preparing'); setMessage('desktop.downloading') })
+          : await desktopGardenRequest(payload)
         active.previous = encoded
         if (session.current !== active) return
         if (!result?.ok || !result.open) {
           stop()
           setPhase('idle')
           const errors = {busy:'desktop.busy', 'runtime-unavailable':'desktop.unavailable'}
-          setMessage(result?.ok ? '' : errors[result?.error] ?? 'desktop.error')
+          setMessage(result?.ok ? '' : desktopSetupError(result?.error) ?? errors[result?.error] ?? 'desktop.error')
           return
         }
-        setPhase('open')
+        setPhase('open'); setMessage('')
         for (const action of result.actions ?? []) mirror.act(action)
         active.timer = window.setTimeout(()=>sync('sync'), 450)
       } catch {
