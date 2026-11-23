@@ -3,6 +3,9 @@
 const bridge = window.flowerGardenDesktop
 const garden = document.querySelector('#garden')
 const closeButton = document.querySelector('#close')
+const mode = document.documentElement.dataset.mode
+const bouquet = mode === 'bouquet'
+const bloom = mode === 'bloom'
 const svgNS = 'http://www.w3.org/2000/svg'
 const htmlTags = new Set('div span strong p button select option article'.split(' '))
 const svgTags = new Set('svg g defs path circle ellipse rect polygon polyline line stop linearGradient radialGradient clipPath mask pattern symbol use title'.split(' '))
@@ -47,6 +50,11 @@ function patch(parent, index, tree, inSVG = false) {
   const [, attrs, children] = tree
   for (const attr of Array.from(node.attributes)) if (attr.name !== 'style' && !(attr.name in attrs)) node.removeAttribute(attr.name)
   patchStyles(node,attrs)
+  if (bouquet && tag === 'span' && attrs.class === 'fg-vaseStem') {
+    const tilt = /^rotate\((-?\d+(?:\.\d+)?)deg\) translateY\((\d+)px\)$/.exec(attrs.$transform)
+    if (tilt && Math.abs(Number(tilt[1])) <= 34 && Number(tilt[2]) <= 11) node.style.transform = tilt[0]
+    else node.style.removeProperty('transform')
+  }
   for (const [name,value] of Object.entries(attrs)) {
     if (!htmlAttrs.has(name) && !(svg && svgAttrs.has(name))) continue
     if (/url\s*\(/i.test(value) && !/^url\(#[\w:.-]+\)(?:\s+#[\da-f]+)?$/i.test(value)) continue
@@ -56,7 +64,35 @@ function patch(parent, index, tree, inSVG = false) {
   while (node.childNodes.length > children.length) node.lastChild.remove()
   if (tag === 'select' && node.value !== attrs['data-selection']) node.value = attrs['data-selection']
 }
-bridge.onSnapshot(snapshot => {
+bridge.onSnapshot((snapshot, id) => {
+  if (bloom) {
+    let rendered = false
+    try {
+      const tree = snapshot?.tree
+      if (snapshot?.mode === 'bloom' && tree?.[0] === 'div' && tree[1]?.class === 'fg-desktopBloom' && tree[2]?.length === 1 && tree[2][0]?.[0] === 'svg') {
+        patch(garden, 0, tree)
+        const flower = garden.querySelector('.fg-desktopBloom > svg')
+        rendered = Boolean(flower?.querySelector('path, circle, ellipse, rect, polygon, polyline, line'))
+        document.title = snapshot.title || ''
+        document.documentElement.lang = snapshot.lang || 'en'
+      }
+    } catch { rendered = false }
+    bridge.rendered(id, rendered)
+    return
+  }
+  if (bouquet) {
+    let rendered = false
+    try {
+      if (snapshot?.tree?.[0] === 'div' && snapshot.tree[1]?.class === 'fg-vase fg-vaseStill') {
+        patch(garden, 0, snapshot.tree)
+        rendered = Boolean(garden.querySelector('.fg-vaseStem > svg') && garden.querySelector('.fg-vasePot > svg'))
+        document.title = snapshot.title || ''
+        document.documentElement.lang = snapshot.lang || 'en'
+      }
+    } catch { rendered = false }
+    bridge.rendered(id, rendered)
+    return
+  }
   if (!snapshot?.tree) return
   const rootStyle = document.documentElement.style
   for (const key of themeKeys) {
@@ -71,7 +107,10 @@ bridge.onSnapshot(snapshot => {
   closeButton.title = snapshot.close
   patch(garden,0,snapshot.tree)
 })
-closeButton.addEventListener('click',()=>bridge.close())
+if (bouquet || bloom) window.addEventListener('keydown', event => {
+  if (event.key === 'Escape') bridge.close()
+})
+closeButton?.addEventListener('click',()=>bridge.close())
 garden.addEventListener('click',event=>{
   const button = event.target.closest('button[data-command]')
   if (button && !button.disabled) bridge.act({id:button.dataset.command})

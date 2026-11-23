@@ -1,0 +1,11 @@
+html, body, #garden { margin: 0; width: 100%; height: 100%; overflow: hidden; background: transparent; }
+#garden { display: grid; place-items: center; user-select: none; }
+.fg-desktopBloom { width: 82%; height: 82%; display: grid; place-items: center; -webkit-app-region: drag; }
+.fg-desktopBloom > svg { width: 100%; height: 100%; overflow: visible; transform-origin: 50% 88%; }
+@media (prefers-reduced-motion: no-preference) {
+  .fg-desktopBloom > svg { animation: desktop-flower-sway 5.5s ease-in-out infinite alternate; }
+  @keyframes desktop-flower-sway { from { transform: rotate(-1.7deg); } to { transform: rotate(1.7deg); } }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fg-desktopBloom, .fg-desktopBloom * { animation: none !important; }
+}

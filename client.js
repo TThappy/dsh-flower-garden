@@ -7876,6 +7876,118 @@ const MINI_CSS=`
 
 `
 
+// Capture the finished album drawing on click. Mounted album cards can disappear
+// when navigating, so window ownership and the immutable snapshot live separately.
+Object.assign(zh, {'desktop.working':'处理中…','desktop.route':'桌面窗口服务未连接，请重新载入花园插件。','desktop.artMissing':'无法读取这张花束卡的插花图。','desktop.launchFailed':'桌面花瓶启动失败，请关闭旧桌面小窗后重试。','desktop.tooLarge':'这束插花的绘图超过桌面窗口大小限制。','desktop.pinBouquet':'钉到桌面', 'desktop.unpinBouquet':'从桌面收回', 'desktop.unpinFailed':'未能收回花瓶，请再试一次。'})
+Object.assign(en, {'desktop.working':'Working…','desktop.route':'The desktop service is unavailable. Reload the garden plugin.','desktop.artMissing':'The artwork on this bouquet card could not be read.','desktop.launchFailed':'The vase could not open. Close any previous desktop garden windows and try again.','desktop.tooLarge':'This arrangement exceeds the desktop drawing size limit.','desktop.pinBouquet':'Pin vase to desktop', 'desktop.unpinBouquet':'Remove vase from desktop', 'desktop.unpinFailed':'Could not close the vase. Try again.'})
+const bouquetSvgTags = new Set('svg g defs path circle ellipse rect polygon polyline line stop linearGradient radialGradient clipPath mask pattern'.split(' '))
+const bouquetSvgAttrs = new Set('viewBox preserveAspectRatio id d x y x1 y1 x2 y2 cx cy r rx ry width height fill fill-rule fill-opacity stroke stroke-width stroke-linecap stroke-linejoin stroke-dasharray stroke-opacity transform opacity points offset stop-color stop-opacity gradientUnits gradientTransform clip-path clip-rule mask vector-effect'.split(' '))
+const bouquetStyles = new Map([
+  ['animation-delay', /^-?[\d.]+m?s$/], ['transform-origin', /^-?[\d.]+px -?[\d.]+px$/],
+  ['fill', /^(?:#[\da-f]{3,8}|none)$/i], ['stroke', /^(?:#[\da-f]{3,8}|none)$/i],
+  ['stroke-width', /^[\d.]+(?:px)?$/], ['stroke-linecap', /^(?:round|butt|square)$/], ['stroke-dasharray', /^[\d., px]+$/],
+])
+function encodeDesktopArtwork(root, stems = []) {
+  function encode(node) {
+    const tag = node.localName
+    const isSvg = node.namespaceURI === 'http://www.w3.org/2000/svg'
+    if (isSvg ? !bouquetSvgTags.has(tag) : tag !== 'div' && tag !== 'span') return null
+    const attrs = {}
+    for (const attr of node.attributes) {
+      if (attr.name === 'class') {
+        attrs.class = attr.value.split(/\s+/).filter(name => /^fg-[\w-]+$/.test(name)).join(' ')
+      } else if (isSvg && bouquetSvgAttrs.has(attr.name)) {
+        if (/url\s*\(/i.test(attr.value) && !/^url\(#[\w:.-]+\)(?:\s+#[\da-f]+)?$/i.test(attr.value)) continue
+        attrs[attr.name] = attr.value
+      }
+    }
+    for (const [property, rule] of bouquetStyles) {
+      const value = node.style?.getPropertyValue(property)
+      if (value && rule.test(value)) attrs[`$${property}`] = value
+    }
+    const index = stems.indexOf(node)
+    if (index !== -1) attrs.$transform = stemTilt(index, stems.length)
+    return [tag, attrs, Array.from(node.children, encode).filter(Boolean)]
+  }
+  return encode(root)
+}
+
+function snapshotBouquet(container, title) {
+  const root = container?.querySelector('.fg-cardVase > .fg-vaseStill')
+  if (!root) throw new Error('Bouquet artwork missing')
+  const stems = Array.from(root.children).filter(node => node.classList.contains('fg-vaseStem'))
+  if (!stems.length || stems.length > BOUQUET_MAX) throw new Error('Invalid bouquet drawing')
+  return {mode:'bouquet', tree:encodeDesktopArtwork(root, stems), title, lang:document.documentElement.lang || 'en'}
+}
+
+const bouquetPins = new Map()
+const bouquetPinListeners = new Set()
+const noBouquetPin = Object.freeze({phase:'idle'})
+function subscribeBouquetPins(listener) {
+  bouquetPinListeners.add(listener)
+  return () => bouquetPinListeners.delete(listener)
+}
+function updateBouquetPin(id, entry) {
+  if (entry) bouquetPins.set(id, entry)
+  else bouquetPins.delete(id)
+  for (const listener of bouquetPinListeners) listener()
+}
+function bouquetRequest(id, op, snapshot) {
+  return desktopGardenRequest({op, owner:desktopOwner(), windowKey:typeof id === 'string' ? id : `bouquet:${id}`, snapshot})
+}
+function watchBouquet(id, entry) {
+  entry.timer = window.setTimeout(async () => {
+    try {
+      const result = await bouquetRequest(id, 'sync')
+      if (bouquetPins.get(id) !== entry) return
+      if (result.ok && result.open) watchBouquet(id, entry)
+      else updateBouquetPin(id, null)
+    } catch {
+      if (bouquetPins.get(id) === entry) {
+        // Keep the close action available while the connection is interrupted.
+        const failed = {phase:'open', error:'desktop.error'}
+        updateBouquetPin(id, failed)
+        watchBouquet(id, failed)
+      }
+    }
+  }, 15000)
+}
+function toggleBouquetPin(card, container, t) {
+  return toggleArtPin(card.id, () => snapshotBouquet(container, card.title || t(`vase.${card.vase}`)))
+}
+
+function toggleBloomPin(id, svg, title) {
+  return toggleArtPin(id, () => {
+    if (svg?.localName !== 'svg') throw new Error('Bloom artwork missing')
+    const tree = ['div', {class:'fg-desktopBloom'}, [encodeDesktopArtwork(svg)]]
+    return {mode:'bloom', tree, title, lang:document.documentElement.lang || 'en'}
+  })
+}
+
+async function toggleArtPin(id, capture) {
+  const previous = bouquetPins.get(id)
+  if (previous?.phase === 'pending') return
+  const closing = previous?.phase === 'open'
+  window.clearTimeout(previous?.timer)
+  updateBouquetPin(id, {phase:'pending'})
+  try {
+    const result = await bouquetRequest(id, closing ? 'close' : 'open', closing ? undefined : capture())
+    if (!result.ok || closing === !!result.open) throw new Error(result.error || 'unavailable')
+    if (closing) updateBouquetPin(id, null)
+    else {
+      const entry = {phase:'open'}
+      updateBouquetPin(id, entry)
+      watchBouquet(id, entry)
+    }
+  } catch (error) {
+    const message = closing ? 'desktop.unpinFailed' : ({'Bloom artwork missing':'desktop.artMissing','render-failed':'desktop.artMissing','Bouquet artwork missing':'desktop.artMissing','Invalid bouquet drawing':'desktop.artMissing','launch-failed':'desktop.launchFailed','invalid-snapshot':'desktop.tooLarge','too-large':'desktop.tooLarge','route-unavailable':'desktop.route',busy:'desktop.busy','runtime-unavailable':'desktop.unavailable'}[error.message] || 'desktop.error')
+    const bloomErrors = {'desktop.artMissing':'bag.pinArtError','desktop.launchFailed':'bag.pinLaunchError','desktop.unpinFailed':'bag.unpinError','desktop.tooLarge':'bag.pinSizeError'}
+    const pinError = typeof id === 'string' ? bloomErrors[message] ?? message : message
+    const failed = {phase:closing ? 'open' : 'idle', error:pinError}
+    updateBouquetPin(id, failed)
+    if (closing) watchBouquet(id, failed)
+  }
+}
 
 Object.assign(zh, { 'bulk.harvest':'一键收获 · {n}', 'bulk.sow':'随机播种 · {n}', 'bulk.harvested':'收获了 {n} 朵花', 'bulk.sown':'随机种下了 {n} 株', 'bulk.none':'做不了：金币不够，或者花篮满了' })
 Object.assign(en, { 'bulk.harvest':'Harvest all · {n}', 'bulk.sow':'Random sow · {n}', 'bulk.harvested':'Harvested {n} flowers', 'bulk.sown':'Sowed {n} random seeds', 'bulk.none':'Not possible: too few coins, or the basket is full' })
@@ -7974,12 +8086,17 @@ function createDesktopMirror(root, t) {
 
 async function desktopGardenRequest(payload) {
   const path = '/api/flower-garden/desktop'
-  const options = {method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}
+  const options = {method:'POST',credentials:'same-origin',signal:AbortSignal.timeout(22000),headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}
   const response = await globalThis.fetch(path, options)
+  if ([401,403,404,405].includes(response.status)) throw new Error('route-unavailable')
+  if (response.status === 413) throw new Error('too-large')
   const result = await response.json()
   if (!response.ok && !result?.error) throw new Error('Desktop garden request failed')
   return result
 }
+
+let desktopOwnerId
+function desktopOwner() { return desktopOwnerId ??= crypto.randomUUID() }
 
 function useDesktopGarden(body, t) {
   const [phase, setPhase] = React.useState('idle')
@@ -7996,7 +8113,7 @@ function useDesktopGarden(body, t) {
   React.useEffect(()=>()=>stop(),[])
   async function toggle() {
     if (session.current) { stop(); setPhase('idle'); setMessage(''); return }
-    const active = {owner:crypto.randomUUID(), timer:0, cleanup:stop, previous:null}
+    const active = {owner:desktopOwner(), timer:0, cleanup:stop, previous:null}
     const mirror = createDesktopMirror(body,t)
     session.current = active
     window.addEventListener('pagehide',stop)
@@ -8568,6 +8685,8 @@ function CardTools({ state, t, kind, card, onChange }) {
   const [editing, setEditing] = React.useState(false)
   const [greeting, setGreeting] = React.useState(false)
   const [title, setTitle] = React.useState(card.title ?? ''), [note, setNote] = React.useState(card.note ?? '')
+  const pin = useSyncExternalStore(subscribeBouquetPins, () => bouquetPins.get(card.id) ?? noBouquetPin, () => noBouquetPin)
+  const pinLabel = t(pin.phase === 'pending' ? 'desktop.working' : pin.phase === 'open' ? 'desktop.unpinBouquet' : 'desktop.pinBouquet')
   const onShelf = shelfCards(state).some(ref => ref.kind === kind && ref.id === card.id)
   const room = shelfCards(state).length < shelfSlots(state)
   const apply = transition => { tick(); const next = transition(getState()); if (next !== null) onChange(next) }
@@ -8578,8 +8697,10 @@ function CardTools({ state, t, kind, card, onChange }) {
     h('div', { className: 'fg-cardToolRow' },
       h('button', { type: 'button', className: 'fg-cardTool', 'data-action': 'cardSave', title: t('keep.save'), 'aria-label': t('keep.save'), onClick: event => saveCard(event.currentTarget.closest('.fg-keepCard'), lines, `flower-garden-card-${card.id}`) }, '⬇'),
       onShelf || room ? h('button', { type: 'button', className: 'fg-cardTool', 'data-action': 'cardShelf', 'aria-pressed': onShelf ? 'true' : 'false', title: t(onShelf ? 'shelf.take' : 'shelf.put'), 'aria-label': t(onShelf ? 'shelf.take' : 'shelf.put'), onClick: () => apply(current => toggleShelf(current, kind, card.id)) }, '📌') : null,
+      kind === 'bouquets' ? h('button', { type:'button', className:'fg-btn fg-btnSmall', 'data-action':'cardPinDesktop', disabled:pin.phase==='pending', 'aria-pressed':pin.phase==='open', onClick:event=>toggleBouquetPin(card,event.currentTarget.closest('.fg-keepCard'),t) }, pinLabel) : null,
       kind === 'bouquets' ? h('button', { type: 'button', className: 'fg-cardTool', 'data-action': 'cardGreet', 'aria-pressed': greeting ? 'true' : 'false', title: t('greet.open'), 'aria-label': t('greet.open'), onClick: () => setGreeting(!greeting) }, '💌') : null,
       kind === 'bouquets' ? h('button', { type: 'button', className: 'fg-cardTool', 'data-action': 'cardName', 'aria-pressed': editing ? 'true' : 'false', title: t('keep.name'), 'aria-label': t('keep.name'), onClick: () => setEditing(!editing) }, '✎') : null),
+    kind === 'bouquets' && pin.error ? h('p', {className:'fg-note', role:'status'}, t(pin.error)) : null,
     greeting ? h(GreetingEditor, { t, card }) : null,
     editing ? h('div', { className: 'fg-cardEdit' },
       h('input', { type: 'text', maxLength: 20, value: title, placeholder: t('keep.titlePh'), 'aria-label': t('keep.titlePh'), onChange: event => setTitle(event.target.value) }),
@@ -9202,14 +9323,39 @@ function InventoryContents({ state, t }) {
     entries.length === 0 ? h('p', { className: 'fg-empty' }, t('bag.empty')) : h(BagGrid, { entries }))
 }
 
+Object.assign(zh, {
+  'bag.pinBloom':'钉住这朵花', 'bag.unpinBloom':'从桌面收回', 'bag.pinArtError':'无法读取这朵花的绘图。',
+  'bag.pinLaunchError':'桌面花朵启动失败，请再试一次。', 'bag.unpinError':'未能收回这朵花，请再试一次。', 'bag.pinSizeError':'这朵花的绘图超过窗口大小限制。',
+})
+Object.assign(en, {
+  'bag.pinBloom':'Pin this flower', 'bag.unpinBloom':'Remove from desktop', 'bag.pinArtError':'Could not read this flower’s artwork.',
+  'bag.pinLaunchError':'Could not open the desktop flower. Try again.', 'bag.unpinError':'Could not close this flower. Try again.', 'bag.pinSizeError':'This flower exceeds the desktop drawing size limit.',
+})
+
+function individualBloomPins(stack) {
+  const duplicates = new Map()
+  return stack.items.map(item => {
+    const signature = `${itemKey(item).replaceAll('+','.')}:${item.dna ?? 'legacy'}`
+    const ordinal = duplicates.get(signature) ?? 0
+    duplicates.set(signature, ordinal + 1)
+    return {item, key:`bloom:${signature}:${ordinal}`}
+  })
+}
+
 function InventoryDialog({ state, t, clock = Date.now(), onClose, onGarden, onShop, onSell, onUse, onOpenBloom, onKeep, onUseBloom }) {
   const ref = React.useRef(null); useGardenDialog(ref)
   const [filter, setFilter] = React.useState('all')
   const [picked, setPicked] = React.useState(null)
   const [armed, setArmed] = React.useState(null)
+  const [pickedBloom, setPickedBloom] = React.useState(null)
+  const artRef = React.useRef(null)
   const all = bagEntries(state, t)
   const shown = all.filter(entry => filter === 'all' || entry.kind === filter)
   const current = shown.find(entry => entry.key === picked) ?? shown[0] ?? null
+  const individuals = current?.kind === 'bloom' ? individualBloomPins(current) : []
+  const individual = individuals.find(bloom => bloom.key === pickedBloom) ?? individuals[0]
+  const displayed = individual ? {...current,item:individual.item} : current
+  const pin = useSyncExternalStore(subscribeBouquetPins, () => bouquetPins.get(individual?.key) ?? noBouquetPin, () => noBouquetPin)
   const worth = current?.kind === 'bloom' ? quoteSale(state, current.items, clock).coins : 0
   function pick(key) { setPicked(key); setArmed(null) }
   function sell() {
@@ -9218,6 +9364,7 @@ function InventoryDialog({ state, t, clock = Date.now(), onClose, onGarden, onSh
   }
   const actions = current === null ? [] : current.kind === 'bloom' ? [
     h('button', { key: 'sell', type: 'button', className: armed === current.key ? 'fg-btn fg-btnDanger' : 'fg-btn fg-btnPrimary', 'data-action': 'bagSell', onClick: sell }, t(armed === current.key ? 'bag.sellConfirm' : 'bag.sell', { n: worth })),
+    h('button', { key:'pin', type:'button', className:'fg-btn', 'data-action':'bagPinDesktop', disabled:pin.phase==='pending', 'aria-pressed':pin.phase==='open', onClick:()=>toggleBloomPin(individual.key, artRef.current?.querySelector('svg'), current.name) }, t(pin.phase==='pending' ? 'desktop.working' : pin.phase==='open' ? 'bag.unpinBloom' : 'bag.pinBloom')),
     h('button', { key: 'view', type: 'button', className: 'fg-btn', onClick: () => onOpenBloom?.(current.groupKey) }, t('bag.view')),
     h('button', { key: 'use', type: 'button', className: 'fg-btn', 'data-action': 'bagUse', onClick: () => onUseBloom?.(current.groupKey) }, t('use.' + flowerUse(current.item.species))),
     h('button', { key: 'keep', type: 'button', className: 'fg-btn', 'data-action': 'bagKeep', onClick: () => onKeep?.(current.groupKey) }, t('album.keep')),
@@ -9244,16 +9391,20 @@ function InventoryDialog({ state, t, clock = Date.now(), onClose, onGarden, onSh
       h(BagGrid, { entries: shown, picked: current?.key, onSelect: pick, min: 12 }),
       h('aside', { className: 'fg-bagDetail', 'data-rarity': current?.rarity, 'aria-live': 'polite' },
         current === null ? h('p', { className: 'fg-empty' }, t('bag.empty')) : [
-          h('div', { key: 'art', className: 'fg-bagDetailArt' }, bagArt(current)),
+          h('div', { key: 'art', ref:artRef, className: 'fg-bagDetailArt' }, bagArt(displayed)),
           h('h3', { key: 'name' }, current.name),
+          individuals.length > 1 ? h('label', {key:'individual', className:'fg-note'}, t('basket.individual'),
+            h('select', {className:'fg-btn', value:individual.key, onChange:event=>setPickedBloom(event.target.value)},
+              individuals.map((bloom,index)=>h('option',{key:bloom.key,value:bloom.key},t('basket.individualNo',{n:index+1,max:individuals.length}))))) : null,
           h('div', { key: 'tags', className: 'fg-bagTags' },
             h('span', { className: 'fg-rarityTag', 'data-rarity': current.rarity }, current.kind === 'item' ? t('bag.item') : current.kind === 'seed' ? t('bag.seed') : t(`bag.rarity.${current.rarity}`)),
             h('span', { className: 'fg-note' }, `×${current.count}`),
             current.kind === 'bloom' ? h('span', { className: 'fg-note' }, t('bag.worth', { n: worth })) : null),
           current.kind === 'bloom' ? h('span', { key: 'use', className: 'fg-questChip' }, t('use.' + flowerUse(current.item.species) + '.note')) : null,
-          current.kind === 'bloom' && current.item.dna ? h(GeneBars, { key: 'genes', dna: current.item.dna, t }) : null,
+          individual && Number.isFinite(individual.item.dna) ? h(GeneBars, { key: 'genes', dna: individual.item.dna, t }) : null,
           current.kind === 'item' ? h('p', { key: 'note', className: 'fg-note' }, t(`item.${current.id}.note`)) : null,
           h('div', { key: 'actions', className: 'fg-bagActions' }, actions),
+           individual && pin.error ? h('p', {key:'pinError',className:'fg-note',role:'status'}, t(pin.error)) : null,
         ])),
     h('footer', { className: 'fg-rewardActions' },
       h('button', { type: 'button', className: 'fg-btn', onClick: onShop }, t('tabs.shop')),

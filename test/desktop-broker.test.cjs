@@ -30,3 +30,43 @@ test('opening twice shares one child and desktop clicks return once to their own
   assert.deepEqual(result.actions, [action])
   assert.deepEqual((await request('sync', { snapshot: {} })).actions, [])
 })
+
+test('pinning a saved arrangement first opens only its own window', async t => {
+  const { createDesktopBroker } = await import('../index.js')
+  const child = new EventEmitter()
+  const messages = []
+  child.send = message => {
+    messages.push(message)
+    if (message.type === 'snapshot') setImmediate(() => child.emit('message', {type:'rendered', id:message.id, windowKey:message.windowKey, ok:true}))
+    if (message.type === 'open-window') setImmediate(() => child.emit('message', { type: 'ready', windowKey: message.windowKey }))
+    return true
+  }
+  child.kill = () => child.emit('exit', 0)
+  const broker = createDesktopBroker({ launch: () => child })
+  t.after(() => broker.dispose())
+  const owner = randomUUID()
+  const windowKey = 'bouquet:42'
+  const snapshot = { mode: 'bouquet', tree: ['div', {class:'fg-vase fg-vaseStill'}, []] }
+  const result = await broker.request({ op: 'open', owner, windowKey, snapshot })
+  assert.equal(result.open, true)
+  assert.deepEqual(messages.filter(message => message.type === 'open-window').map(message => message.windowKey), [windowKey])
+  assert.ok(messages.some(message => message.snapshot === snapshot && message.windowKey === windowKey))
+})
+
+for (const outcome of ['rejected', 'timeout', 'closed']) {
+  test(`a bouquet whose rendering is ${outcome} reports render-failed`, async t => {
+    const { createDesktopBroker } = await import('../index.js')
+    const child = new EventEmitter()
+    child.send = ({type, windowKey, id}) => {
+      if (type === 'open-window') setImmediate(() => child.emit('message', {type:'ready', windowKey}))
+      if (type === 'snapshot' && outcome !== 'timeout') setImmediate(() => child.emit('message', {
+        type: outcome === 'closed' ? 'closed' : 'rendered', windowKey, id, ok:false,
+      }))
+    }
+    child.kill = () => child.emit('exit', 0)
+    const broker = createDesktopBroker({launch: () => child, renderTimeoutMs: 50})
+    t.after(() => broker.dispose())
+    const result = await broker.request({op:'open', owner:randomUUID(), windowKey:'bouquet:3', snapshot:{tree:[]}})
+    assert.deepEqual(result, {ok:false, open:false, error:'render-failed'})
+  })
+}

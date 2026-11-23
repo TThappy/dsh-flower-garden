@@ -138,6 +138,8 @@ function CardTools({ state, t, kind, card, onChange }) {
   const [editing, setEditing] = React.useState(false)
   const [greeting, setGreeting] = React.useState(false)
   const [title, setTitle] = React.useState(card.title ?? ''), [note, setNote] = React.useState(card.note ?? '')
+  const pin = useSyncExternalStore(subscribeBouquetPins, () => bouquetPins.get(card.id) ?? noBouquetPin, () => noBouquetPin)
+  const pinLabel = t(pin.phase === 'pending' ? 'desktop.working' : pin.phase === 'open' ? 'desktop.unpinBouquet' : 'desktop.pinBouquet')
   const onShelf = shelfCards(state).some(ref => ref.kind === kind && ref.id === card.id)
   const room = shelfCards(state).length < shelfSlots(state)
   const apply = transition => { tick(); const next = transition(getState()); if (next !== null) onChange(next) }
@@ -148,8 +150,10 @@ function CardTools({ state, t, kind, card, onChange }) {
     h('div', { className: 'fg-cardToolRow' },
       h('button', { type: 'button', className: 'fg-cardTool', 'data-action': 'cardSave', title: t('keep.save'), 'aria-label': t('keep.save'), onClick: event => saveCard(event.currentTarget.closest('.fg-keepCard'), lines, `flower-garden-card-${card.id}`) }, '⬇'),
       onShelf || room ? h('button', { type: 'button', className: 'fg-cardTool', 'data-action': 'cardShelf', 'aria-pressed': onShelf ? 'true' : 'false', title: t(onShelf ? 'shelf.take' : 'shelf.put'), 'aria-label': t(onShelf ? 'shelf.take' : 'shelf.put'), onClick: () => apply(current => toggleShelf(current, kind, card.id)) }, '📌') : null,
+      kind === 'bouquets' ? h('button', { type:'button', className:'fg-btn fg-btnSmall', 'data-action':'cardPinDesktop', disabled:pin.phase==='pending', 'aria-pressed':pin.phase==='open', onClick:event=>toggleBouquetPin(card,event.currentTarget.closest('.fg-keepCard'),t) }, pinLabel) : null,
       kind === 'bouquets' ? h('button', { type: 'button', className: 'fg-cardTool', 'data-action': 'cardGreet', 'aria-pressed': greeting ? 'true' : 'false', title: t('greet.open'), 'aria-label': t('greet.open'), onClick: () => setGreeting(!greeting) }, '💌') : null,
       kind === 'bouquets' ? h('button', { type: 'button', className: 'fg-cardTool', 'data-action': 'cardName', 'aria-pressed': editing ? 'true' : 'false', title: t('keep.name'), 'aria-label': t('keep.name'), onClick: () => setEditing(!editing) }, '✎') : null),
+    kind === 'bouquets' && pin.error ? h('p', {className:'fg-note', role:'status'}, t(pin.error)) : null,
     greeting ? h(GreetingEditor, { t, card }) : null,
     editing ? h('div', { className: 'fg-cardEdit' },
       h('input', { type: 'text', maxLength: 20, value: title, placeholder: t('keep.titlePh'), 'aria-label': t('keep.titlePh'), onChange: event => setTitle(event.target.value) }),

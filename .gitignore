@@ -5,3 +5,4 @@ node_modules/
 .research-tests.log
 .garden-layout-tests.log
 .variant-tests.log
+.tmpnpm/

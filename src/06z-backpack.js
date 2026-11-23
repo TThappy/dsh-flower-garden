@@ -102,14 +102,39 @@ function InventoryContents({ state, t }) {
     entries.length === 0 ? h('p', { className: 'fg-empty' }, t('bag.empty')) : h(BagGrid, { entries }))
 }
 
+Object.assign(zh, {
+  'bag.pinBloom':'钉住这朵花', 'bag.unpinBloom':'从桌面收回', 'bag.pinArtError':'无法读取这朵花的绘图。',
+  'bag.pinLaunchError':'桌面花朵启动失败，请再试一次。', 'bag.unpinError':'未能收回这朵花，请再试一次。', 'bag.pinSizeError':'这朵花的绘图超过窗口大小限制。',
+})
+Object.assign(en, {
+  'bag.pinBloom':'Pin this flower', 'bag.unpinBloom':'Remove from desktop', 'bag.pinArtError':'Could not read this flower’s artwork.',
+  'bag.pinLaunchError':'Could not open the desktop flower. Try again.', 'bag.unpinError':'Could not close this flower. Try again.', 'bag.pinSizeError':'This flower exceeds the desktop drawing size limit.',
+})
+
+function individualBloomPins(stack) {
+  const duplicates = new Map()
+  return stack.items.map(item => {
+    const signature = `${itemKey(item).replaceAll('+','.')}:${item.dna ?? 'legacy'}`
+    const ordinal = duplicates.get(signature) ?? 0
+    duplicates.set(signature, ordinal + 1)
+    return {item, key:`bloom:${signature}:${ordinal}`}
+  })
+}
+
 function InventoryDialog({ state, t, clock = Date.now(), onClose, onGarden, onShop, onSell, onUse, onOpenBloom, onKeep, onUseBloom }) {
   const ref = React.useRef(null); useGardenDialog(ref)
   const [filter, setFilter] = React.useState('all')
   const [picked, setPicked] = React.useState(null)
   const [armed, setArmed] = React.useState(null)
+  const [pickedBloom, setPickedBloom] = React.useState(null)
+  const artRef = React.useRef(null)
   const all = bagEntries(state, t)
   const shown = all.filter(entry => filter === 'all' || entry.kind === filter)
   const current = shown.find(entry => entry.key === picked) ?? shown[0] ?? null
+  const individuals = current?.kind === 'bloom' ? individualBloomPins(current) : []
+  const individual = individuals.find(bloom => bloom.key === pickedBloom) ?? individuals[0]
+  const displayed = individual ? {...current,item:individual.item} : current
+  const pin = useSyncExternalStore(subscribeBouquetPins, () => bouquetPins.get(individual?.key) ?? noBouquetPin, () => noBouquetPin)
   const worth = current?.kind === 'bloom' ? quoteSale(state, current.items, clock).coins : 0
   function pick(key) { setPicked(key); setArmed(null) }
   function sell() {
@@ -118,6 +143,7 @@ function InventoryDialog({ state, t, clock = Date.now(), onClose, onGarden, onSh
   }
   const actions = current === null ? [] : current.kind === 'bloom' ? [
     h('button', { key: 'sell', type: 'button', className: armed === current.key ? 'fg-btn fg-btnDanger' : 'fg-btn fg-btnPrimary', 'data-action': 'bagSell', onClick: sell }, t(armed === current.key ? 'bag.sellConfirm' : 'bag.sell', { n: worth })),
+    h('button', { key:'pin', type:'button', className:'fg-btn', 'data-action':'bagPinDesktop', disabled:pin.phase==='pending', 'aria-pressed':pin.phase==='open', onClick:()=>toggleBloomPin(individual.key, artRef.current?.querySelector('svg'), current.name) }, t(pin.phase==='pending' ? 'desktop.working' : pin.phase==='open' ? 'bag.unpinBloom' : 'bag.pinBloom')),
     h('button', { key: 'view', type: 'button', className: 'fg-btn', onClick: () => onOpenBloom?.(current.groupKey) }, t('bag.view')),
     h('button', { key: 'use', type: 'button', className: 'fg-btn', 'data-action': 'bagUse', onClick: () => onUseBloom?.(current.groupKey) }, t('use.' + flowerUse(current.item.species))),
     h('button', { key: 'keep', type: 'button', className: 'fg-btn', 'data-action': 'bagKeep', onClick: () => onKeep?.(current.groupKey) }, t('album.keep')),
@@ -144,16 +170,20 @@ function InventoryDialog({ state, t, clock = Date.now(), onClose, onGarden, onSh
       h(BagGrid, { entries: shown, picked: current?.key, onSelect: pick, min: 12 }),
       h('aside', { className: 'fg-bagDetail', 'data-rarity': current?.rarity, 'aria-live': 'polite' },
         current === null ? h('p', { className: 'fg-empty' }, t('bag.empty')) : [
-          h('div', { key: 'art', className: 'fg-bagDetailArt' }, bagArt(current)),
+          h('div', { key: 'art', ref:artRef, className: 'fg-bagDetailArt' }, bagArt(displayed)),
           h('h3', { key: 'name' }, current.name),
+          individuals.length > 1 ? h('label', {key:'individual', className:'fg-note'}, t('basket.individual'),
+            h('select', {className:'fg-btn', value:individual.key, onChange:event=>setPickedBloom(event.target.value)},
+              individuals.map((bloom,index)=>h('option',{key:bloom.key,value:bloom.key},t('basket.individualNo',{n:index+1,max:individuals.length}))))) : null,
           h('div', { key: 'tags', className: 'fg-bagTags' },
             h('span', { className: 'fg-rarityTag', 'data-rarity': current.rarity }, current.kind === 'item' ? t('bag.item') : current.kind === 'seed' ? t('bag.seed') : t(`bag.rarity.${current.rarity}`)),
             h('span', { className: 'fg-note' }, `×${current.count}`),
             current.kind === 'bloom' ? h('span', { className: 'fg-note' }, t('bag.worth', { n: worth })) : null),
           current.kind === 'bloom' ? h('span', { key: 'use', className: 'fg-questChip' }, t('use.' + flowerUse(current.item.species) + '.note')) : null,
-          current.kind === 'bloom' && current.item.dna ? h(GeneBars, { key: 'genes', dna: current.item.dna, t }) : null,
+          individual && Number.isFinite(individual.item.dna) ? h(GeneBars, { key: 'genes', dna: individual.item.dna, t }) : null,
           current.kind === 'item' ? h('p', { key: 'note', className: 'fg-note' }, t(`item.${current.id}.note`)) : null,
           h('div', { key: 'actions', className: 'fg-bagActions' }, actions),
+           individual && pin.error ? h('p', {key:'pinError',className:'fg-note',role:'status'}, t(pin.error)) : null,
         ])),
     h('footer', { className: 'fg-rewardActions' },
       h('button', { type: 'button', className: 'fg-btn', onClick: onShop }, t('tabs.shop')),

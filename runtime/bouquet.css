@@ -1,0 +1,4 @@
+html, body, #garden { width: 100%; height: 100%; margin: 0; overflow: hidden; background: transparent; }
+#garden { display: grid; place-items: center; user-select: none; }
+#garden .fg-vaseStill { -webkit-app-region: drag; }
+#garden .fg-vaseStem, #garden .fg-vasePot { filter: none; box-shadow: none; }

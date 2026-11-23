@@ -1,27 +1,14 @@
-/* The garden's artwork, plot cards, scene accents, motion and feedback use the
-   generated shared sheet. Only native window furniture and fallbacks live here. */
-:root {
-  color-scheme: light dark;
-  --dsw-alias-bg-base: light-dark(#fbfaf6,#20251f);
-  --dsw-alias-bg-layer-1: light-dark(#fff,#292e28);
-  --dsw-alias-bg-layer-2: light-dark(#f1f3ef,#343a32);
-  --dsw-alias-label-primary: light-dark(#29362d,#edf2e9);
-  --dsw-alias-label-secondary: light-dark(#526457,#becbbd);
-  --dsw-alias-border-l1: light-dark(#dce4d9,#404a40);
-  --dsw-alias-border-l2: light-dark(#bdcabb,#596558);
-  --dsw-alias-brand-primary: light-dark(#326995,#86b8e8);
-  --dsw-alias-state-success-primary: light-dark(#286344,#89c9a1);
-  --dsw-alias-state-warn-primary: light-dark(#805611,#efc26e);
-  --dsw-alias-state-error-primary: light-dark(#a73f3f,#f89a93);
-  --dsw-alias-state-idle-primary: var(--dsw-alias-label-secondary);
-  --paper: var(--dsw-alias-bg-layer-1); --ink: var(--dsw-alias-label-primary);
-  --line: var(--dsw-alias-border-l1); --muted: var(--dsw-alias-label-secondary);
-  --accent: var(--dsw-alias-state-success-primary);
-  font: 14px/1.5 system-ui,sans-serif;
-}
+* { box-sizing: border-box; }
+:root { color-scheme: light dark; --paper: light-dark(#fbfaf6,#20251f); --ink: light-dark(#29362d,#edf2e9); --line: light-dark(#ccd6c9,#47544a); --muted: light-dark(#526457,#becbbd); --accent: light-dark(#286344,#286647); font: 14px/1.45 system-ui,sans-serif; }
 body { margin: 0; height: 100vh; display: flex; flex-direction: column; background: var(--paper); color: var(--ink); }
 body > header { display: flex; align-items: center; justify-content: space-between; flex: none; padding: 6px 12px; background: var(--dsw-alias-bg-layer-2); border-bottom: 1px solid var(--line); -webkit-app-region: drag; }
 header button { -webkit-app-region: no-drag; color: inherit; background: var(--paper); border: 1px solid var(--line); border-radius: 8px; min-width: 34px; }
 main { flex: 1; min-height: 0; overflow: auto; }
 #garden :focus-visible { outline: 2px solid var(--dsw-alias-brand-primary); outline-offset: 2px; }
 @media (max-width: 335px) { .fg-miniPlots { grid-template-columns: 1fr; } }
+html[data-mode="pot"],body[data-mode="pot"]{background:transparent!important}
+body[data-mode="pot"] header{display:none}
+body[data-mode="pot"] main{overflow:visible}
+body[data-mode="pot"] #garden{display:block;background:transparent}
+.fg-bouquetDesktop{width:260px;height:260px;display:grid;place-items:center;background:transparent}
+.fg-bouquetDesktop .fg-vase{transform:scale(1.05);transform-origin:center}

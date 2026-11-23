@@ -91,12 +91,17 @@ function createDesktopMirror(root, t) {
 
 async function desktopGardenRequest(payload) {
   const path = '/api/flower-garden/desktop'
-  const options = {method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}
+  const options = {method:'POST',credentials:'same-origin',signal:AbortSignal.timeout(22000),headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)}
   const response = await globalThis.fetch(path, options)
+  if ([401,403,404,405].includes(response.status)) throw new Error('route-unavailable')
+  if (response.status === 413) throw new Error('too-large')
   const result = await response.json()
   if (!response.ok && !result?.error) throw new Error('Desktop garden request failed')
   return result
 }
+
+let desktopOwnerId
+function desktopOwner() { return desktopOwnerId ??= crypto.randomUUID() }
 
 function useDesktopGarden(body, t) {
   const [phase, setPhase] = React.useState('idle')
@@ -113,7 +118,7 @@ function useDesktopGarden(body, t) {
   React.useEffect(()=>()=>stop(),[])
   async function toggle() {
     if (session.current) { stop(); setPhase('idle'); setMessage(''); return }
-    const active = {owner:crypto.randomUUID(), timer:0, cleanup:stop, previous:null}
+    const active = {owner:desktopOwner(), timer:0, cleanup:stop, previous:null}
     const mirror = createDesktopMirror(body,t)
     session.current = active
     window.addEventListener('pagehide',stop)

@@ -35,14 +35,13 @@ function launchElectron() {
   })
 }
 
-export function createDesktopBroker({launch = launchElectron} = {}) {
-  let current, disposed = false
+export function createDesktopBroker({launch = launchElectron, renderTimeoutMs = 5000} = {}) {
+  let current = null, disposed = false, renderSequence = 0
   function end(session, terminate) {
     if (current !== session) return
-    current = undefined
-    clearTimeout(session.startTimer)
+    current = null
     clearTimeout(session.leaseTimer)
-    session.resolve(false)
+    for (const window of session.windows.values()) { clearTimeout(window.startTimer); window.render?.finish(false); window.resolve(false) }
     if (terminate) session.child.kill()
   }
   function refresh(session) {
@@ -51,57 +50,93 @@ export function createDesktopBroker({launch = launchElectron} = {}) {
     session.leaseTimer.unref?.()
   }
   function send(session, payload) {
-    try {
-      session.child.send(payload, error => { if (error) end(session, true) })
-    } catch { end(session, true) }
+    try { session.child.send(payload, error => { if (error) end(session, true) }) } catch { end(session, true) }
   }
   function start(owner) {
-    const child = launch()
-    let resolve
-    const ready = new Promise(done => { resolve = done })
-    const session = {owner, child, ready, resolve, actions: [], started: false}
+    const child = launch(), session = {owner, child, windows:new Map(), started:false}
     current = session
-    session.startTimer = setTimeout(() => end(session, true), 15000)
-    child.on('error', () => end(session, true))
-    child.once('exit', () => end(session, false))
-    child.once('disconnect', () => end(session, true))
+    child.on('error', () => end(session, true)); child.once('exit', () => end(session, false)); child.once('disconnect', () => end(session, true))
     child.on('message', message => {
       if (current !== session) return
-      if (message?.type === 'ready') {
-        clearTimeout(session.startTimer)
-        session.started = true
-        resolve(true)
-      } else if (message?.type === 'action' && session.started && session.actions.length < 64) {
+      const key = typeof message?.windowKey === 'string' ? message.windowKey : 'garden'
+      const window = session.windows.get(key)
+      if (!window) return
+      if (message?.type === 'ready') { clearTimeout(window.startTimer); window.started = true; window.resolve(true) }
+      else if (message?.type === 'closed') { clearTimeout(window.startTimer); window.render?.finish(false); window.resolve(false); session.windows.delete(key) }
+      else if (message?.type === 'rendered' && window.render?.id === message.id) window.render.finish(message.ok === true)
+      else if (message?.type === 'action' && window.started && window.actions.length < 64) {
         const action = message.action
         if (typeof action?.id !== 'string' || !/^\d{1,16}$/.test(action.id)) return
         if (action.value !== undefined && (typeof action.value !== 'string' || action.value.length > 256)) return
-        session.actions.push(action.value === undefined ? {id: action.id} : {id: action.id, value: action.value})
+        window.actions.push(action.value === undefined ? {id:action.id} : {id:action.id,value:action.value})
       }
     })
     return session
   }
+  function getWindow(session, key, create) {
+    let window = session.windows.get(key)
+    if (!window && create) {
+      let resolve
+      window = {key, ready:new Promise(done => { resolve = done }), resolve, actions:[], started:false}
+      window.startTimer = setTimeout(() => {
+        window.resolve(false)
+        session.windows.delete(key)
+        send(session, {type: 'close-window', windowKey: key})
+        if (!session.windows.size) end(session, true)
+      }, 15000)
+      session.windows.set(key, window)
+    }
+    return window
+  }
   return {
     async request(input) {
       if (disposed) return failure('unavailable')
-      if (!input || typeof input.owner !== 'string' || !OWNER.test(input.owner) || !['open', 'sync', 'close'].includes(input.op)) return failure('invalid-request')
+      if (!input || typeof input.owner !== 'string' || !OWNER.test(input.owner) || !['open','sync','close'].includes(input.op)) return failure('invalid-request')
+      const key = input.windowKey === undefined ? 'garden' : String(input.windowKey)
+      if (!/^[\w:.~-]{1,128}$/u.test(key)) return failure('invalid-window')
       if (input.snapshot !== undefined && (!input.snapshot || typeof input.snapshot !== 'object' || Array.isArray(input.snapshot) || Buffer.byteLength(JSON.stringify(input.snapshot)) > LIMIT)) return failure('invalid-snapshot')
       if (current && current.owner !== input.owner) return failure('busy')
       let session = current
       if (input.op === 'close') {
-        if (session) end(session, true)
+        if (session) { const window = session.windows.get(key); if (window) { clearTimeout(window.startTimer); window.render?.finish(false); window.resolve(false); send(session,{type:'close-window',windowKey:key}); session.windows.delete(key) } if (!session.windows.size) end(session,true) }
         return closed()
       }
       if (!session) {
         if (input.op !== 'open') return closed()
         try { session = start(input.owner) } catch (error) { return failure(error.message === 'runtime-unavailable' ? error.message : 'launch-failed') }
-      } else if (input.op === 'open' && session.started) send(session, {type: 'focus'})
+      }
+      const window = getWindow(session,key,input.op === 'open')
+      if (!window) return closed()
+      if (input.op === 'open' && window.started) send(session,{type:'focus',windowKey:key})
+      else if (input.op === 'open' && !window.requested) {
+        window.requested = true
+        const mode = key.startsWith('bloom:') ? 'bloom' : key === 'garden' ? 'garden' : 'bouquet'
+        send(session, {type:'open-window', windowKey:key, mode})
+      }
       refresh(session)
-      if (!await session.ready || session !== current) return failure('launch-failed')
-      if (input.snapshot !== undefined) send(session, {type: 'snapshot', snapshot: input.snapshot})
-      if (session !== current) return closed()
-      return {ok: true, open: true, actions: session.actions.splice(0)}
+      if (!await window.ready || session !== current) return failure('launch-failed')
+      if (key !== 'garden' && input.op === 'open') {
+        if (!window.render) {
+          const id = ++renderSequence
+          let finish
+          const ready = new Promise(resolve => { finish = resolve })
+          window.render = { id, ready, finish }
+          const timer = setTimeout(() => finish(false), renderTimeoutMs)
+          ready.then(() => clearTimeout(timer))
+          send(session, {type:'snapshot', windowKey:key, snapshot:input.snapshot, id})
+        }
+        if (!await window.render.ready || session !== current || session.windows.get(key) !== window) {
+          if (session === current && session.windows.get(key) === window) {
+            session.windows.delete(key)
+            send(session, {type:'close-window', windowKey:key})
+            if (!session.windows.size) end(session,true)
+          }
+          return failure('render-failed')
+        }
+      } else if (input.snapshot !== undefined) send(session,{type:'snapshot',windowKey:key,snapshot:input.snapshot})
+      return {ok:true,open:true,actions:window.actions.splice(0)}
     },
-    dispose() { disposed = true; if (current) end(current, true) },
+    dispose() { disposed=true; if(current) end(current,true) },
   }
 }
 
