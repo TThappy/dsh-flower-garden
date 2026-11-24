@@ -107,6 +107,39 @@ bridge.onSnapshot((snapshot, id) => {
   closeButton.title = snapshot.close
   patch(garden,0,snapshot.tree)
 })
+if (bouquet || bloom) {
+  const viewport = window.visualViewport
+  let lastScale = viewport?.scale || 1
+  let lastPinchWheel = -Infinity
+  let resetTimer
+  let resetting = false
+  window.addEventListener('wheel', event => {
+    if (!event.deltaY) return
+    event.preventDefault()
+    if (event.ctrlKey) {
+      lastPinchWheel = performance.now()
+      bridge.zoom(Math.exp(-event.deltaY / 100))
+    } else {
+      bridge.zoom(event.deltaY < 0 ? 1.1 : 1 / 1.1)
+    }
+  }, {passive:false})
+  viewport?.addEventListener('resize', () => {
+    const scale = viewport.scale
+    if (scale === lastScale) return
+    const ratio = scale / lastScale
+    lastScale = scale
+    if (resetting) return
+    if (performance.now() - lastPinchWheel > 200) bridge.zoom(ratio)
+    clearTimeout(resetTimer)
+    resetTimer = setTimeout(async () => {
+      resetting = true
+      try { await bridge.resetPinch() } finally {
+        lastScale = viewport.scale
+        resetting = false
+      }
+    }, 180)
+  })
+}
 if (bouquet || bloom) window.addEventListener('keydown', event => {
   if (event.key === 'Escape') bridge.close()
 })

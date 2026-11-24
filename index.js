@@ -49,7 +49,9 @@ export function createDesktopBroker({launch = launchElectron, renderTimeoutMs = 
       const key = typeof message?.windowKey === 'string' ? message.windowKey : 'garden'
       const window = session.windows.get(key)
       if (!window) return
-      if (message?.type === 'ready') { clearTimeout(window.startTimer); window.started = true; window.resolve(true) }
+      if (message?.type === 'missing') { clearTimeout(window.startTimer); window.missing = true; window.resolve(false); session.windows.delete(key); if (!session.windows.size) end(session,true); return }
+      if (message?.type === 'restored') window.persisted = true
+      if (message?.type === 'ready' || message?.type === 'restored') { clearTimeout(window.startTimer); window.started = true; window.resolve(true) }
       else if (message?.type === 'closed') { clearTimeout(window.startTimer); window.render?.finish(false); window.resolve(false); session.windows.delete(key) }
       else if (message?.type === 'rendered' && window.render?.id === message.id) window.render.finish(message.ok === true)
       else if (message?.type === 'action' && window.started && window.actions.length < 64) {
@@ -79,33 +81,36 @@ export function createDesktopBroker({launch = launchElectron, renderTimeoutMs = 
   return {
     async request(input) {
       if (disposed) return failure('unavailable')
-      if (!input || typeof input.owner !== 'string' || !OWNER.test(input.owner) || !['open','sync','close'].includes(input.op)) return failure('invalid-request')
+      if (!input || typeof input.owner !== 'string' || !OWNER.test(input.owner) || !['open','restore','sync','close'].includes(input.op)) return failure('invalid-request')
       const key = input.windowKey === undefined ? 'garden' : String(input.windowKey)
-      if (!/^[\w:.~-]{1,128}$/u.test(key)) return failure('invalid-window')
+      if (!/^[\w:.~-]{1,128}$/u.test(key) || (input.op === 'restore' && !/^(bloom|bouquet):[\w:.~-]+$/u.test(key))) return failure('invalid-window')
       if (input.snapshot !== undefined && (!input.snapshot || typeof input.snapshot !== 'object' || Array.isArray(input.snapshot) || Buffer.byteLength(JSON.stringify(input.snapshot)) > LIMIT)) return failure('invalid-snapshot')
       if (current && current.owner !== input.owner) return failure('busy')
       let session = current
       if (input.op === 'close') {
         runtimeSetup?.cancel(input.owner, key)
-        if (session) { const window = session.windows.get(key); if (window) { clearTimeout(window.startTimer); window.render?.finish(false); window.resolve(false); send(session,{type:'close-window',windowKey:key}); session.windows.delete(key) } if (!session.windows.size) end(session,true) }
+        if (session) { const window = session.windows.get(key); if (window) { clearTimeout(window.startTimer); window.render?.finish(false); window.resolve(false); send(session,{type:'close-window',windowKey:key}); session.windows.delete(key) } if (!session.windows.size) refresh(session) }
         return closed()
       }
       if (!session) {
-        if (input.op !== 'open') return closed()
+        if (input.op !== 'open' && input.op !== 'restore') return closed()
         const runtimeStatus = runtimeSetup?.check(input.owner, key)
         if (runtimeStatus) return failure(runtimeStatus)
         try { session = start(input.owner) } catch (error) { return failure(error.message === 'runtime-unavailable' ? error.message : 'launch-failed') }
       }
-      const window = getWindow(session,key,input.op === 'open')
+      const window = getWindow(session,key,input.op === 'open' || input.op === 'restore')
       if (!window) return closed()
       if (input.op === 'open' && window.started) send(session,{type:'focus',windowKey:key})
-      else if (input.op === 'open' && !window.requested) {
+      else if ((input.op === 'open' || input.op === 'restore') && !window.requested) {
         window.requested = true
         const mode = key.startsWith('bloom:') ? 'bloom' : key === 'garden' ? 'garden' : 'bouquet'
-        send(session, {type:'open-window', windowKey:key, mode})
+        send(session, {type:input.op === 'restore' ? 'restore-window' : 'open-window', windowKey:key, mode})
       }
       refresh(session)
-      if (!await window.ready || session !== current) return failure('launch-failed')
+      const ready = await window.ready
+      if (window.missing) return closed()
+      if (!ready || session !== current) return failure('launch-failed')
+      if (input.op === 'restore' && window.render && !await window.render.ready) return failure('render-failed')
       if (key !== 'garden' && input.op === 'open') {
         if (!window.render) {
           const id = ++renderSequence

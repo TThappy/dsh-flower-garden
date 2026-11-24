@@ -1,4 +1,4 @@
-const { contextBridge, ipcRenderer } = require('electron')
+const { contextBridge, ipcRenderer, webFrame } = require('electron')
 contextBridge.exposeInMainWorld('flowerGardenDesktop', {
   onMode(callback) {
     const listener = (_event, mode) => callback(mode === 'pot' ? 'pot' : 'garden')
@@ -18,6 +18,17 @@ contextBridge.exposeInMainWorld('flowerGardenDesktop', {
     ipcRenderer.send('flower-garden:action', {id: action.id, value: action.value})
   },
   toggleCompact() { ipcRenderer.send('flower-garden:toggle-compact') },
+  zoom(factor) { if (Number.isFinite(factor) && factor > 0) ipcRenderer.send('flower-garden:zoom', factor) },
+
+  // Reset the transient compositor magnification after its scale has been
+  // applied to the saved window bounds.
+  resetPinch() {
+    webFrame.setVisualZoomLevelLimits(1, 1)
+    return new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(() => {
+      webFrame.setVisualZoomLevelLimits(0.5, 4)
+      resolve()
+    })))
+  },
   onCompact(callback) {
     const listener = (_event, compact) => callback(compact === true)
     ipcRenderer.on('flower-garden:compact', listener)

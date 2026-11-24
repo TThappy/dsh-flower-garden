@@ -28,6 +28,8 @@
           }
         }, 'flower-garden: saved garden')
 
+        ctx.effect(trackDesktopArtPins, 'flower-garden: restore pinned artwork')
+
         ctx.slots.inject('shell.overlay', () => ctx.slots.register({name:'shell.overlay',id:'flower-garden-mini',order:30},FloatingGarden))
 
         ctx.slots.inject('conversation.view', () => ctx.slots.register({

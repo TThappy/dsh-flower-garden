@@ -54,25 +54,88 @@ function updateBouquetPin(id, entry) {
   else bouquetPins.delete(id)
   for (const listener of bouquetPinListeners) listener()
 }
+const pinStoragePrefix = 'flower-garden.desktop-pin.v1.'
+function artWindowKey(id) { return typeof id === 'string' ? id : `bouquet:${id}` }
+function artIdFromWindowKey(key) {
+  if (/^bloom:[\w:.~-]{1,122}$/.test(key)) return key
+  if (/^bouquet:\d{1,16}$/.test(key)) {
+    const id = Number(key.slice(8))
+    if (Number.isSafeInteger(id) && artWindowKey(id) === key) return id
+  }
+  return null
+}
+function rememberArtPin(id, pinned) {
+  const key = pinStoragePrefix + artWindowKey(id)
+  try {
+    if (pinned) window.localStorage.setItem(key, '1')
+    else window.localStorage.removeItem(key)
+  } catch { /* A window remains usable when browser storage is unavailable. */ }
+}
 function bouquetRequest(id, op, snapshot) {
-  return desktopGardenRequest({op, owner:desktopOwner(), windowKey:typeof id === 'string' ? id : `bouquet:${id}`, snapshot})
+  return desktopGardenRequest({op, owner:desktopOwner(), windowKey:artWindowKey(id), snapshot})
 }
 function watchBouquet(id, entry) {
-  entry.timer = window.setTimeout(async () => {
-    try {
-      const result = await bouquetRequest(id, 'sync')
-      if (bouquetPins.get(id) !== entry) return
-      if (result.ok && result.open) watchBouquet(id, entry)
-      else updateBouquetPin(id, null)
-    } catch {
-      if (bouquetPins.get(id) === entry) {
-        // Keep the close action available while the connection is interrupted.
-        const failed = {phase:'open', error:'desktop.error'}
-        updateBouquetPin(id, failed)
-        watchBouquet(id, failed)
-      }
+  entry.timer = window.setTimeout(() => reconcileArtPin(id, entry, false), 15000)
+}
+async function reconcileArtPin(id, entry, restore) {
+  if (bouquetPins.get(id) !== entry) return
+  try {
+    let result = await bouquetRequest(id, restore ? 'restore' : 'sync')
+    if (bouquetPins.get(id) !== entry) return
+    // A restarted broker has no live windows. Restore replays its saved artwork.
+    // A user-dismissed window has no saved record and returns closed here.
+    if (!restore && result.ok && !result.open) result = await bouquetRequest(id, 'restore')
+    if (bouquetPins.get(id) !== entry) return
+    if (result.ok && !result.open) {
+      rememberArtPin(id, false)
+      updateBouquetPin(id, null)
+      return
     }
-  }, 15000)
+    if (!result.ok) throw new Error(result.error)
+    if (entry.error) {
+      entry = {phase:'open'}
+      updateBouquetPin(id, entry)
+    }
+  } catch (error) {
+    if (bouquetPins.get(id) !== entry) return
+    const message = error.message === 'busy' ? 'desktop.busy' : 'desktop.error'
+    if (entry.error !== message) {
+      entry = {phase:'open', error:message}
+      updateBouquetPin(id, entry)
+    }
+  }
+  watchBouquet(id, entry)
+}
+// Keep one small hint per confirmed pin. The host owns its artwork and geometry.
+function trackDesktopArtPins() {
+  if (typeof window === 'undefined' || !window.addEventListener) return
+  function hydrate(key) {
+    if (!key?.startsWith(pinStoragePrefix)) return
+    const id = artIdFromWindowKey(key.slice(pinStoragePrefix.length))
+    if (id === null || bouquetPins.has(id)) return
+    const entry = {phase:'open'}
+    updateBouquetPin(id, entry)
+    reconcileArtPin(id, entry, true)
+  }
+  function onStorage(event) {
+    if (!event.key?.startsWith(pinStoragePrefix)) return
+    if (event.newValue === '1') hydrate(event.key)
+    else if (event.newValue === null) {
+      const id = artIdFromWindowKey(event.key.slice(pinStoragePrefix.length))
+      const entry = bouquetPins.get(id)
+      if (entry?.phase === 'open') { window.clearTimeout(entry.timer); updateBouquetPin(id, null) }
+    }
+  }
+  window.addEventListener('storage', onStorage)
+  try {
+    const storage = window.localStorage
+    for (let i = 0; i < storage.length; i++) hydrate(storage.key(i))
+  } catch { /* Storage can be disabled in the browser. */ }
+  return () => {
+    window.removeEventListener('storage', onStorage)
+    for (const entry of bouquetPins.values()) { window.clearTimeout(entry.timer); entry.controller?.abort() }
+    bouquetPins.clear()
+  }
 }
 function toggleBouquetPin(card, container, t) {
   return toggleArtPin(card.id, () => snapshotBouquet(container, card.title || t(`vase.${card.vase}`)))
@@ -110,6 +173,7 @@ async function toggleArtPin(id, capture) {
     )
     if (controller?.signal.aborted) return
     if (!result.ok || closing === !!result.open) throw new Error(result.error || 'unavailable')
+    rememberArtPin(id, !closing)
     if (closing) updateBouquetPin(id, null)
     else {
       const entry = {phase:'open'}

@@ -107,7 +107,17 @@ async function desktopGardenRequest(payload) {
 }
 
 let desktopOwnerId
-function desktopOwner() { return desktopOwnerId ??= crypto.randomUUID() }
+function desktopOwner() {
+  if (desktopOwnerId) return desktopOwnerId
+  const key = 'flower-garden.desktop-owner.v1'
+  try {
+    const saved = window.sessionStorage.getItem(key)
+    if (/^[\da-f]{8}(?:-[\da-f]{4}){3}-[\da-f]{12}$/i.test(saved ?? '')) return (desktopOwnerId = saved)
+    desktopOwnerId = crypto.randomUUID()
+    window.sessionStorage.setItem(key, desktopOwnerId)
+  } catch { desktopOwnerId ??= crypto.randomUUID() }
+  return desktopOwnerId
+}
 
 // The host prepares one shared runtime. Re-submit an open only while its original
 // control is active, using the same owner, key and artwork on every request.
