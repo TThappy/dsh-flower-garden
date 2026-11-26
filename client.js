@@ -7876,6 +7876,70 @@ const MINI_CSS=`
 
 `
 
+// One local preference for every desktop flower and saved arrangement on this device.
+const petSizeKey = 'flower-garden.desktop-pet-size.v1'
+const petSizeListeners = new Set()
+let petSizeValue
+let petSizeTimer
+let sendingPetSize = false
+let petSizePending = false
+
+function normalizePetSize(value) {
+  if (value === null || value === undefined || String(value).trim() === '') return 100
+  const number = Number(value)
+  return Number.isFinite(number) ? Math.max(50, Math.min(150, Math.round(number))) : 100
+}
+function currentPetSize() {
+  if (petSizeValue === undefined) {
+    try { petSizeValue = normalizePetSize(window.localStorage.getItem(petSizeKey)) }
+    catch { petSizeValue = 100 }
+  }
+  return petSizeValue
+}
+function subscribePetSize(listener) {
+  petSizeListeners.add(listener)
+  return () => petSizeListeners.delete(listener)
+}
+async function sendPetSize() {
+  if (sendingPetSize) return
+  sendingPetSize = true
+  try {
+    while (petSizePending) {
+      petSizePending = false
+      await desktopGardenRequest({op:'pet-size', owner:desktopOwner(), petSize:currentPetSize()})
+    }
+  } catch { /* Each artwork sync also carries the latest preference. */ }
+  finally {
+    sendingPetSize = false
+    if (petSizePending) queuePetSize()
+  }
+}
+function queuePetSize() {
+  petSizePending = true
+  window.clearTimeout(petSizeTimer)
+  petSizeTimer = window.setTimeout(sendPetSize, 75)
+}
+function setPetSize(value, persist = true) {
+  const size = normalizePetSize(value)
+  if (size === currentPetSize()) return
+  petSizeValue = size
+  if (persist) {
+    try { window.localStorage.setItem(petSizeKey, String(size)) } catch { /* Keep the session preference. */ }
+  }
+  for (const listener of petSizeListeners) listener()
+  queuePetSize()
+}
+function DesktopPetSizeSetting({t}) {
+  const size = useSyncExternalStore(subscribePetSize, currentPetSize, () => 100)
+  return h('div', {className:'fg-settingRow fg-petSizeRow'},
+    h('label', {className:'fg-petSizeLabel'}, t('desktop.petSize'),
+      h('input', {type:'range', min:50, max:150, step:1, value:size, 'aria-valuetext':`${size}%`,
+        onChange:event => setPetSize(event.currentTarget.valueAsNumber)}),
+      h('span', {'aria-hidden':'true', className:'fg-petSizeValue'}, `${size}%`)),
+    h('button', {className:'fg-btn fg-btnSmall', type:'button', disabled:size === 100, onClick:() => setPetSize(100)}, t('desktop.resetPetSize')))
+}
+Object.assign(zh, {'desktop.petSize':'桌宠大小', 'desktop.resetPetSize':'恢复 100%'})
+Object.assign(en, {'desktop.petSize':'Desktop pet size', 'desktop.resetPetSize':'Reset to 100%'})
 // Capture the finished album drawing on click. Mounted album cards can disappear
 // when navigating, so window ownership and the immutable snapshot live separately.
 Object.assign(zh, {'desktop.working':'处理中…','desktop.route':'桌面窗口服务未连接，请重新载入花园插件。','desktop.artMissing':'无法读取这张花束卡的插花图。','desktop.launchFailed':'桌面花瓶启动失败，请关闭旧桌面小窗后重试。','desktop.tooLarge':'这束插花的绘图超过桌面窗口大小限制。','desktop.pinBouquet':'钉到桌面', 'desktop.unpinBouquet':'从桌面收回', 'desktop.unpinFailed':'未能收回花瓶，请再试一次。'})
@@ -7950,7 +8014,8 @@ function rememberArtPin(id, pinned) {
   } catch { /* A window remains usable when browser storage is unavailable. */ }
 }
 function bouquetRequest(id, op, snapshot) {
-  return desktopGardenRequest({op, owner:desktopOwner(), windowKey:artWindowKey(id), snapshot})
+  const sizing = op === 'close' ? {} : {petSize:currentPetSize()}
+  return desktopGardenRequest({op, owner:desktopOwner(), windowKey:artWindowKey(id), snapshot, ...sizing})
 }
 function watchBouquet(id, entry) {
   entry.timer = window.setTimeout(() => reconcileArtPin(id, entry, false), 15000)
@@ -7996,6 +8061,7 @@ function trackDesktopArtPins() {
     reconcileArtPin(id, entry, true)
   }
   function onStorage(event) {
+    if (event.key === petSizeKey || event.key === null) setPetSize(event.newValue, false)
     if (!event.key?.startsWith(pinStoragePrefix)) return
     if (event.newValue === '1') hydrate(event.key)
     else if (event.newValue === null) {
@@ -11007,6 +11073,7 @@ h('section',{className:'fg-section fg-settings'},
  h('h2',{className:'fg-sectionTitle'},t('settings.title')),
  h('label',{className:'fg-settingRow'},t('settings.size'),h('select',{value:ui.fontSize,onChange:event=>updateUi({fontSize:Number(event.target.value)}),className:'fg-btn'},[13,15,17,19].map(size=>h('option',{key:size,value:size},`${size}px`)))),
  h('label',{className:'fg-settingRow'},t('settings.font'),h('select',{value:ui.font,onChange:event=>updateUi({font:event.target.value}),className:'fg-btn'},['system','serif','rounded'].map(font=>h('option',{key:font,value:font},t(`settings.${font}`))))),
+ h(DesktopPetSizeSetting,{t}),
  h('label',{className:'fg-settingRow'},t('settings.sound'),h('input',{type:'checkbox',checked:ui.sound,onChange:event=>updateUi({sound:event.target.checked})})),
  h('p',{className:'fg-fontPreview'},t('settings.preview')),h('p',{className:'fg-hint'},t('settings.note'))),
 h('section', { className: 'fg-section' },
@@ -11210,6 +11277,10 @@ function GoodsShelf({ state, t, clock, onChange }) {
 .fg-liveClock small{grid-column:1/-1;font-size:.78em;color:var(--dsw-alias-label-secondary)}
 .fg-settings{max-width:640px;padding:20px;border:1px solid var(--dsw-alias-border-l1);border-radius:16px}
 .fg-settingRow{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:10px 0}
+.fg-petSizeRow{flex-wrap:wrap;gap:8px 16px}
+.fg-petSizeLabel{display:flex;align-items:center;gap:10px;flex:1 1 220px;min-width:0;flex-wrap:wrap}
+.fg-petSizeLabel input{flex:1 1 90px;min-width:65px;max-width:240px;min-height:28px;accent-color:var(--fg-accent)}
+.fg-petSizeValue{min-width:4ch;text-align:end;font-variant-numeric:tabular-nums}
 .fg-fontPreview{font-size:1.25em;line-height:1.8;padding:22px;border-radius:12px;background:var(--dsw-alias-bg-layer-2)}
 .fg-ground.fg-landscape{position:relative;isolation:isolate;overflow:hidden;border-radius:18px;min-height:580px;padding:0;background:#233d43;gap:0}
 .fg-gardenBackdrop{position:absolute;inset:0;z-index:0;pointer-events:none}

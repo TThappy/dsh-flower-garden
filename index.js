@@ -1,4 +1,5 @@
 import { spawn } from 'node:child_process'
+import petSizing from './runtime/pet-size.cjs'
 import { createRuntimeSetup, locateElectron } from './runtime/setup.js'
 import { fileURLToPath } from 'node:url'
 import { setTimeout, clearTimeout } from 'node:timers'
@@ -81,11 +82,21 @@ export function createDesktopBroker({launch = launchElectron, renderTimeoutMs = 
   return {
     async request(input) {
       if (disposed) return failure('unavailable')
-      if (!input || typeof input.owner !== 'string' || !OWNER.test(input.owner) || !['open','restore','sync','close'].includes(input.op)) return failure('invalid-request')
+      if (!input || typeof input.owner !== 'string' || !OWNER.test(input.owner) || !['open','restore','sync','close','pet-size'].includes(input.op)) return failure('invalid-request')
       const key = input.windowKey === undefined ? 'garden' : String(input.windowKey)
       if (!/^[\w:.~-]{1,128}$/u.test(key) || (input.op === 'restore' && !/^(bloom|bouquet):[\w:.~-]+$/u.test(key))) return failure('invalid-window')
       if (input.snapshot !== undefined && (!input.snapshot || typeof input.snapshot !== 'object' || Array.isArray(input.snapshot) || Buffer.byteLength(JSON.stringify(input.snapshot)) > LIMIT)) return failure('invalid-snapshot')
       if (current && current.owner !== input.owner) return failure('busy')
+      if (input.petSize !== undefined && !Number.isFinite(input.petSize)) return failure('invalid-size')
+      const petSize = petSizing.normalizePetSize(input.petSize)
+      if (input.op === 'pet-size') {
+        if (input.petSize === undefined) return failure('invalid-size')
+        if (current) {
+          send(current, {type:'pet-size', petSize})
+          for (const win of current.windows.values()) win.petSize = petSize
+        }
+        return {ok:true}
+      }
       let session = current
       if (input.op === 'close') {
         runtimeSetup?.cancel(input.owner, key)
@@ -103,8 +114,13 @@ export function createDesktopBroker({launch = launchElectron, renderTimeoutMs = 
       if (input.op === 'open' && window.started) send(session,{type:'focus',windowKey:key})
       else if ((input.op === 'open' || input.op === 'restore') && !window.requested) {
         window.requested = true
+        window.petSize = petSize
         const mode = key.startsWith('bloom:') ? 'bloom' : key === 'garden' ? 'garden' : 'bouquet'
-        send(session, {type:input.op === 'restore' ? 'restore-window' : 'open-window', windowKey:key, mode})
+        send(session, {type:input.op === 'restore' ? 'restore-window' : 'open-window', windowKey:key, mode, petSize})
+      }
+      if (key !== 'garden' && input.petSize !== undefined && window.petSize !== petSize) {
+        window.petSize = petSize
+        send(session,{type:'pet-size',windowKey:key,petSize})
       }
       refresh(session)
       const ready = await window.ready

@@ -69,6 +69,10 @@
 .fg-liveClock small{grid-column:1/-1;font-size:.78em;color:var(--dsw-alias-label-secondary)}
 .fg-settings{max-width:640px;padding:20px;border:1px solid var(--dsw-alias-border-l1);border-radius:16px}
 .fg-settingRow{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:10px 0}
+.fg-petSizeRow{flex-wrap:wrap;gap:8px 16px}
+.fg-petSizeLabel{display:flex;align-items:center;gap:10px;flex:1 1 220px;min-width:0;flex-wrap:wrap}
+.fg-petSizeLabel input{flex:1 1 90px;min-width:65px;max-width:240px;min-height:28px;accent-color:var(--fg-accent)}
+.fg-petSizeValue{min-width:4ch;text-align:end;font-variant-numeric:tabular-nums}
 .fg-fontPreview{font-size:1.25em;line-height:1.8;padding:22px;border-radius:12px;background:var(--dsw-alias-bg-layer-2)}
 .fg-ground.fg-landscape{position:relative;isolation:isolate;overflow:hidden;border-radius:18px;min-height:580px;padding:0;background:#233d43;gap:0}
 .fg-gardenBackdrop{position:absolute;inset:0;z-index:0;pointer-events:none}

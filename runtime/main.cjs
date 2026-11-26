@@ -3,6 +3,7 @@ const path = require('node:path')
 const { mkdirSync } = require('node:fs')
 const { pathToFileURL } = require('node:url')
 const { createPinStore, validSnapshot, pinMode } = require('./pin-store.cjs')
+const { petDimensions } = require('./pet-size.cjs')
 const directory = path.join(app.getPath('appData'), 'dsh-flower-garden-desktop')
 mkdirSync(directory, { recursive: true, mode: 0o700 })
 app.setPath('userData', directory); app.setPath('sessionData', directory); app.setName('Pocket garden')
@@ -41,27 +42,32 @@ function closeWindow(key) {
   const win = windows.get(key)
   if (win && !win.isDestroyed()) win.close()
 }
-function zoomWindow(key, factor) {
-  const win=windows.get(key); if(!win||win.isDestroyed()||!pinMode(key)||!Number.isFinite(factor)||factor<=0||factor===1)return
-  const bounds=win.getBounds(), step=Math.max(0.5,Math.min(2,factor))
-  const width=Math.max(140,Math.min(900,Math.round(bounds.width*step))), height=Math.max(140,Math.min(900,Math.round(bounds.height*step)))
-  const centerX=bounds.x+bounds.width/2,centerY=bounds.y+bounds.height/2
-  win.setBounds({x:Math.round(centerX-width/2),y:Math.round(centerY-height/2),width,height}); saveGeometry(key)
+function applyPetSize(key, petSize) {
+  const win = windows.get(key)
+  if (!pinMode(key) || !win || win.isDestroyed()) return
+  const current = win.getBounds()
+  const bounds = clampBounds({...current, ...petDimensions(petSize)})
+  if (Object.keys(bounds).some(prop => bounds[prop] !== current[prop])) win.setBounds(bounds)
 }
 if (!process.send || !app.requestSingleInstanceLock()) app.quit()
 else {
  app.on('before-quit', () => { quitting = true; for (const key of pinnedKeys) saveGeometry(key) })
  process.on('disconnect',()=>app.quit())
  process.on('message',message=>{
+   if (message?.type === 'pet-size') {
+     const keys = message.windowKey ? [message.windowKey] : windows.keys()
+     for (const key of keys) applyPetSize(key, message.petSize)
+     return
+   }
    const key=keyOf(message)
    if (key !== 'garden' && !pinMode(key)) return
    if (message?.type === 'restore-window' && pinMode(key)) app.whenReady().then(() => {
      if (windows.has(key)) return report({type:'restored',windowKey:key})
      const record = store.load(key)
      if (!record) return report({type:'missing',windowKey:key})
-     createWindow(key, record)
+     createWindow(key, record, message.petSize)
    }).catch(() => report({type:'closed',windowKey:key}))
-   if(message?.type==='open-window') app.whenReady().then(() => createWindow(key)).catch(() => app.quit())
+   if(message?.type==='open-window') app.whenReady().then(() => createWindow(key, null, message.petSize)).catch(() => app.quit())
    if(message?.type==='focus') focus(key)
    if (message?.type === 'snapshot') {
      const win = windows.get(key)
@@ -85,32 +91,17 @@ else {
 
  }).catch(()=>app.quit())
 }
-function createWindow(key, restored = null) {
+function createWindow(key, restored, petSize) {
  const bouquet = key !== 'garden'
  if(windows.has(key)){focus(key);return}
- const win=new BrowserWindow({width:bouquet?280:400,height:bouquet?300:465,...(restored?.geometry ? clampBounds(restored.geometry.bounds) : {}),minWidth:restored?.geometry?.compact?240:bouquet?180:285,minHeight:restored?.geometry?.compact?44:bouquet?160:230,show:false,frame:false,alwaysOnTop:true,autoHideMenuBar:true,backgroundColor:bouquet?'#00000000':'#f6f7f2',transparent:bouquet,hasShadow:!bouquet,resizable:!bouquet,webPreferences:{session:session.fromPartition('flower-garden'),preload:path.join(__dirname,'preload.cjs'),sandbox:true,contextIsolation:true,nodeIntegration:false,devTools:false}})
+ const size = bouquet ? petDimensions(petSize) : {width:400, height:465}
+ const bounds = restored?.geometry ? clampBounds({...restored.geometry.bounds, ...size}) : size
+ const win=new BrowserWindow({...bounds,minWidth:bouquet?1:285,minHeight:bouquet?1:230,show:false,frame:false,alwaysOnTop:true,autoHideMenuBar:true,backgroundColor:bouquet?'#00000000':'#f6f7f2',transparent:bouquet,hasShadow:!bouquet,resizable:!bouquet,webPreferences:{session:session.fromPartition('flower-garden'),preload:path.join(__dirname,'preload.cjs'),sandbox:true,contextIsolation:true,nodeIntegration:false,devTools:false}})
  windows.set(key,win)
- if (pinMode(key)) {
-   win.webContents.setVisualZoomLevelLimits(0.5, 4).catch(() => {})
-   win.webContents.on('before-mouse-event', (event, mouse) => {
-     if (mouse.type !== 'mouseWheel') return
-     // Chromium delivers synthesized trackpad pinches as precise Ctrl+wheel events.
-     // Let the renderer consume those; regular native wheel events end here.
-     if (mouse.modifiers?.includes('control') || mouse.ctrlKey || mouse.control) return
-     const delta = mouse.wheelTicksY || mouse.deltaY
-     if (!delta) return
-     event.preventDefault()
-     zoomWindow(key, delta < 0 ? 1.1 : 1 / 1.1)
-   })
- }
  win.webContents.setWindowOpenHandler(()=>({action:'deny'})); win.webContents.on('will-navigate',event=>event.preventDefault()); win.webContents.on('will-attach-webview',event=>event.preventDefault()); win.webContents.on('render-process-gone',()=>{win.preserveRecord=true;closeWindow(key)}); win.on('move',()=>saveGeometry(key)); win.on('resize',()=>saveGeometry(key)); win.on('close',()=>{if(!quitting && !win.preserveRecord) forget(key)}); win.once('closed',()=>{windows.delete(key);compact.delete(key);pendingArt.delete(key);pinnedKeys.delete(key);if(process.connected)process.send({type:'closed',windowKey:key})})
  win.loadFile(pageFor(key)).then(() => {
    if (win.isDestroyed()) return
    if (restored) {
-     if (restored.geometry?.compact) {
-       compact.set(key, restored.geometry.compact)
-       win.webContents.send('flower-garden:compact', true)
-     }
      pendingArt.set(key, {id:-1, restored:true})
      win.webContents.send('flower-garden:snapshot', restored.snapshot, -1)
    } else { if (!bouquet) win.show(); report({type:'ready',windowKey:key}) }
@@ -137,10 +128,6 @@ ipcMain.on('flower-garden:rendered', (event, id, ok) => {
     else { win.preserveRecord = true; closeWindow(key) }
   } else report({type:'rendered',windowKey:key,id,ok:accepted})
 })
-ipcMain.on('flower-garden:zoom', (event, factor) => {
-  const found = senderWindow(event)
-  if (found) zoomWindow(found[0], factor)
-})
 ipcMain.on('flower-garden:action',(event,action)=>{const found=senderWindow(event);if(found&&process.connected)process.send({type:'action',windowKey:found[0],action})})
 ipcMain.on('flower-garden:close',event=>{const found=senderWindow(event);if(found)closeWindow(found[0])})
-ipcMain.on('flower-garden:toggle-compact',event=>{const found=senderWindow(event);if(!found)return;const [key,win]=found;const current=compact.get(key);const bounds=win.getBounds();if(current){const area=screen.getDisplayMatching(bounds).workArea;win.setResizable(true);win.setMinimumSize(key==='garden'?285:180,key==='garden'?230:160);win.setBounds({x:Math.max(area.x,Math.min(bounds.x,area.x+area.width-current.width)),y:Math.max(area.y,Math.min(bounds.y,area.y+area.height-current.height)),width:current.width,height:current.height});compact.delete(key)}else{compact.set(key,{width:bounds.width,height:bounds.height});win.setMinimumSize(240,44);win.setBounds({...bounds,width:240,height:44});win.setResizable(false)}saveGeometry(key);win.webContents.send('flower-garden:compact',!current)})
+ipcMain.on('flower-garden:toggle-compact',event=>{const found=senderWindow(event);if(!found||found[0]!=='garden')return;const [key,win]=found;const current=compact.get(key);const bounds=win.getBounds();if(current){const area=screen.getDisplayMatching(bounds).workArea;win.setResizable(true);win.setMinimumSize(key==='garden'?285:180,key==='garden'?230:160);win.setBounds({x:Math.max(area.x,Math.min(bounds.x,area.x+area.width-current.width)),y:Math.max(area.y,Math.min(bounds.y,area.y+area.height-current.height)),width:current.width,height:current.height});compact.delete(key)}else{compact.set(key,{width:bounds.width,height:bounds.height});win.setMinimumSize(240,44);win.setBounds({...bounds,width:240,height:44});win.setResizable(false)}saveGeometry(key);win.webContents.send('flower-garden:compact',!current)})

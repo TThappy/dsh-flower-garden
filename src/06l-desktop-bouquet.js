@@ -72,7 +72,8 @@ function rememberArtPin(id, pinned) {
   } catch { /* A window remains usable when browser storage is unavailable. */ }
 }
 function bouquetRequest(id, op, snapshot) {
-  return desktopGardenRequest({op, owner:desktopOwner(), windowKey:artWindowKey(id), snapshot})
+  const sizing = op === 'close' ? {} : {petSize:currentPetSize()}
+  return desktopGardenRequest({op, owner:desktopOwner(), windowKey:artWindowKey(id), snapshot, ...sizing})
 }
 function watchBouquet(id, entry) {
   entry.timer = window.setTimeout(() => reconcileArtPin(id, entry, false), 15000)
@@ -118,6 +119,7 @@ function trackDesktopArtPins() {
     reconcileArtPin(id, entry, true)
   }
   function onStorage(event) {
+    if (event.key === petSizeKey || event.key === null) setPetSize(event.newValue, false)
     if (!event.key?.startsWith(pinStoragePrefix)) return
     if (event.newValue === '1') hydrate(event.key)
     else if (event.newValue === null) {
