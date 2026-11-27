@@ -84,7 +84,7 @@ export function createDesktopBroker({launch = launchElectron, renderTimeoutMs = 
       if (disposed) return failure('unavailable')
       if (!input || typeof input.owner !== 'string' || !OWNER.test(input.owner) || !['open','restore','sync','close','pet-size'].includes(input.op)) return failure('invalid-request')
       const key = input.windowKey === undefined ? 'garden' : String(input.windowKey)
-      if (!/^[\w:.~-]{1,128}$/u.test(key) || (input.op === 'restore' && !/^(bloom|bouquet):[\w:.~-]+$/u.test(key))) return failure('invalid-window')
+      if (!/^[\w:.~-]{1,128}$/u.test(key) || (input.op === 'restore' && key !== 'pet:xiaohei' && !/^(bloom|bouquet):[\w:.~-]+$/u.test(key))) return failure('invalid-window')
       if (input.snapshot !== undefined && (!input.snapshot || typeof input.snapshot !== 'object' || Array.isArray(input.snapshot) || Buffer.byteLength(JSON.stringify(input.snapshot)) > LIMIT)) return failure('invalid-snapshot')
       if (current && current.owner !== input.owner) return failure('busy')
       if (input.petSize !== undefined && !Number.isFinite(input.petSize)) return failure('invalid-size')
@@ -115,7 +115,7 @@ export function createDesktopBroker({launch = launchElectron, renderTimeoutMs = 
       else if ((input.op === 'open' || input.op === 'restore') && !window.requested) {
         window.requested = true
         window.petSize = petSize
-        const mode = key.startsWith('bloom:') ? 'bloom' : key === 'garden' ? 'garden' : 'bouquet'
+        const mode = key === 'pet:xiaohei' ? 'pet' : key.startsWith('bloom:') ? 'bloom' : key === 'garden' ? 'garden' : 'bouquet'
         send(session, {type:input.op === 'restore' ? 'restore-window' : 'open-window', windowKey:key, mode, petSize})
       }
       if (key !== 'garden' && input.petSize !== undefined && window.petSize !== petSize) {

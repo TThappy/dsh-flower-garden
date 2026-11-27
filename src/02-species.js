@@ -228,6 +228,7 @@ const REGION_SPECIES = [
     const UNLOCK_COSTS = [null, null, null, 40, 90, 160]
     const XP_PER_LEVEL = 60
     const BASKET_CAPACITY = 12
+    const BASKET_MAX_LEVEL = 20
     const SPRINKLER_MS = 30 * 60 * 1000
     const CHARM_BONUS = 0.03
     /** Ceiling of the spirit chance, without and with a lucky charm. */
@@ -240,12 +241,21 @@ const REGION_SPECIES = [
       { id: 'compost', price: 25, kind: 'consumable' },
       { id: 'sprinkler', price: 90, kind: 'consumable' },
       { id: 'charm', price: 120, kind: 'consumable' },
-      { id: 'basket', price: 150, kind: 'upgrade', maxLevel: 4 },
+      { id: 'basket', price: 150, kind: 'upgrade', maxLevel: BASKET_MAX_LEVEL },
     ]
     const ITEM_BY_ID = new Map(ITEMS.map(item => [item.id, item]))
 
+    function basketUpgradeLevel(state) {
+      return Math.min(BASKET_MAX_LEVEL, Math.floor(finiteOr(state.basketLevel, 0)))
+    }
+
     function basketCapacity(state) {
-      return [BASKET_CAPACITY, 30, 50, 75, 100][Math.max(0,Math.min(4,Math.floor(finiteOr(state.basketLevel,0))))]
+      const level = basketUpgradeLevel(state)
+      return level <= 4 ? [BASKET_CAPACITY, 30, 50, 75, 100][level] : 100 + (level - 4) * 50
+    }
+
+    function basketUpgradeCost(state) {
+      return basketUpgradeLevel(state) < BASKET_MAX_LEVEL ? ITEM_BY_ID.get('basket').price : null
     }
     const ORDER_SLOTS = 2
 

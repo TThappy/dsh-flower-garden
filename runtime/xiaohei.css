@@ -1,0 +1,28 @@
+html,body,#garden { width:100%; height:100%; margin:0; background:transparent; overflow:hidden; }
+#garden { display:grid; place-items:center; user-select:none; outline:none; touch-action:none; }
+.fg-desktopPet { width:90%; height:90%; display:grid; place-items:center; cursor:grab; }
+.fg-desktopPet > svg { width:100%; height:100%; overflow:visible; }
+#garden:active .fg-desktopPet { cursor:grabbing; }
+#garden[data-pose="happy"] .fg-xh-eye-open { opacity:0; }
+#garden[data-pose="happy"] .fg-xh-eye-closed { opacity:1; }
+.xh-carry-eyes { opacity:0; }
+#garden[data-pose="carried"] .xh-carry-eyes { opacity:1; }
+#garden[data-pose="carried"] .xh-rest-eyes { opacity:0; }
+@media (prefers-reduced-motion:no-preference) {
+  #garden[data-pose="carried"] .fg-desktopPet > svg { transform-origin:38% 52%; animation:xh-dangle .9s ease-in-out infinite alternate; }
+  #garden[data-pose="landing"] .fg-desktopPet > svg { transform-origin:50% 75%; animation:xh-settle .38s ease-out; }
+  @keyframes xh-dangle { from { transform:translateY(-2%) rotate(-4deg); } to { transform:translateY(-3%) rotate(4deg); } }
+  @keyframes xh-settle { 0% { transform:translateY(-3%) rotate(3deg); } 42% { transform:scale(1.045,.94); } 72% { transform:scale(.985,1.02); } 100% { transform:none; } }
+  #garden[data-pose="happy"] .fg-xh-head { transform-box:fill-box; transform-origin:center bottom; animation:xh-nuzzle .65s ease-in-out; }
+  #garden[data-pose="play"] .fg-desktopPet { animation:xh-hop .52s ease-in-out 2; }
+  .xh-rest-flank,.xh-rest-tail,.xh-rest-eyes { transform-box:fill-box; }
+  .xh-rest-flank { transform-origin:center bottom; animation:xh-breathe 3.7s ease-in-out infinite; }
+  .xh-rest-tail { transform-origin:left center; animation:xh-tail-flick 7.3s ease-in-out infinite; }
+  .xh-rest-eyes { transform-origin:center; animation:xh-blink 6.1s ease-in-out infinite; }
+  @keyframes xh-breathe { 50% { transform:scaleY(1.055); } }
+  @keyframes xh-tail-flick { 0%,65%,100% { transform:rotate(0); } 76% { transform:rotate(-11deg); } 88% { transform:rotate(3deg); } }
+  @keyframes xh-blink { 0%,66%,73%,100% { transform:scaleY(1); } 69% { transform:scaleY(.09); } }
+  @keyframes xh-nuzzle { 30% { transform:rotate(-8deg); } 70% { transform:rotate(6deg); } }
+  @keyframes xh-hop { 45% { transform:translateY(-8%) rotate(4deg); } }
+}
+@media (prefers-reduced-motion:reduce) { #garden[data-pose="play"] .fg-desktopPet { filter:brightness(1.14); } }

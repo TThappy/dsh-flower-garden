@@ -1,10 +1,10 @@
     // ---------------------------------------------------------------------
     // §6 View.
     // ---------------------------------------------------------------------
-const GARDEN_TABS = ['garden','basket','studio','album','orders','ecology','show','shop','flowers','visitors','settings']
+const GARDEN_TABS = ['garden','basket','studio','album','orders','ecology','show','shop','flowers','visitors','gardeners','settings']
 // The tab bar shows five groups; each saved section id still names one panel, so old saves open where they left off.
 // Settings sits behind the gear button instead of taking a tab.
-const TAB_GROUPS = { garden: ['garden'], bag: ['basket', 'shop'], studio: ['studio', 'album'], tasks: ['orders', 'ecology', 'show'], book: ['flowers', 'visitors'] }
+const TAB_GROUPS = { garden: ['garden', 'gardeners'], bag: ['basket', 'shop'], studio: ['studio', 'album'], tasks: ['orders', 'ecology', 'show'], book: ['flowers', 'visitors'] }
 const TAB_GROUP_IDS = Object.keys(TAB_GROUPS)
 function tabGroupOf(id) { return TAB_GROUP_IDS.find(group => TAB_GROUPS[group].includes(id)) ?? null }
 function sanitizeUi(raw) {
@@ -232,11 +232,11 @@ Object.assign(zh, {'mini.sown':'已种下{flower}'})
 Object.assign(en, {'mini.sown':'Planted {flower}'})
 function MiniGarden({t}) {
   const state=useSyncExternalStore(subscribeGarden,getState,getState)
-  const [clock,setClock]=React.useState(()=>Date.now()), [notice,setNotice]=React.useState(null), [discovery,setDiscovery]=React.useState(null)
+  const clock = state.lastTick
+  const [notice,setNotice]=React.useState(null), [discovery,setDiscovery]=React.useState(null)
   const [selection,setSelection]=React.useState({}), [preview,setPreview]=React.useState(null)
   const miniRoot=React.useRef(null), opener=React.useRef(null)
   function restoreMiniFocus(){window.setTimeout(()=>{const target=opener.current?.isConnected?opener.current:miniRoot.current?.querySelector('select,button');target?.focus()},0)}
-  React.useEffect(()=>{const id=window.setInterval(()=>{tick();setClock(Date.now())},1000);return()=>window.clearInterval(id)},[])
   const scene=sceneOf(state.scene), slot=state.scenes[state.scene], weather=weatherAt(clock), period=gardenClock(clock).period
   React.useEffect(()=>{setSelection({})},[scene.id])
   const ripeCount=slot.plots.slice(0,slot.unlocked).filter(plot=>plot&&!plot.resident&&stageOf(plot)==='bloom').length

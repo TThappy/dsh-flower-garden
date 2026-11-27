@@ -6,6 +6,7 @@ const closeButton = document.querySelector('#close')
 const mode = document.documentElement.dataset.mode
 const bouquet = mode === 'bouquet'
 const bloom = mode === 'bloom'
+const pet = mode === 'pet'
 const svgNS = 'http://www.w3.org/2000/svg'
 const htmlTags = new Set('div span strong p button select option article'.split(' '))
 const svgTags = new Set('svg g defs path circle ellipse rect polygon polyline line stop linearGradient radialGradient clipPath mask pattern symbol use title'.split(' '))
@@ -65,13 +66,14 @@ function patch(parent, index, tree, inSVG = false) {
   if (tag === 'select' && node.value !== attrs['data-selection']) node.value = attrs['data-selection']
 }
 bridge.onSnapshot((snapshot, id) => {
-  if (bloom) {
+  if (pet || bloom) {
     let rendered = false
     try {
       const tree = snapshot?.tree
-      if (snapshot?.mode === 'bloom' && tree?.[0] === 'div' && tree[1]?.class === 'fg-desktopBloom' && tree[2]?.length === 1 && tree[2][0]?.[0] === 'svg') {
-        patch(garden, 0, tree)
-        const flower = garden.querySelector('.fg-desktopBloom > svg')
+      if (snapshot?.mode === mode && tree?.[0] === 'div' && tree[1]?.class === (pet ? 'fg-desktopPet' : 'fg-desktopBloom') && tree[2]?.length === 1 && tree[2][0]?.[0] === 'svg') {
+        if (pet) garden.replaceChildren(document.querySelector('#busy-kitten').content.cloneNode(true))
+        else patch(garden, 0, tree)
+        const flower = garden.querySelector(pet ? '.fg-desktopPet > svg' : '.fg-desktopBloom > svg')
         rendered = Boolean(flower?.querySelector('path, circle, ellipse, rect, polygon, polyline, line'))
         document.title = snapshot.title || ''
         document.documentElement.lang = snapshot.lang || 'en'
@@ -107,7 +109,7 @@ bridge.onSnapshot((snapshot, id) => {
   closeButton.title = snapshot.close
   patch(garden,0,snapshot.tree)
 })
-if (bouquet || bloom) window.addEventListener('keydown', event => {
+if (bouquet || bloom || pet) window.addEventListener('keydown', event => {
   if (event.key === 'Escape') bridge.close()
 })
 closeButton?.addEventListener('click',()=>bridge.close())

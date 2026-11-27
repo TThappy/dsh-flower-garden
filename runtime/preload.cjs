@@ -17,6 +17,9 @@ contextBridge.exposeInMainWorld('flowerGardenDesktop', {
     if (action.value !== undefined && (typeof action.value !== 'string' || action.value.length > 256)) return
     ipcRenderer.send('flower-garden:action', {id: action.id, value: action.value})
   },
+  petDrag(phase) {
+    if (['start','move','end'].includes(phase)) ipcRenderer.send('flower-garden:pet-drag', phase)
+  },
   toggleCompact() { ipcRenderer.send('flower-garden:toggle-compact') },
   onCompact(callback) {
     const listener = (_event, compact) => callback(compact === true)

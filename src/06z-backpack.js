@@ -168,6 +168,8 @@ function InventoryDialog({ state, t, clock = Date.now(), onClose, onGarden, onSh
     h('div', { className: 'fg-bagFilters', role: 'group', 'aria-label': t('bag.filters') },
       ['all', 'bloom', 'seed', 'item'].map(id => h('button', { key: id, type: 'button', className: 'fg-bagFilter', 'aria-pressed': filter === id ? 'true' : 'false', onClick: () => { setFilter(id); setArmed(null) } },
         t(`bag.${id}`), ' ', h('span', { className: 'fg-bagFilterCount' }, String(all.filter(entry => id === 'all' || entry.kind === id).length))))),
+    h(BasketExpansion,{state,t}),
+    (filter === 'all' || filter === 'bloom') && h(FlowerBatchSale,{state,source:'basket',t}),
     h('div', { className: 'fg-bagBody' },
       h(BagGrid, { entries: shown, picked: current?.key, onSelect: pick, min: 12 }),
       h('aside', { className: 'fg-bagDetail', 'data-rarity': current?.rarity, 'aria-live': 'polite' },

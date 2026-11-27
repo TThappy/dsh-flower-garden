@@ -7,6 +7,7 @@ const MAX_RECORD = 1024 * 1024 + 2048
 const tags = new Set('div span svg g defs path circle ellipse rect polygon polyline line stop linearGradient radialGradient clipPath mask pattern'.split(' '))
 const attrs = new Set('class viewBox preserveAspectRatio id d x y x1 y1 x2 y2 cx cy r rx ry width height fill fill-rule fill-opacity stroke stroke-width stroke-linecap stroke-linejoin stroke-dasharray stroke-opacity transform opacity points offset stop-color stop-opacity gradientUnits gradientTransform clip-path clip-rule mask vector-effect $animation-delay $transform-origin $fill $stroke $stroke-width $stroke-linecap $stroke-dasharray $transform'.split(' '))
 function pinMode(key) {
+  if (key === 'pet:xiaohei') return 'pet'
   const match = typeof key === 'string' && key.length <= 128 && /^(bloom|bouquet):[\w:.~-]+$/.exec(key)
   return match ? match[1] : null
 }
@@ -24,7 +25,7 @@ function validSnapshot(key, snapshot) {
     }
     return children.every(child => validNode(child, depth + 1))
   }
-  return snapshot.tree?.[0] === 'div' && snapshot.tree[1]?.class === (mode === 'bloom' ? 'fg-desktopBloom' : 'fg-vase fg-vaseStill') && validNode(snapshot.tree, 0) && Buffer.byteLength(JSON.stringify(snapshot)) <= 1024 * 1024
+  return snapshot.tree?.[0] === 'div' && snapshot.tree[1]?.class === ({pet:'fg-desktopPet', bloom:'fg-desktopBloom', bouquet:'fg-vase fg-vaseStill'})[mode] && validNode(snapshot.tree, 0) && Buffer.byteLength(JSON.stringify(snapshot)) <= 1024 * 1024
 }
 function validBounds(bounds) {
   return bounds && ['x','y','width','height'].every(k => Number.isSafeInteger(bounds[k]) && Math.abs(bounds[k]) <= 1000000) && bounds.width > 0 && bounds.height > 0

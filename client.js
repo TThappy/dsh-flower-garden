@@ -1968,6 +1968,7 @@ const REGION_SPECIES = [
     const UNLOCK_COSTS = [null, null, null, 40, 90, 160]
     const XP_PER_LEVEL = 60
     const BASKET_CAPACITY = 12
+    const BASKET_MAX_LEVEL = 20
     const SPRINKLER_MS = 30 * 60 * 1000
     const CHARM_BONUS = 0.03
     /** Ceiling of the spirit chance, without and with a lucky charm. */
@@ -1980,12 +1981,21 @@ const REGION_SPECIES = [
       { id: 'compost', price: 25, kind: 'consumable' },
       { id: 'sprinkler', price: 90, kind: 'consumable' },
       { id: 'charm', price: 120, kind: 'consumable' },
-      { id: 'basket', price: 150, kind: 'upgrade', maxLevel: 4 },
+      { id: 'basket', price: 150, kind: 'upgrade', maxLevel: BASKET_MAX_LEVEL },
     ]
     const ITEM_BY_ID = new Map(ITEMS.map(item => [item.id, item]))
 
+    function basketUpgradeLevel(state) {
+      return Math.min(BASKET_MAX_LEVEL, Math.floor(finiteOr(state.basketLevel, 0)))
+    }
+
     function basketCapacity(state) {
-      return [BASKET_CAPACITY, 30, 50, 75, 100][Math.max(0,Math.min(4,Math.floor(finiteOr(state.basketLevel,0))))]
+      const level = basketUpgradeLevel(state)
+      return level <= 4 ? [BASKET_CAPACITY, 30, 50, 75, 100][level] : 100 + (level - 4) * 50
+    }
+
+    function basketUpgradeCost(state) {
+      return basketUpgradeLevel(state) < BASKET_MAX_LEVEL ? ITEM_BY_ID.get('basket').price : null
     }
     const ORDER_SLOTS = 2
 
@@ -2346,6 +2356,7 @@ const REGION_SPECIES = [
       return fillOrders({
         v: STATE_VERSION,
         coins: START_COINS,
+        gardeners: sanitizeGardeners(null, scenes, now),
         ui: sanitizeUi(null),
         discoveries: [], discoverySeq: 0,
         xp: 0,
@@ -2529,7 +2540,7 @@ const REGION_SPECIES = [
         }
       }
       // An upgraded basket holds more, so the cap depends on the saved level.
-      const basketLevel = Math.max(0, Math.min(4, Math.floor(finiteOr(raw.basketLevel, 0))))
+      const basketLevel = basketUpgradeLevel(raw)
       const basket = []
       if (Array.isArray(raw.basket)) {
         for (const item of raw.basket.slice(0, basketCapacity({basketLevel}))) {
@@ -2546,6 +2557,7 @@ const REGION_SPECIES = [
       return fillOrders({
         v: STATE_VERSION,
         coins: finiteOr(raw.coins, START_COINS),
+        gardeners: sanitizeGardeners(raw.gardeners, scenes, now),
         ui: sanitizeUi(raw.ui),
         discoveries: sanitizeDiscoveries(raw.discoveries), discoverySeq: Math.max(Math.floor(finiteOr(raw.discoverySeq,0)),...sanitizeDiscoveries(raw.discoveries).map(entry=>entry.id),0),
         xp: finiteOr(raw.xp, 0),
@@ -2982,7 +2994,7 @@ const ECOLOGY_API = { ECO_PERIOD_MS, ECO_OBSERVE_MS, ecologyPeriod, ecologyState
         }
         cursor = segmentEnd
       }
-      return revealGarden(companionTick({ ...state, ...(scenesChanged ? { scenes: nextScenes } : {}), lastTick: now, ecology: ecologyState(state, now), quests: questState(state, now) }, now), now)
+      return gardenerTick(revealGarden(companionTick({ ...state, ...(scenesChanged ? { scenes: nextScenes } : {}), lastTick: now, ecology: ecologyState(state, now), quests: questState(state, now) }, now), now), now)
     }
 
     /**
@@ -3104,14 +3116,16 @@ const ECOLOGY_API = { ECO_PERIOD_MS, ECO_OBSERVE_MS, ecologyPeriod, ecologyState
       }
     }
 
-    function harvestAt(state, sceneId, index, now, weather, endResidency = false) {
+    function harvestAt(state, sceneId, index, now, weather, endResidency = false, destination = 'basket') {
       const scene = SCENE_BY_ID.get(sceneId)
       const slot = state.scenes[sceneId]
       const plot = slot === undefined ? undefined : slot.plots[index]
       if (scene === undefined || plot === undefined || plot === null || (plot.resident && !endResidency)) return null
       const species = SPECIES_BY_ID.get(plot.species)
       if (species === undefined || plot.growthMs < growMsOf(species)) return null
-      if (state.basket.length >= basketCapacity(state)) return null
+      const store = destination === 'storage'
+      const room = store ? gardenerStorageCapacity(state) - state.gardeners.storage.length : basketCapacity(state) - state.basket.length
+      if (room <= 0) return null
       const bonus = state.charm === true ? CHARM_BONUS : 0
       const chance = Math.min(state.charm === true ? CHARM_CAP : HIDDEN_CAP, hiddenChance(plot, weather, now, scene) + bonus + shelfBonus(state).spirit + studyBonus(state, plot.species) + boostBonus(state, now))
       const roll = nextRandom(state.seed)
@@ -3142,7 +3156,7 @@ const ECOLOGY_API = { ECO_PERIOD_MS, ECO_OBSERVE_MS, ecologyPeriod, ecologyState
       if (plot.tint !== undefined) first.tint = plot.tint
       const blooms = [first]
       // A pollinated flower sets a second bloom in the plot's own colour, room permitting.
-      const doubled = plot.pollinated === true && state.basket.length + 2 <= basketCapacity(state)
+      const doubled = plot.pollinated === true && room >= 2
       if (doubled) {
         const second = { species: species.id, variant: plain }
         if (plot.dna !== undefined) second.dna = 1 + ((plot.dna * 7919) % 2147483646)
@@ -3194,7 +3208,7 @@ const ECOLOGY_API = { ECO_PERIOD_MS, ECO_OBSERVE_MS, ecologyPeriod, ecologyState
         harvested: state.harvested + blooms.length,
         pollinated: (state.pollinated ?? 0) + (doubled ? 1 : 0),
         scenes: { ...state.scenes, [sceneId]: { ...slot, plots, ...withSoil(slot, index, soilOf(slot, index) - SOIL_HARVEST, species.id) } },
-        basket: [...state.basket, ...blooms],
+        ...(store ? {gardeners:{...state.gardeners, storage:[...state.gardeners.storage, ...blooms]}} : {basket:[...state.basket, ...blooms]}),
         seen,
         hybrids,
         exotics,
@@ -3267,36 +3281,62 @@ const ECOLOGY_API = { ECO_PERIOD_MS, ECO_OBSERVE_MS, ecologyPeriod, ecologyState
     function quoteSale(state, items, now) {
       const featured = featuredSpecies(state, now)
       const steps = new Map()
+      const saleBonus = shelfBonus(state).sale
       let coins = 0
       for (const item of items) {
         const down = steps.get(item.species) ?? glutSteps(state, item.species, now)
-        coins += Math.round((1 + shelfBonus(state).sale) * itemValue(item) * (item.species === featured ? MARKET_BONUS : 1) * glutFactor(down))
+        coins += Math.round((1 + saleBonus) * itemValue(item) * (item.species === featured ? MARKET_BONUS : 1) * glutFactor(down))
         steps.set(item.species, now === undefined ? 0 : down + 1)
       }
       return { coins, steps }
     }
 
-    function sellWhere(state, match, now) {
-      const selling = state.basket.filter(match)
-      if (selling.length === 0) return null
-      const quote = quoteSale(state, selling, now)
-      const next = { ...state, coins: state.coins + quote.coins, basket: state.basket.filter(item => !match(item)) }
+    // Settle the quoted inventory and glut together, preserving the other container.
+    function settleFlowerSale(state, source, remaining, quote, now) {
+      const next = {...state, coins:state.coins + quote.coins}
+      if (source === 'storage') next.gardeners = {...state.gardeners, storage:remaining}
+      else next.basket = remaining
       if (now !== undefined) {
-        const glut = { ...state.glut }
-        for (const [id, down] of quote.steps) glut[id] = { n: Math.min(down, 14), at: now }
-        next.glut = glut
+        next.glut = {...state.glut}
+        for (const [id, down] of quote.steps) next.glut[id] = {n:Math.min(down, 14), at:now}
       }
       return next
     }
 
-    /** Sell one basket group, addressed by `itemKey`. */
+    function sellWhere(state, match, now) {
+      const selling = state.basket.filter(match)
+      if (!selling.length) return null
+      return settleFlowerSale(state, 'basket', state.basket.filter((flower,index) => !match(flower,index)), quoteSale(state,selling,now), now)
+    }
+
     function sellIndividual(state, index, now) {
       if (!Number.isInteger(index) || index < 0 || index >= state.basket.length) return null
-      const item = state.basket[index]
-      const quote = quoteSale(state, [item], now)
-      const next = { ...state, coins: state.coins + quote.coins, basket: state.basket.filter((_, at) => at !== index) }
-      if (now !== undefined) next.glut = { ...state.glut, [item.species]: { n: Math.min(quote.steps.get(item.species), 14), at: now } }
-      return next
+      return sellWhere(state, (_, at) => at === index, now)
+    }
+
+    // Keep the order of the source inventory: successive blooms share a species' market glut.
+    function quoteFlowerBatch(state, source, keys, now) {
+      const inventory = source === 'basket' ? state.basket : source === 'storage' ? state.gardeners?.storage : null
+      if (!Array.isArray(inventory) || !Array.isArray(keys) || !keys.length || keys.length > inventory.length || !Number.isFinite(now)) return null
+      const selected = new Set(keys)
+      if (selected.size !== keys.length) return null
+      const selling = inventory.filter(item => selected.has(itemKey(item)))
+      if (new Set(selling.map(itemKey)).size !== selected.size) return null
+      const quote = quoteSale(state, selling, now)
+      // Use the full ordered list of selected identities, independent of object references after reload.
+      const fingerprint = JSON.stringify([source, selling.map(item => [itemKey(item), item.dna ?? null]), quote.coins])
+      return {source, keys:[...selected], count:selling.length, coins:quote.coins, fingerprint}
+    }
+
+    function sellFlowerBatch(state, offer, now) {
+      if (!offer) return null
+      const current = quoteFlowerBatch(state, offer.source, offer.keys, now)
+      if (!current || current.fingerprint !== offer.fingerprint || current.coins !== offer.coins || current.count !== offer.count) return null
+      const inventory = offer.source === 'basket' ? state.basket : state.gardeners.storage
+      const selected = new Set(current.keys)
+      const remaining = [], selling = []
+      for (const item of inventory) (selected.has(itemKey(item)) ? selling : remaining).push(item)
+      return settleFlowerSale(state, offer.source, remaining, quoteSale(state,selling,now), now)
     }
 
     function sellKind(state, key, now) {
@@ -3461,9 +3501,9 @@ const ECOLOGY_API = { ECO_PERIOD_MS, ECO_OBSERVE_MS, ecologyPeriod, ecologyState
       const item = ITEM_BY_ID.get(itemId)
       if (item === undefined || state.coins < item.price) return null
       if (item.kind === 'upgrade') {
-        const level = state.basketLevel ?? 0
-        if (level >= item.maxLevel) return null
-        return { ...state, coins: state.coins - item.price, basketLevel: level + 1 }
+        const cost = basketUpgradeCost(state)
+        if (cost === null) return null
+        return { ...state, coins: state.coins - cost, basketLevel: basketUpgradeLevel(state) + 1 }
       }
       return {
         ...state,
@@ -3656,6 +3696,247 @@ const ECOLOGY_API = { ECO_PERIOD_MS, ECO_OBSERVE_MS, ecologyPeriod, ecologyState
       return t('time.hours', { n: Math.round(minutes / 6) / 10 })
     }
 
+    // Gardeners are unique recruits. Additional copies become upgrade shards.
+    const GARDENER_DRAW_COST = 1000
+    const GARDENER_RECYCLE_COINS = 100
+    const GARDENER_DRAW_RIBBONS = 1
+    const GARDENER_TEN_RIBBONS = 10 * GARDENER_DRAW_RIBBONS
+    const GARDENER_TEN_COST = 10 * GARDENER_DRAW_COST
+    const GARDENER_STORAGE_CAP = 60
+    const GARDENER_STORAGE_MAX_LEVEL = 30
+    const GARDENER_MAX_STARS = 5
+    const GARDENER_MAX_RANK = 5
+    const GARDENERS = [
+      {id:'sprout', perk:'fertilizer', chance:15, amount:1, baseSeconds:120, rarity:'common', role:'harvest', weight:30},
+      {id:'finch', perk:'coins', chance:20, amount:2, baseSeconds:120, rarity:'common', role:'greet', weight:30},
+      {id:'clover', perk:'storedBloom', chance:15, amount:1, baseSeconds:90, rarity:'rare', role:'harvest', weight:15},
+      {id:'robin', perk:'affinity', chance:15, amount:1, baseSeconds:90, rarity:'rare', role:'greet', weight:15},
+      {id:'amber', perk:'ribbon', chance:12, amount:1, baseSeconds:60, rarity:'epic', role:'harvest', weight:4},
+      {id:'luna', perk:'charm', chance:10, amount:1, baseSeconds:60, rarity:'epic', role:'greet', weight:4},
+      {id:'xiaohei', perk:'compost', chance:15, amount:1, baseSeconds:60, rarity:'epic', role:'greet', weight:1.5},
+      {id:'aurum', perk:'hybridSeed', chance:8, amount:1, baseSeconds:45, rarity:'legendary', role:'harvest', weight:0.5},
+    ]
+    const GARDENER_BY_ID = new Map(GARDENERS.map(entry => [entry.id, entry]))
+
+    const GARDENER_BONUS_POOL = GARDENERS.filter(person => person.rarity === 'epic' || person.rarity === 'legendary')
+
+    function gardenerStorageLevel(gardeners) {
+      return Math.min(GARDENER_STORAGE_MAX_LEVEL, Math.max(1, Math.floor(finiteOr(gardeners?.storageLevel, 1))))
+    }
+
+    function gardenerStorageCapacity(state) {
+      return GARDENER_STORAGE_CAP + (gardenerStorageLevel(state.gardeners) - 1) * 30
+    }
+
+    function gardenerStorageUpgradeCost(state) {
+      const level = gardenerStorageLevel(state.gardeners)
+      return level < GARDENER_STORAGE_MAX_LEVEL ? level * 500 : null
+    }
+
+    function upgradeGardenerStorage(state) {
+      const cost = gardenerStorageUpgradeCost(state)
+      if (cost === null || state.coins < cost) return null
+      return {...state, coins:state.coins - cost, gardeners:{...state.gardeners, storageLevel:gardenerStorageLevel(state.gardeners) + 1}}
+    }
+
+    function sanitizeGardeners(raw, scenes, now) {
+      const roster = {}, assignments = {}, workedAt = {}, lastWork = {}
+      const level = (value, max) => Math.min(max, Math.max(1, Math.floor(finiteOr(value, 1))))
+      for (const {id} of GARDENERS) {
+        const worker = raw?.roster?.[id]
+        if (!worker || Array.isArray(worker) || typeof worker !== 'object') continue
+        roster[id] = {stars:level(worker.stars, GARDENER_MAX_STARS), rank:level(worker.rank, GARDENER_MAX_RANK),
+          shards:Math.min(Number.MAX_SAFE_INTEGER, Math.max(0, Math.floor(finiteOr(worker.shards, 0))))}
+      }
+      const employed = new Set()
+      for (const {id: ground} of SCENES) {
+        const id = raw?.assignments?.[ground]
+        if (!GARDENER_BY_ID.has(id) || !roster[id] || !scenes[ground]?.unlocked || employed.has(id)) continue
+        assignments[ground] = id
+        employed.add(id)
+        workedAt[ground] = Math.min(now, Math.max(0, finiteOr(raw?.workedAt?.[ground], now)))
+      }
+      for (const {id: ground} of SCENES) {
+        const log = raw?.lastWork?.[ground]
+        if (scenes[ground]?.unlocked && log && GARDENER_BY_ID.has(log.id) && ['greet','harvest','sow'].includes(log.action) && Number.isInteger(log.index) && log.index >= 0 && log.index < scenes[ground].unlocked && Number.isFinite(log.at) && log.at >= 0) {
+          lastWork[ground] = {id:log.id, action:log.action, at:Math.min(now,log.at), index:log.index}
+        }
+      }
+      const storage = Array.isArray(raw?.storage) ? raw.storage.slice(0, gardenerStorageCapacity({gardeners:raw})).map(cleanBloom).filter(Boolean) : []
+      return {roster, assignments, workedAt, lastWork, storageLevel:gardenerStorageLevel(raw), autoSow:raw?.autoSow === true, storage, lastDraw:GARDENER_BY_ID.has(raw?.lastDraw) && roster[raw.lastDraw] ? raw.lastDraw : null}
+    }
+
+    function recruitFromPool(state, pool) {
+      const roll = nextRandom(state.seed)
+      let ticket = roll.value * pool.reduce((sum, person) => sum + person.weight, 0)
+      const {id} = pool.find(worker => (ticket -= worker.weight) < 0)
+      const team = state.gardeners, worker = team.roster[id]
+      const recruited = worker ? {...worker, shards:worker.shards + 1} : {stars:1, rank:1, shards:0}
+      return {...state, coins:state.coins - GARDENER_DRAW_COST, ribbons:state.ribbons - GARDENER_DRAW_RIBBONS, seed:roll.seed,
+        gardeners:{...team, roster:{...team.roster, [id]:recruited}, lastDraw:id}}
+    }
+
+    function canRecruitGardeners(state, count = 1) {
+      return (count === 1 || count === 10) && state.coins >= count * GARDENER_DRAW_COST && state.ribbons >= count * GARDENER_DRAW_RIBBONS
+    }
+
+    function drawGardener(state) {
+      return canRecruitGardeners(state) ? recruitFromPool(state, GARDENERS) : null
+    }
+
+    function drawGardenerTen(state) {
+      if (!canRecruitGardeners(state, 10)) return null
+      const results = []
+      let next = state
+      for (let i = 0; i < 10; i++) {
+        const before = next
+        next = recruitFromPool(before, i === 9 ? GARDENER_BONUS_POOL : GARDENERS)
+        const id = next.gardeners.lastDraw
+        const isNew = !before.gardeners.roster[id]
+        results.push({id, isNew, shards:isNew ? 0 : 1})
+      }
+      return {state:next, results}
+    }
+
+    function gardenerUpgradeCost(state, id, kind) {
+      if (!GARDENER_BY_ID.has(id) || !['stars', 'rank'].includes(kind)) return null
+      const worker = state.gardeners.roster[id]
+      if (!worker || worker[kind] >= (kind === 'stars' ? GARDENER_MAX_STARS : GARDENER_MAX_RANK)) return null
+      return kind === 'stars' ? {coins:50 * worker.stars, shards:worker.stars} : {coins:125 * worker.rank, shards:0}
+    }
+
+    function upgradeGardener(state, id, kind) {
+      const cost = gardenerUpgradeCost(state, id, kind)
+      if (!cost) return null
+      const team = state.gardeners, worker = team.roster[id]
+      if (state.coins < cost.coins || worker.shards < cost.shards) return null
+      const upgraded = {...worker, [kind]:worker[kind] + 1, shards:worker.shards - cost.shards}
+      return {...state, coins:state.coins - cost.coins, gardeners:{...team, roster:{...team.roster, [id]:upgraded}}}
+    }
+
+    function dismantleGardener(state, id) {
+      const team = state.gardeners
+      const worker = team.roster[id]
+      if (!GARDENER_BY_ID.has(id) || !worker || Object.values(team.assignments).includes(id)) return null
+      const roster = {...team.roster}
+      delete roster[id]
+      const lastDraw = team.lastDraw === id ? null : team.lastDraw
+      return {...state, coins:state.coins + GARDENER_RECYCLE_COINS, gardeners:{...team, roster, lastDraw}}
+    }
+    function dismantleGardenerShard(state, id) {
+      const team = state.gardeners, worker = team.roster[id]
+      if (!GARDENER_BY_ID.has(id) || !worker || worker.shards <= 0) return null
+      return {...state, coins:state.coins + GARDENER_RECYCLE_COINS, gardeners:{...team, roster:{...team.roster, [id]:{...worker, shards:worker.shards - 1}}}}
+    }
+
+    function assignGardener(state, id, sceneId, now = state.lastTick) {
+      const team = state.gardeners
+      if (!GARDENER_BY_ID.has(id) || !team.roster[id] || !Number.isFinite(now)) return null
+      if (sceneId !== null && (!SCENE_BY_ID.has(sceneId) || !state.scenes[sceneId]?.unlocked)) return null
+      const previous = Object.keys(team.assignments).find(ground => team.assignments[ground] === id) ?? null
+      if (previous === sceneId) return null
+      const assignments = {...team.assignments}, workedAt = {...team.workedAt}
+      if (previous) { delete assignments[previous]; delete workedAt[previous] }
+      if (sceneId !== null) { assignments[sceneId] = id; workedAt[sceneId] = now }
+      return {...state, gardeners:{...team, assignments, workedAt}}
+    }
+
+    function gardenerInterval(state, id) {
+      const entry = GARDENER_BY_ID.get(id), worker = state.gardeners?.roster[id] ?? {stars:1, rank:1}
+      if (!entry) return Infinity
+      return Math.round(entry.baseSeconds * 1000 / (1 + (worker.stars - 1) * .20 + (worker.rank - 1) * .10))
+    }
+
+    function gardenerTraitChance(state, id) {
+      return (GARDENER_BY_ID.get(id)?.chance ?? 0) / 100
+    }
+
+    function applyGardenerTrait(before, after, id, sceneId, index) {
+      const roll = nextRandom(after.seed)
+      const next = {...after, seed:roll.seed}
+      if (roll.value >= gardenerTraitChance(before, id)) return next
+      const {perk, amount} = GARDENER_BY_ID.get(id)
+      switch (perk) {
+        case 'fertilizer':
+        case 'compost': return applyReward(next, {bag:{[perk]:amount}})
+        case 'coins': return {...next, coins:next.coins + amount}
+        case 'storedBloom': {
+          const {storage} = next.gardeners
+          const copies = Math.min(amount, gardenerStorageCapacity(next) - storage.length)
+          if (!copies) return next
+          const bloom = storage[before.gardeners.storage.length]
+          return {...next, gardeners:{...next.gardeners, storage:[...storage, ...Array.from({length:copies}, () => ({...bloom}))]}}
+        }
+        case 'affinity': {
+          const visitor = VISITORS.find(({id}) => (next.visitors[id] ?? 0) > (before.visitors[id] ?? 0))
+          return visitor ? addAffinity(next, visitor.id, amount) : next
+        }
+        case 'ribbon': return {...next, ribbons:next.ribbons + amount, ribbonsEarned:next.ribbonsEarned + amount}
+        case 'charm': return applyReward(next, {bag:{charm:amount}})
+        case 'hybridSeed': {
+          const species = before.scenes[sceneId].plots[index].species
+          const donors = SCENE_BY_ID.get(sceneId).species.filter(id => id !== species)
+          const draw = nextRandom(next.seed)
+          const seedKey = `${species}~${donors[Math.floor(draw.value * donors.length)]}`
+          return {...next, seed:draw.seed, seeds:{...next.seeds, [seedKey]:(next.seeds[seedKey] ?? 0) + amount}}
+        }
+        default: return next
+      }
+    }
+
+    function claimGardenerFlowers(state) {
+      const team = state.gardeners
+      const count = Math.min(team.storage.length, basketCapacity(state) - state.basket.length)
+      if (count <= 0) return null
+      return {...state, basket:[...state.basket, ...team.storage.slice(0, count)], gardeners:{...team, storage:team.storage.slice(count)}}
+    }
+
+    function setGardenerAutoSow(state, enabled) {
+      if (typeof enabled !== 'boolean' || enabled === state.gardeners.autoSow) return null
+      return {...state, gardeners:{...state.gardeners, autoSow:enabled}}
+    }
+
+    function workGardenerDuty(state, sceneId, id, now) {
+      const slot = state.scenes[sceneId]
+      const primary = GARDENER_BY_ID.get(id).role
+      const duties = primary === 'harvest' ? ['harvest','greet'] : ['greet','harvest']
+      const weather = weatherAt(now)
+      function record(next, action, index) {
+        const lastWork = {...next.gardeners.lastWork, [sceneId]:{id,action,at:now,index}}
+        return {...next, gardeners:{...next.gardeners,lastWork}}
+      }
+      for (const action of duties) {
+        if (action === 'harvest' && state.gardeners.storage.length >= gardenerStorageCapacity(state)) continue
+        for (let index = 0; index < slot.unlocked; index++) {
+          if (!slot.plots[index]) continue
+          const changed = action === 'harvest'
+            ? harvestAt(state,sceneId,index,now,weather,false,'storage')
+            : greetVisitor(state,sceneId,index,now,weather)
+          if (changed) return record(action === primary ? applyGardenerTrait(state,changed,id,sceneId,index) : changed, action, index)
+        }
+      }
+      if (!state.gardeners.autoSow) return state
+      const index = slot.plots.findIndex((plot, i) => i < slot.unlocked && plot === null)
+      if (index < 0) return state
+      const cheapest = SCENE_BY_ID.get(sceneId).species.map(key => SPECIES_BY_ID.get(key)).reduce((best, seed) => seed.cost < best.cost ? seed : best)
+      const planted = plantAt(state,sceneId,index,cheapest.id)
+      return planted ? record(planted,'sow',index) : state
+    }
+
+    // A returning worker performs one current duty; historical visitors never replay.
+    function gardenerTick(state, now) {
+      let next = state
+      for (const [sceneId, id] of Object.entries(state.gardeners.assignments)) {
+        if (now - next.gardeners.workedAt[sceneId] < gardenerInterval(next, id)) continue
+        const team = next.gardeners
+        next = {...next, gardeners:{...team, workedAt:{...team.workedAt, [sceneId]:now}}}
+        next = workGardenerDuty(next,sceneId,id,now)
+      }
+      return next
+    }
+
+    const GARDENER_API = {GARDENER_DRAW_RIBBONS, GARDENER_TEN_RIBBONS, canRecruitGardeners, GARDENERS, GARDENER_DRAW_COST, GARDENER_TEN_COST, GARDENER_BONUS_POOL, GARDENER_STORAGE_CAP, GARDENER_STORAGE_MAX_LEVEL, gardenerStorageCapacity, gardenerStorageUpgradeCost, upgradeGardenerStorage, GARDENER_MAX_STARS, GARDENER_MAX_RANK,
+      drawGardener, drawGardenerTen, dismantleGardener, dismantleGardenerShard, gardenerUpgradeCost, upgradeGardener, assignGardener, gardenerInterval, gardenerTraitChance, claimGardenerFlowers, setGardenerAutoSow, gardenerTick}
 
     // ---------------------------------------------------------------------
     // §3n Bulk actions: harvest every ripe plant, sow every empty plot at random.
@@ -7524,10 +7805,10 @@ Object.assign(PLANTS, {
     // ---------------------------------------------------------------------
     // §6 View.
     // ---------------------------------------------------------------------
-const GARDEN_TABS = ['garden','basket','studio','album','orders','ecology','show','shop','flowers','visitors','settings']
+const GARDEN_TABS = ['garden','basket','studio','album','orders','ecology','show','shop','flowers','visitors','gardeners','settings']
 // The tab bar shows five groups; each saved section id still names one panel, so old saves open where they left off.
 // Settings sits behind the gear button instead of taking a tab.
-const TAB_GROUPS = { garden: ['garden'], bag: ['basket', 'shop'], studio: ['studio', 'album'], tasks: ['orders', 'ecology', 'show'], book: ['flowers', 'visitors'] }
+const TAB_GROUPS = { garden: ['garden', 'gardeners'], bag: ['basket', 'shop'], studio: ['studio', 'album'], tasks: ['orders', 'ecology', 'show'], book: ['flowers', 'visitors'] }
 const TAB_GROUP_IDS = Object.keys(TAB_GROUPS)
 function tabGroupOf(id) { return TAB_GROUP_IDS.find(group => TAB_GROUPS[group].includes(id)) ?? null }
 function sanitizeUi(raw) {
@@ -7755,11 +8036,11 @@ Object.assign(zh, {'mini.sown':'已种下{flower}'})
 Object.assign(en, {'mini.sown':'Planted {flower}'})
 function MiniGarden({t}) {
   const state=useSyncExternalStore(subscribeGarden,getState,getState)
-  const [clock,setClock]=React.useState(()=>Date.now()), [notice,setNotice]=React.useState(null), [discovery,setDiscovery]=React.useState(null)
+  const clock = state.lastTick
+  const [notice,setNotice]=React.useState(null), [discovery,setDiscovery]=React.useState(null)
   const [selection,setSelection]=React.useState({}), [preview,setPreview]=React.useState(null)
   const miniRoot=React.useRef(null), opener=React.useRef(null)
   function restoreMiniFocus(){window.setTimeout(()=>{const target=opener.current?.isConnected?opener.current:miniRoot.current?.querySelector('select,button');target?.focus()},0)}
-  React.useEffect(()=>{const id=window.setInterval(()=>{tick();setClock(Date.now())},1000);return()=>window.clearInterval(id)},[])
   const scene=sceneOf(state.scene), slot=state.scenes[state.scene], weather=weatherAt(clock), period=gardenClock(clock).period
   React.useEffect(()=>{setSelection({})},[scene.id])
   const ripeCount=slot.plots.slice(0,slot.unlocked).filter(plot=>plot&&!plot.resident&&stageOf(plot)==='bloom').length
@@ -7876,6 +8157,593 @@ const MINI_CSS=`
 
 `
 
+// Transparent cat artwork shared by the desktop pet and the recruitment plate.
+// Proportions follow the seated kitten in the user's cursor reference sheet.
+function XiaoheiArt({pose = 'idle'} = {}) {
+  const fur = '#0e0a0b', outline = '#563e33', cream = '#fff9dd', pupil = '#090708'
+  const closed = pose === 'happy' || pose === 'sleep'
+  const poseTransform = {idle:'', happy:'rotate(-5 46 49)', wave:'rotate(-8 46 49)', walk:'translate(2 2) rotate(5 46 49)', sleep:'translate(0 3) rotate(7 46 49)'}
+  const path = (d, fill, stroke = outline, width = 1.4) => h('path',{d,fill,stroke,strokeWidth:width,strokeLinecap:'round',strokeLinejoin:'round'})
+  const line = (d, color = outline, width = 1.2) => path(d,'none',color,width)
+  const ellipse = (cx,cy,rx,ry,fill) => h('ellipse',{cx,cy,rx,ry,fill})
+  function eye(cx, cy, tilt) {
+    return h('g',{transform:`rotate(${tilt} ${cx} ${cy})`},
+      ellipse(cx,cy,14.1,19.8,cream),ellipse(cx + (pose === 'walk' ? 2 : .35),cy-.4,9.2,13.6,pupil))
+  }
+  // Place the feet on the same baseline for every expression and pet animation.
+  return h('svg',{viewBox:'0 0 160 180',width:160,height:180,className:'fg-xiaoheiArt','aria-hidden':true,focusable:'false'},
+    h('g',{transform:'translate(7 14) scale(1.44)'},
+      h('g',{className:'fg-xh-tail'},
+        line('M60 92C72 96 85 93 87 82C89 76 86 72 81 73',outline,6.4),
+        line('M60 92C72 96 85 93 87 82C89 76 86 72 81 73',fur,4.4)),
+      // Hind legs bracket the narrow chest and two small, round front feet.
+      h('g',{className:'fg-xh-body'},
+        path('M35 65Q32 74 29 80C23 83 21 91 24 96Q26 101 34 100L55 100C65 101 70 97 67 90Q66 83 60 80L56 65Z',fur),
+        line('M30 88Q25 91 26 96M61 87Q67 91 64 96'),
+        line('M40 81Q37 88 37 96M50 81Q52 89 52 96'),
+        path('M32 93Q35 91 38 94Q40 98 37 100H31Q29 98 32 93Z',fur),
+        path('M51 94Q54 91 58 94Q61 98 58 100H51Q49 98 51 94Z',fur),
+        line('M33 97v2M36 97v2M53 97v2M56 97v2',outline,.7)),
+      // A small leaf on a raised paw anchors the gardener's idle silhouette.
+      h('g',{className:'fg-xh-paw',transform:pose === 'wave' ? 'rotate(19 34 79)' : undefined},
+        line('M26 81Q18 68 7 56','#65543b',1.2),
+        path('M18 66C10 67 4 60 2 50Q12 52 16 57Q20 61 18 66Z','#b4c980',outline,.9),
+        line('M5 54Q12 58 17 64','#80955a',.65),
+        path('M36 77Q31 77 26 72Q22 68 19 70C15 73 20 80 28 83Q33 85 36 82Z',fur)),
+      h('g',{className:'fg-xh-head',transform:poseTransform[pose] || undefined},
+        // Broad triangular ears, rounded tips and a small arc of black forehead.
+        path('M15 40Q9 28 11 9Q11 4 16 6Q26 8 34 15Q45 10 56 15Q65 7 77 5Q81 5 81 10Q82 25 76 40Z',fur),
+        path('M14 9Q12 20 16 33Q20 22 27 17Q22 11 14 9Z','#bece89',outline,.8),
+        path('M77 8Q70 10 64 16Q71 20 75 31Q80 20 77 8Z','#bece89',outline,.8),
+        path('M12 39C14 23 27 12 45 12C64 11 76 21 78 39C81 57 66 68 47 69C29 70 12 62 11 48Q11 43 12 39Z',fur),
+        h('g',{className:'fg-xh-eye-open',opacity:closed?0:1},eye(30.1,39,-3),eye(60.7,39.3,3)),
+        h('g',{className:'fg-xh-eye-closed',opacity:closed?1:0},
+          ellipse(30.1,39,13.7,18.9,cream),ellipse(60.7,39.3,13.7,18.9,cream),
+          line('M19 40Q30 52 41 40M50 40Q61 52 72 40',outline,2.3)),
+        path('M43.7 58.2Q45.5 57.8 47.5 58.2L45.6 60.5Z','#839ca8',outline,.6),
+        path('M44.4 61.4Q45.8 61.8 47.3 61.1L45.9 63.6Z','#94c5b5',outline,.45))))
+}
+
+function XiaoheiRecruitPlate() {
+  return h('svg',{viewBox:'0 0 160 180',width:160,height:180,'aria-hidden':'true',focusable:'false',className:'fg-gardenerPortrait','data-portrait':'xiaohei',style:{display:'block',width:'100%',height:'100%'}},
+    h('rect',{width:160,height:180,fill:'#f3f0df'}),
+    h('circle',{cx:78,cy:86,r:65,fill:'#e4e9c8'}),
+    h('ellipse',{cx:75,cy:160,rx:33,ry:3.6,fill:'#878564',opacity:.24}),
+    h(XiaoheiArt,{pose:'idle'}))
+}
+Object.assign(zh, {'pet.xiaohei.pin':'让小黑住到桌面', 'pet.xiaohei.unpin':'收回小黑', 'pet.xiaohei.hint':'轻点摸摸，双击玩耍，按住拖动。', 'pet.xiaohei.error':'小黑未能显示，请重试。'})
+Object.assign(en, {'pet.xiaohei.pin':'Pin Xiaohei to desktop', 'pet.xiaohei.unpin':'Bring Xiaohei back', 'pet.xiaohei.hint':'Click to pet, double-click to play, or drag to move.', 'pet.xiaohei.error':'Xiaohei could not appear. Try again.'})
+
+function XiaoheiPetButton({t}) {
+  const key = 'pet:xiaohei'
+  const pin = useSyncExternalStore(subscribeBouquetPins, () => bouquetPins.get(key) ?? noBouquetPin, () => noBouquetPin)
+  function toggle(event) {
+    const svg = event.currentTarget.closest('[data-gardener="xiaohei"]')?.querySelector('.fg-staffPortrait svg.fg-xiaoheiArt')
+    toggleArtPin(key, () => {
+      if (!svg) throw new Error('render-failed')
+      const tree = ['div', {class:'fg-desktopPet'}, [encodeDesktopArtwork(svg)]]
+      return {mode:'pet', title:/^zh/i.test(document.documentElement.lang) ? '小黑' : 'Xiaohei', lang:document.documentElement.lang || 'en', tree}
+    })
+  }
+  const label = pin.phase === 'open' ? 'pet.xiaohei.unpin' : pin.phase === 'preparing' ? 'desktop.cancelWait' : pin.phase === 'pending' ? 'desktop.working' : 'pet.xiaohei.pin'
+  return h('div', null,
+    h('button', {type:'button', className:'fg-btn fg-btnSmall', 'data-action':'xiaoheiPet', disabled:pin.phase === 'pending', 'aria-pressed':pin.phase === 'open', onClick:toggle}, t(label)),
+    pin.phase === 'open' && h('p', {className:'fg-note'}, t('pet.xiaohei.hint')),
+    pin.error && h('p', {className:'fg-note', role:'status'}, t(pin.error.startsWith('bag.') ? 'pet.xiaohei.error' : pin.error)))
+}
+// Original cut-paper character plates for the gardener cards. All coordinates use the same 160 × 180 artboard.
+const GARDENER_PLATES = {
+  sprout: {sky:'#cadba0', light:'#f8efbd', hill:'#9cb675', ink:'#594e38', hair:'#6f4432', skin:'#eabd89', blush:'#d98c69'},
+  finch:  {sky:'#9ecbd2', light:'#faf0b9', hill:'#83afb0', ink:'#314e60', hair:'#543833', skin:'#bc784d', blush:'#a65a3e'},
+  clover: {sky:'#88b9a3', light:'#dee5a7', hill:'#638f78', ink:'#284e48', hair:'#304746', skin:'#bd946c', blush:'#aa7053'},
+  robin:  {sky:'#dab295', light:'#fff0c7', hill:'#c79476', ink:'#544042', hair:'#e4ddd3', skin:'#ab724f', blush:'#996149'},
+  amber:  {sky:'#d39e59', light:'#fff1a9', hill:'#b47f49', ink:'#583937', hair:'#682f29', skin:'#cb8857', blush:'#b36b47'},
+  luna:   {sky:'#535c91', light:'#f1e6b9', hill:'#434676', ink:'#403c63', hair:'#cac8ed', skin:'#d2a794', blush:'#bb887b'},
+  aurum:  {sky:'#d8b34d', light:'#fff6c2', hill:'#a77a2e', ink:'#513b18', hair:'#f5d76b', skin:'#d99b5f', blush:'#c77745'},
+}
+
+function GardenerPortrait({id}) {
+  const character = Object.prototype.hasOwnProperty.call(GARDENER_PLATES,id) ? id : 'sprout'
+  const palette = GARDENER_PLATES[character]
+  const {ink, skin, hair, blush} = palette
+  const uid = React.useId().replace(/[^a-zA-Z0-9_-]/g,'')
+  if (id === 'xiaohei') return h(XiaoheiRecruitPlate)
+  const sky = `fg-portrait-${character}-${uid}`
+  const path = (d, fill, stroke, width=1.5) => h('path',{d,fill,stroke,strokeWidth:width,strokeLinejoin:'round',strokeLinecap:'round'})
+  const line = (d, color=ink, width=1.5) => path(d,'none',color,width)
+  const oval = (cx,cy,rx,ry,fill,stroke) => h('ellipse',{cx,cy,rx,ry,fill,stroke,strokeWidth:1.4})
+  const group = (transform,...children) => h('g',{transform},...children)
+  const star = (x,y,size,color) => group(`translate(${x} ${y}) scale(${size})`,path('M0 -5Q.7 -.7 4 0Q.7 .8 0 5Q-.8 .8 -4 0Q-.8 -.7 0 -5Z',color))
+  const leaf = (x,y,angle,size,color) => group(`translate(${x} ${y}) rotate(${angle}) scale(${size})`,path('M0 0Q-9 -6 -5 -18Q5 -14 0 0Z',color),line('M0 -1L-4 -14',palette.light,.65))
+  const sprig = (x,y,angle,size,color) => group(`translate(${x} ${y}) rotate(${angle}) scale(${size})`,line('M0 0Q-4 -23 4 -46',color,1.8),leaf(-1,-8,-38,.8,color),leaf(-1,-18,42,.8,color),leaf(0,-24,-20,.65,color),leaf(2,-34,40,.6,color))
+  const face = (tilt,expression) => group(`rotate(${tilt} 78 73)`,
+    path('M69 85L69 100Q77 109 90 99L87 84Z',skin,ink),path('M69 89Q79 97 87 89L88 94Q79 101 70 98Z',blush),
+    oval(57,71,5,7,skin,ink),oval(99,70,5,7,skin,ink),
+    path('M57 55Q65 39 84 42Q102 46 100 66L97 79Q94 87 81 92Q68 92 60 81Q54 72 57 55Z',skin,ink),
+    oval(66,77,4.3,2,blush),oval(91,76,4,1.8,blush),line('M80 68L78 74L81 74',blush,1.2),
+    line(expression==='wise'?'M62 62Q68 59 73 62M84 62Q90 58 95 61':'M63 63Q68 60 73 62M85 61Q90 58 95 61',hair,2.2),
+    expression==='joy' ? group('',line('M64 69Q68 64 72 68',ink,2),line('M86 68Q89 64 93 67',ink,2)) : group('',
+      path('M63 69Q68 65 73 67Q70 72 64 70Z','#fff5df'),oval(69,68,2,2.5,ink),path('M85 68Q89 64 95 66Q92 72 86 70Z','#fff5df'),oval(90,67.5,2,2.6,ink)),
+    expression==='joy' ? path('M73 79Q80 82 88 77Q84 88 77 85Z','#793e39') : line(expression==='wise'?'M74 81Q81 83 87 79':'M75 81Q82 84 87 78','#895145',1.5))
+  const braid = (x,y,angle) => group(`translate(${x} ${y}) rotate(${angle})`,path('M-5 0Q4 -8 7 1L5 8Q9 13 4 18Q8 23 3 29L6 38L-1 34L-4 39L-5 29Q-11 22 -6 17Q-12 9 -5 5Z',hair,ink),line('M-4 6L3 12L-4 18L2 24',ink,1),line('M-5 30L4 30','#efd782',3))
+  const envelope = (x,y,angle) => group(`translate(${x} ${y}) rotate(${angle})`,path('M-11 -6H11V7H-11Z','#fff2cc',ink,1.2),line('M-10 -5L0 2L10 -5','#ad795d',1),oval(0,2,2,2,'#ba6250'))
+  const bird = (x,y,size) => group(`translate(${x} ${y}) scale(${size})`,path('M-18 0L-8 2Q-6 -3 0 -3Q3 -15 11 -11Q17 -8 12 0Q14 8 4 10Q-7 11 -10 5Z','#ebce6a',ink),path('M-7 3Q0 -2 7 2Q1 9 -5 7Z','#767b58'),path('M13 -7L20 -5L13 -3Z','#ce843e'),oval(9,-7,1.3,1.3,ink),line('M0 10L-1 14M5 10L6 13',ink,1.2))
+
+  function drawSprout() {
+    return group('rotate(-4 82 107)',
+      path('M62 46Q40 54 49 79Q40 86 47 98Q61 98 67 84L91 91Q109 96 107 85Q111 65 98 48Z',hair,ink),
+      path('M65 96Q49 97 43 108L30 133L42 143L56 128L50 170L113 174L107 122L121 137L132 127L111 102L89 96Z','#e7d99e',ink,2),
+      path('M58 99L66 98L70 113L85 114L90 98L98 99L96 120L104 143L110 174L47 174L54 138L58 121Z','#b86344',ink,2),
+      path('M67 119L88 120L86 134Q77 141 67 130Z','#d88959','#8b513f'),line('M68 122L85 123M61 142L56 164M90 140L97 163','#f1b778',1.4),oval(65,112,2.3,2.3,'#f7d982'),oval(91,113,2.3,2.3,'#f7d982'),
+      face(4,'joy'),path('M57 68Q50 63 54 52Q71 38 95 49L99 64L90 58L82 62L83 55Q75 61 67 62L68 57L59 68Z',hair,ink),
+      path('M44 54Q48 32 66 28Q78 19 92 28L103 43L114 50Q109 58 91 57Q68 53 49 62Q40 64 40 59Z','#7e9c55',ink,2),path('M42 55Q70 42 100 45L114 50Q111 55 102 56Q76 49 49 60L41 60Z','#cad18b',ink),
+      leaf(78,29,-24,.82,'#a7bd62'),leaf(78,29,64,.92,'#618554'),
+      path('M89 139Q95 112 113 115Q130 116 132 139','none','#865b3c',4),path('M79 135Q108 144 142 132L134 160Q112 171 89 160Z','#d6a464',ink,2),
+      line('M87 145Q111 151 137 141M90 151Q111 159 135 149M99 140L105 163M116 140L118 162M129 138L126 159','#aa784c'),
+      sprig(100,138,-42,.54,'#6b9256'),sprig(111,141,35,.58,'#819d54'),oval(41,138,6,6,skin,ink),oval(126,130,6,5,skin,ink))
+  }
+  function drawFinch() {
+    return group('rotate(4 78 109)',
+      path('M48 110L33 149L58 141L77 169L87 131L107 151L105 107Z','#506e88',ink,2),
+      path('M62 97L51 102L34 124L43 135L56 123L51 168L101 172L99 125L107 111L94 99Z','#648ca3',ink,2),
+      path('M66 99L77 107L88 98L96 102L84 123L73 163L58 158L69 118L60 107Z','#e5d09a',ink),
+      path('M95 104Q104 105 112 113L119 114L124 92L135 94L132 124Q129 134 119 131L99 121Z','#7299a9',ink,2),
+      path('M121 98L123 87Q121 82 124 81L128 87L135 77Q137 76 137 79L133 88L140 84Q143 85 139 89L131 97Z',skin,ink),bird(131,72,.82),
+      path('M57 58Q47 46 55 37Q60 26 74 29Q87 19 96 33Q109 35 102 54L101 70L94 65Z',hair,ink),face(-9,'bright'),
+      path('M53 57Q50 45 68 42L93 42L100 55L90 52L83 58L79 51L73 59L66 55L60 71Q53 71 53 57Z',hair,ink),
+      path('M44 48Q49 32 68 29Q85 20 97 36L110 38L95 48L64 52L45 58L50 50Z','#527e95',ink,2),path('M58 49Q78 33 108 38L99 45L71 51Z','#a8c8c5',ink),
+      path('M56 37Q45 30 50 12Q59 18 61 27L62 19Q70 29 60 39Z','#f3d584',ink),
+      path('M93 92Q79 103 64 95L61 100Q75 114 88 102L106 107L123 102L109 99L114 94L97 98Z','#da7850',ink),
+      line('M61 108L93 150','#a26b49',5),path('M81 142L105 138L111 158L87 166Z','#bc8858',ink),envelope(96,146,-11),oval(40,132,6,5,skin,ink))
+  }
+  function drawClover() {
+    return group('',
+      path('M62 41Q40 54 43 85Q33 102 28 118L42 116L39 127L61 118L80 126L99 115L121 119Q115 106 107 88Q108 59 94 46Z','#477968',ink,2),
+      path('M57 98Q40 108 38 137L34 165L52 162L54 175L108 173L116 147L114 122Q108 110 96 99Z','#395e55',ink,2),
+      path('M61 102L78 112L91 102L104 111L91 139L89 172L62 172L60 141L53 122Z','#799785',ink),line('M62 114L74 125L69 155M91 113L83 126L79 165','#c2cc98',2),
+      path('M48 122L67 146L96 132L101 139L68 159L57 157L39 137Z','#63877a',ink,2),
+      face(2,'wise'),path('M54 67Q51 48 68 44Q86 38 100 52L101 65L95 59L89 64L90 55Q81 65 71 64L75 55L62 64L60 72Z',hair,ink),
+      braid(55,75,10),braid(101,72,-7),path('M42 57Q42 41 58 29Q69 21 82 20Q103 31 111 50L98 53L88 47L69 49L54 59Z','#56866c',ink,2),
+      group('translate(77 32)',path('M0 1Q-12 0 -11 -6Q-12 -12 -6 -12Q0 -12 1 -6Q4 -15 11 -12Q18 -8 13 -3L4 2Q14 6 10 12Q6 18 1 11L-2 6L-7 14L-9 12Z','#afd184',ink,1.2)),
+      path('M100 126L122 87L127 90L106 134Z','#bb945a',ink,2),path('M118 96Q146 81 136 54Q132 44 127 41Q145 49 149 64Q154 92 126 106Z','#cfdbb8',ink,2),line('M131 98Q146 84 145 69','#f4f1cf'),oval(101,135,6,5,skin,ink),
+      path('M41 140L54 143L51 158Q44 164 36 153Z','#ad8055',ink),sprig(42,144,-18,.43,'#abc38b'))
+  }
+  function drawRobin() {
+    return group('rotate(-3 80 108)',
+      path('M50 103Q40 110 36 132L31 151L45 159L59 138L55 170L110 171L110 134L124 141L132 131L115 110L96 97Z','#685f60',ink,2),
+      path('M59 139L102 137L108 173L54 172Z','#7d7771',ink),line('M63 146L61 166M96 147L101 167','#aba08b',1.2),
+      path('M55 99L67 92L86 93L102 99Q119 111 126 131L109 129L106 136L85 126L72 137L60 126L39 131L42 121Z','#aa5542',ink,2),
+      path('M55 102Q72 117 82 117Q92 109 97 99L87 96L77 106L66 96Z','#e3b669',ink),oval(80,116,3.6,3.6,'#f5cd7e',ink),
+      path('M53 66L49 52Q49 36 68 37Q88 28 101 43Q107 58 98 80L92 84L61 77Z',hair,ink),face(6,'wise'),
+      path('M59 60Q68 55 73 47Q82 57 98 58L98 53Q87 40 72 42Q56 44 53 60L55 71L60 75Z',hair,ink),
+      path('M68 78Q75 72 79 76Q85 71 92 77Q86 82 79 80Q73 83 68 78Z',hair,ink,1),
+      oval(68,69,8,6,'none','#816b48'),oval(90,68,8,6,'none','#816b48'),line('M76 68Q79 66 82 68','#816b48',1.5),
+      path('M42 48L52 46Q60 23 72 25L80 23Q95 25 103 41L113 43Q114 48 103 51Q81 47 58 54Q45 55 42 52Z','#995d44',ink,2),line('M57 43Q78 36 101 41','#cead76',4),
+      path('M59 129L102 159','#75513b','#ad8355',5),path('M87 147L114 147L118 168L87 172Z','#a97350',ink,2),
+      group('rotate(-16 116 127)',envelope(117,122,9),envelope(114,128,-3)),oval(126,134,6,5,skin,ink),oval(40,152,6,5,skin,ink))
+  }
+  function drawAmber() {
+    const hex = (x,y,r,c) => group(`translate(${x} ${y}) scale(${r})`,path('M-1 0L-.5 -.87H.5L1 0L.5 .87H-.5Z',c))
+    return group('',
+      path('M53 48Q45 40 47 31Q51 20 61 23Q67 11 78 21Q92 9 101 23Q112 21 115 32Q120 45 107 56L100 82L56 87Z',hair,ink,2),
+      path('M55 101L42 108L26 142L41 149L54 130L49 174L112 174L107 128L122 135L136 122L128 114L118 118L104 103L94 96Z','#bf8a50',ink,2),
+      path('M59 100L71 98L77 110L90 97L101 102L96 123L106 148L99 170L53 170L51 144L63 122Z','#f1c469',ink,2),
+      path('M64 127L91 123L94 140L79 149L64 142Z','#a86b44',ink),hex(78,136,5,'#ecc16e'),line('M54 154Q74 160 99 151',ink,4),
+      face(-7,'bright'),path('M54 63Q48 56 52 47Q55 40 64 40Q67 34 74 36Q82 31 87 38Q98 33 102 44L99 61L94 57Q90 61 86 56Q79 60 75 53Q68 58 63 52L60 68Z',hair,ink),
+      path('M46 44Q53 24 69 22L80 15L89 22Q102 25 109 42L98 48L82 42L66 46L50 53Z','#d7a444',ink,2),
+      group('rotate(-6 75 44)',line('M51 44L100 40',ink,4),oval(68,43,9,7,'#8dc5b7',ink),oval(88,42,9,7,'#8dc5b7',ink),line('M64 42L69 39M84 41L90 38','#e7f1cd',2)),
+      path('M47 103L57 98L64 104Q61 126 44 131L35 125Z','#e3b856',ink),line('M43 117L55 110M42 122L53 116','#9a673e',2),
+      group('rotate(-18 118 113)',path('M115 104L103 78Q115 82 119 99L128 73Q135 89 121 106Z','#c3d6bb',ink,1.8),oval(115,111,4,7,'none','#b4783d'),oval(124,111,4,7,'none','#b4783d'),oval(119,104,2,2,'#d5aa53',ink)),
+      oval(126,123,6,5,skin,ink),path('M30 138L42 137L47 145L42 154Q37 157 30 151Z','#72543c',ink),hex(35,148,2.5,'#e6bd6d'))
+  }
+  function drawLuna() {
+    return group('',
+      path('M65 41Q47 53 48 76Q43 85 31 89Q24 93 22 103Q41 94 51 99Q64 106 69 91L93 93Q101 111 123 102Q133 99 143 107Q140 95 126 90Q111 85 107 61Q101 38 84 38Z',hair,ink,2),
+      path('M61 99Q48 100 40 107Q30 123 14 135L24 137L19 147L35 146L36 153L55 146L53 173L103 172L100 144L119 149L122 139L139 142L132 131Q116 115 103 99L91 95Z','#695e91',ink,2),
+      path('M58 105Q39 124 25 134L39 134L36 140Q51 135 63 124M99 105Q108 121 127 134L115 132L116 138L95 125Z','#a098bb'),
+      path('M67 100L79 113L91 99L102 108L90 136L99 173L58 172L67 137L59 110Z','#857aab',ink),line('M67 105L79 117L94 104M72 143L68 165','#e1c6a0',1.5),star(80,121,1,'#fff1bd'),
+      face(-4,'calm'),path('M52 62Q53 39 72 38Q91 32 102 47Q109 62 98 75L95 57Q85 60 74 51Q70 61 57 67L55 74Z',hair,ink),
+      path('M46 52Q50 36 64 31Q67 19 59 10Q82 16 94 30L103 32L100 37L111 46L101 53Q88 44 76 47Q58 47 49 61Z','#665680',ink,2),
+      path('M78 26Q72 37 83 39Q88 40 93 36Q88 47 78 43Q67 37 75 28Z','#f7dc97'),line('M51 53Q70 40 98 46','#ccafd2',2),
+      path('M47 120L54 134L77 128L82 134L53 147Q47 147 42 137L36 127Z','#82759e',ink),oval(80,131,6,4,skin,ink),
+      path('M99 111L110 127L123 115L129 119L114 137Q108 142 102 134L93 122Z','#8e82a9',ink),oval(127,117,5,4,skin,ink),
+      group('translate(128 143)',path('M-6 -12Q-5 -23 1 -24Q7 -24 8 -12','none','#e6c786',1.8),path('M-11 -10L0 -15L12 -10L9 8L2 15L-8 9Z','#f9d68c',ink,2),path('M-11 -10L1 -7L12 -10M1 -7L2 13','none','#997a62'),star(2,0,1.3,'#fff5c9'),path('M-9 9L2 15L10 8L6 14L2 18L-3 15Z','#aa8868',ink)),
+      star(32,132,.6,'#f4dbab'),star(115,134,.5,'#f4dbab'))
+  }
+  function drawAurum() {
+    return group('rotate(-2 80 108)',
+      path('M55 103L36 129L23 163L41 168L59 137L54 174L108 174L104 137L125 164L141 155L119 112L101 98Z','#d2a239',ink,2),
+      path('M61 103L78 114L93 101L103 111L92 139L99 173L58 173L67 139L57 111Z','#f5cf58',ink,2),
+      face(-2,'joy'),
+      path('M51 59Q49 39 66 32Q78 18 93 31Q107 37 101 62L95 76L58 72Z',hair,ink),
+      path('M46 47Q54 24 73 22L80 10L88 23Q105 25 112 45L101 51L86 40L66 46L51 55Z','#e9bd43',ink,2),
+      path('M80 8L86 22L99 19L91 30L102 38L86 36L80 51L74 36L58 39L69 29L60 18L75 22Z','#fff0a5',ink,1.4),
+      line('M62 126L99 126','#fff0a5',3),
+      path('M42 116L32 92L38 87L55 115Z','#f8df78',ink,2),
+      path('M32 91L24 77L29 69L36 83L43 68L47 75L39 94Z','#fff3a4',ink,1.5),
+      path('M112 119L132 91L138 97L120 130Z','#c99831',ink,2),
+      path('M125 103L142 93L146 99L130 113Z','#f3d566',ink,1.5),
+      star(126,48,1.1,'#fff5bd'), star(32,50,.7,'#fff5bd')
+    )
+  }
+
+  const portraits = {sprout:drawSprout, finch:drawFinch, clover:drawClover, robin:drawRobin, amber:drawAmber, luna:drawLuna, aurum:drawAurum}
+  const night = character === 'luna'
+  const motif = {
+    sprout:sprig(28,87,-19,.9,'#aec185'), finch:group('',line('M3 62Q21 50 42 54M9 69Q23 60 37 62','#8cb5b7',2)),
+    clover:sprig(22,96,14,1.3,'#75a18b'), robin:group('',envelope(27,64,-17)),
+    amber:group('translate(24 66)',path('M-12 0L-6 -10H6L12 0L6 10H-6Z M6 -10L12 -20H24L30 -10L24 0H12Z','none','#dfba78',1.6)),
+    luna:group('',star(25,50,.85,'#d9d2c1'),star(36,71,.45,'#d9d2c1'),star(124,38,1,'#d9d2c1'),star(134,52,.45,'#d9d2c1')),
+  }
+  return h('svg',{viewBox:'0 0 160 180',width:160,height:180,className:'fg-gardenerPortrait','data-portrait':character,'aria-hidden':'true',focusable:'false',style:{display:'block',width:'100%',height:'100%'}},
+    h('defs',null,h('linearGradient',{id:sky,x1:'0%',y1:'0%',x2:'90%',y2:'100%'},h('stop',{offset:0,stopColor:palette.sky}),h('stop',{offset:1,stopColor:palette.light}))),
+    path('M0 0H160V180H0Z',`url(#${sky})`),oval(83,78,53,55,night?'#8d86ae':palette.light),oval(83,78,58,60,'none',night?'#aaa0bf':palette.light),motif[character],
+    path('M0 130Q33 104 67 121Q114 150 160 103V180H0Z',palette.hill),path('M0 153Q46 129 85 151Q123 165 160 131V180H0Z',palette.sky),
+    sprig(13,162,1,1.1,palette.hill),sprig(150,155,19,.88,palette.hill),portraits[character](),
+    path('M0 171Q46 162 78 172Q112 181 160 158V180H0Z',palette.hill),sprig(3,179,44,.65,palette.hill),sprig(154,179,-30,.78,palette.hill))
+}
+
+// Garden staff, recruitment and harvested-flower storage.
+Object.assign(zh, {
+  'tabs.gardeners':'园丁', 'staff.recruit':'园丁招募', 'staff.draw':'招募一次', 'staff.wallet':'持有 {coins} 金币 · 绶带 ×{ribbons}', 'staff.drawPrice':'{coins} 金币 + 绶带 ×{ribbons}', 'staff.needCoins':'{n} 金币', 'staff.needRibbons':'绶带 ×{n}', 'staff.short':'还差 {resources}', 'staff.odds':'招募概率', 'staff.new':'招募到{name}', 'staff.repeat':'再次招募{name}，碎片 +{n}', 'staff.roster':'园丁名册', 'staff.empty':'招募一位园丁，即可派往已开放的花地。', 'staff.idle':'待命', 'staff.harvest':'采花', 'staff.greet':'迎接访客', 'staff.common':'普通', 'staff.rare':'稀有', 'staff.epic':'史诗', 'staff.sprout':'芽芽', 'staff.finch':'雀儿', 'staff.clover':'三叶', 'staff.robin':'知更', 'staff.amber':'琥珀', 'staff.luna':'月露', 'staff.aurum':'金穗', 'staff.legendary':'传说', 'staff.stats':'{stars} 星 · {rank} 阶 · {shards} 碎片', 'staff.interval':'每 {time} 执勤', 'staff.post':'派驻花地', 'staff.occupied':'{scene} · 当前为{name}', 'staff.assign':'派驻', 'staff.recall':'召回', 'staff.stars':'升星', 'staff.rank':'升阶', 'staff.max':'已满', 'staff.cost':'{coins} 金币 · {shards} 碎片', 'staff.storage':'花材储藏室', 'staff.claim':'收入花篮 · {n} 朵', 'staff.storageEmpty':'园丁采到的花会放在这里。', 'staff.full':'花篮已满', 'staff.done':'已保存', 'staff.dismantle':'拆解', 'staff.dismantleConfirm':'确认拆解', 'staff.dismantleCancel':'取消', 'staff.dismantleAssigned':'请先召回园丁', 'staff.dismantleNote':'拆解会移除园丁、星级、阶级和碎片，返还 {n} 金币。', 'staff.shardBreak':'回收 1 碎片', 'staff.shardRefund':'返还 {n} 金币',
+})
+Object.assign(en, {
+  'tabs.gardeners':'Gardeners', 'staff.recruit':'Recruitment', 'staff.draw':'Recruit once', 'staff.wallet':'Available: {coins} coins · ribbons ×{ribbons}', 'staff.drawPrice':'{coins} coins + ribbons ×{ribbons}', 'staff.needCoins':'{n} coins', 'staff.needRibbons':'ribbons ×{n}', 'staff.short':'Still needed: {resources}', 'staff.odds':'Recruitment odds', 'staff.new':'Recruited {name}', 'staff.repeat':'Recruited {name} again · +{n} shards', 'staff.roster':'Gardener roster', 'staff.empty':'Recruit a gardener to staff an open ground.', 'staff.idle':'Off duty', 'staff.harvest':'Harvests flowers', 'staff.greet':'Greets visitors', 'staff.common':'Common', 'staff.rare':'Rare', 'staff.epic':'Epic', 'staff.sprout':'Sprout', 'staff.finch':'Finch', 'staff.clover':'Clover', 'staff.robin':'Robin', 'staff.amber':'Amber', 'staff.luna':'Luna', 'staff.aurum':'Aurum', 'staff.legendary':'Legendary', 'staff.stats':'{stars}★ · Rank {rank} · {shards} shards', 'staff.interval':'Works every {time}', 'staff.post':'Assigned ground', 'staff.occupied':'{scene} · currently {name}', 'staff.assign':'Assign', 'staff.recall':'Recall', 'staff.stars':'Raise stars', 'staff.rank':'Raise rank', 'staff.max':'Max', 'staff.cost':'{coins} coins · {shards} shards', 'staff.storage':'Flower storeroom', 'staff.claim':'Move {n} to basket', 'staff.storageEmpty':'Flowers your gardeners harvest are stored here.', 'staff.full':'Basket full', 'staff.done':'Saved', 'staff.dismantle':'Dismantle', 'staff.dismantleConfirm':'Confirm dismantle', 'staff.dismantleCancel':'Cancel', 'staff.dismantleAssigned':'Recall this gardener first', 'staff.dismantleNote':'Removes the gardener, stars, rank and shards. Refunds {n} coins.', 'staff.shardBreak':'Recycle 1 shard', 'staff.shardRefund':'Refund {n} coins',
+})
+
+Object.assign(zh, {'staff.failed':'状态已变化，请再试一次。','staff.claimed':'已收入花篮 {n} 朵','staff.refunded':'已返还 {n} 金币','staff.result':'本次招募','staff.known':'已招募','staff.coinCost':'{coins} 金币'})
+Object.assign(en, {'staff.failed':'The garden changed. Please try again.','staff.claimed':'Moved {n} blooms to the basket','staff.refunded':'Refunded {n} coins','staff.result':'Recruitment result','staff.known':'Recruited','staff.coinCost':'{coins} coins'})
+
+Object.assign(zh, {'staff.rankBadge':'{n} 阶', 'staff.shardCount':'碎片 ×{n}'})
+Object.assign(en, {'staff.rankBadge':'Rank {n}', 'staff.shardCount':'Shards ×{n}'})
+
+Object.assign(zh, {
+  'staff.proc':'触发 {n}', 'staff.drawRate':'招募概率 {n}', 'staff.baseInterval':'基础间隔 {time}', 'staff.currentInterval':'当前间隔 {time}',
+  'staff.traitGrowth':'升星和升阶会缩短执勤间隔。每次成功采花或问候后，按固定概率触发一次特性。',
+  'staff.trigger.harvest':'成功采花后，{effect}', 'staff.trigger.greet':'成功问候后，{effect}',
+  'staff.perk.fertilizer':'草木堆肥', 'staff.reward.fertilizer':'获得肥料 ×{n}',
+  'staff.perk.coins':'迎宾小费', 'staff.reward.coins':'获得 {n} 金币',
+  'staff.perk.storedBloom':'并蒂采集', 'staff.reward.storedBloom':'额外入库 {n} 朵同花（需有空位）',
+  'staff.perk.affinity':'知心来信', 'staff.reward.affinity':'该访客好感 +{n}',
+  'staff.perk.ribbon':'花展珍藏', 'staff.reward.ribbon':'获得绶带 ×{n}',
+  'staff.perk.charm':'月下祝福', 'staff.reward.charm':'获得幸运符 ×{n}',
+  'staff.perk.hybridSeed':'金穗育种', 'staff.reward.hybridSeed':'获得杂交种子 ×{n}（采下的花与同地另一花种）',
+})
+Object.assign(en, {
+  'staff.proc':'{n} proc chance', 'staff.drawRate':'Recruit chance {n}', 'staff.baseInterval':'Base interval {time}', 'staff.currentInterval':'Current interval {time}',
+  'staff.traitGrowth':'Stars and ranks shorten the work interval. Each successful harvest or greeting rolls the gardener’s fixed trait chance once.',
+  'staff.trigger.harvest':'After a successful harvest, {effect}.', 'staff.trigger.greet':'After a successful greeting, {effect}.',
+  'staff.perk.fertilizer':'Leaf Compost', 'staff.reward.fertilizer':'gain {n} fertiliser',
+  'staff.perk.coins':'Welcome Tip', 'staff.reward.coins':'gain {n} coins',
+  'staff.perk.storedBloom':'Twin Blossom', 'staff.reward.storedBloom':'store {n} extra copy if space allows',
+  'staff.perk.affinity':'Dear Friend', 'staff.reward.affinity':'gain {n} affinity with that visitor',
+  'staff.perk.ribbon':'Show Ribbon', 'staff.reward.ribbon':'gain {n} ribbon',
+  'staff.perk.charm':'Moon Blessing', 'staff.reward.charm':'gain {n} charm',
+  'staff.perk.hybridSeed':'Golden Cross', 'staff.reward.hybridSeed':'gain {n} hybrid seed from that flower and another local species',
+})
+
+Object.assign(zh, {'staff.manageCard':'培养与管理'})
+Object.assign(en, {'staff.manageCard':'Training & management'})
+
+Object.assign(zh, {
+  'staff.xiaohei':'罗小黑', 'staff.perk.compost':'林间小礼', 'staff.reward.compost':'获得堆肥 ×{n}',
+  'staff.festival':'森林招募会','staff.featuredCat':'史诗园丁 · 罗小黑','staff.ten':'十连招募','staff.tenBenefit':'第十张必得史诗或传说',
+  'staff.tenOdds':'十连概率','staff.tenFirst':'前九张各按卡池概率独立抽取。第十张只从以下园丁中抽取。',
+  'staff.flip':'翻开第 {n} 张','staff.flipAll':'全部翻开','staff.newBadge':'新园丁','staff.dupeBadge':'碎片 +{n}',
+  'staff.tenResult':'十连结果','staff.tenProgress':'已翻开 {n}/10', 'staff.guaranteedCard':'保底',
+  'staff.tenPaid':'已招募十次，点选卡背查看园丁。',
+})
+Object.assign(en, {
+  'staff.xiaohei':'Luo Xiaohei', 'staff.perk.compost':'Forest Gift', 'staff.reward.compost':'gain {n} compost',
+  'staff.festival':'Woodland Recruitment','staff.featuredCat':'Epic gardener · Luo Xiaohei','staff.ten':'Recruit ten','staff.tenBenefit':'Tenth card is Epic or Legendary',
+  'staff.tenOdds':'Ten-draw odds','staff.tenFirst':'The first nine draws each use the pool odds. The tenth uses this pool.',
+  'staff.flip':'Reveal card {n}','staff.flipAll':'Reveal all','staff.newBadge':'New recruit','staff.dupeBadge':'+{n} shard',
+  'staff.tenResult':'Ten-draw results','staff.tenProgress':'{n}/10 revealed','staff.guaranteedCard':'Guaranteed',
+  'staff.tenPaid':'Ten gardeners recruited. Choose a card to reveal it.',
+})
+
+function GardenerSpread({results,t}) {
+  const [open,setOpen]=React.useState([])
+  return h('section',{className:'fg-gachaSpread','aria-label':t('staff.tenResult')},
+    h('div',{className:'fg-sectionHead'},h('h4',null,t('staff.tenResult')),
+      h('small',{className:'fg-note','aria-live':'polite'},t('staff.tenProgress',{n:open.length})),
+      open.length < results.length && h('button',{type:'button',className:'fg-btn fg-btnSmall',onClick:()=>setOpen(results.map((_,i)=>i))},t('staff.flipAll'))),
+    h('ol',{className:'fg-gachaTiles'},results.map((item,i)=>{
+      const shown=open.includes(i), person=GARDENER_BY_ID.get(item.id)
+      return h('li',{key:i},h('button',{type:'button',className:'fg-gachaTile','data-flipped':shown,'data-rarity':shown?person.rarity:undefined,
+        'aria-label':shown?`${t(`staff.${item.id}`)} · ${t(item.isNew?'staff.newBadge':'staff.dupeBadge',{n:item.shards})}`:t('staff.flip',{n:i+1}),
+        'aria-pressed':shown,onClick:()=>setOpen(prev=>prev.includes(i)?prev:[...prev,i])},
+        shown?h(React.Fragment,null,h(GardenerPortrait,{id:item.id}),h('span',{className:'fg-gachaCaption'},h('strong',null,t(`staff.${item.id}`)),h('small',null,t(item.isNew?'staff.newBadge':'staff.dupeBadge',{n:item.shards})))):
+        h(React.Fragment,null,h('span',{className:'fg-gachaSeal','aria-hidden':true},i===9?'✧':'❧'),h('small',null,i===9?t('staff.guaranteedCard'):String(i+1).padStart(2,'0')))))
+    })))
+}
+
+Object.assign(zh, {
+  'staff.assignHelp':'在园丁卡上选择花地，再点「派驻」。每块花地可派一人，派驻后切到聊天也会继续执勤。',
+  'staff.workOrder':'每次执勤先处理本职工作，其次帮忙采花或问候。有空位时采下的花会进入储藏室。',
+  'staff.autoSow':'空闲时自动播种', 'staff.sowHelp':'勾选后，园丁在没有可采花朵和可问候访客时，会在一个空花圃购买并种下本地最便宜的普通种子。金币不足时等待。',
+  'staff.sowPrice':'本地种子：{flower} · {coins} 金币', 'staff.nextDuty':'下次执勤：{time}后', 'staff.dutyNow':'即将执勤',
+  'staff.work.harvest':'最近收获了第 {n} 块花圃', 'staff.work.greet':'最近问候了第 {n} 块花圃的访客', 'staff.work.sow':'最近播种了第 {n} 块花圃',
+})
+Object.assign(en, {
+  'staff.assignHelp':'Choose a ground on a gardener’s card, then select Assign. Each ground has one gardener. Assigned gardeners keep working in Chat.',
+  'staff.workOrder':'On each shift a gardener tries their specialty first, then helps harvest or greet. Harvested flowers go to the storeroom when space allows.',
+  'staff.autoSow':'Sow seeds when idle', 'staff.sowHelp':'When enabled, a gardener with no harvest or greeting buys the cheapest local ordinary seed for one empty plot. If coins run short, the gardener waits.',
+  'staff.sowPrice':'Local seed: {flower} · {coins} coins', 'staff.nextDuty':'Next shift in {time}', 'staff.dutyNow':'Shift due',
+  'staff.work.harvest':'Last harvested plot {n}', 'staff.work.greet':'Last greeted a visitor at plot {n}', 'staff.work.sow':'Last sowed plot {n}',
+})
+
+Object.assign(zh, {
+  'room.level':'{n} 级储藏室', 'room.capacity':'花材容量', 'room.expand':'扩容至 {n} 朵',
+  'room.expanded':'储藏室已扩容至 {n} 朵', 'room.full':'储藏室已满，领取或扩容后可继续入库。',
+  'room.max':'已达最高等级', 'room.short':'还差 {n} 金币',
+})
+Object.assign(en, {
+  'room.level':'Level {n} storeroom', 'room.capacity':'Flower capacity', 'room.expand':'Expand to {n} blooms',
+  'room.expanded':'Storeroom expanded to {n} blooms', 'room.full':'Storeroom full. Claim flowers or expand to make space.',
+  'room.max':'Maximum level reached', 'room.short':'Need {n} more coins',
+})
+
+function GardenerStoreroom({state, t, run}) {
+  const storage = state.gardeners.storage
+  const capacity = gardenerStorageCapacity(state)
+  const cost = gardenerStorageUpgradeCost(state)
+  const level = state.gardeners.storageLevel ?? 1
+  const claimable = Math.min(storage.length, Math.max(0, basketCapacity(state) - state.basket.length))
+  const full = storage.length >= capacity
+  const stacks = new Map()
+  for (const flower of storage) {
+    const key = itemKey(flower)
+    const stack = stacks.get(key)
+    if (stack) stack.count++
+    else stacks.set(key, {flower, count:1})
+  }
+  const nextCapacity = cost === null ? capacity : gardenerStorageCapacity({...state,gardeners:{...state.gardeners,storageLevel:level+1}})
+  return h('section',{className:'fg-section fg-room', 'data-storage-level':level},
+    h('header',{className:'fg-roomHead'},
+      h('div',null,h('small',{className:'fg-note'},t('room.level',{n:level})),h('h3',{className:'fg-sectionTitle'},t('staff.storage'))),
+      h('strong',{className:'fg-roomCounter'},storage.length,' / ',capacity)),
+    h('progress',{className:'fg-roomMeter', 'aria-label':t('room.capacity'),max:capacity,value:storage.length}),
+    full && h('p',{className:'fg-note fg-noteWarn'},t('room.full')),
+    stacks.size ? h('ul',{className:'fg-roomShelf','aria-label':t('staff.storage')},Array.from(stacks,([key,{flower,count}])=>{
+      const rarity = rarityOf(flower)
+      return h('li',{key,className:'fg-roomStack','data-stack':key,'data-rarity':rarity},
+        h('div',{className:'fg-roomArt','aria-hidden':true},h(FlowerArt,{speciesId:flower.species,stage:'bloom',variant:flower.variant,trait:flower.trait,tint:flower.tint,dna:flower.dna})),
+        h('strong',{className:'fg-roomName'},bloomName(flower,t)),h('small',null,t(`bag.rarity.${rarity}`)),
+        h('span',{className:'fg-roomQuantity'},'×',count))
+    })) : h('p',{className:'fg-roomEmpty'},t('staff.storageEmpty')),
+    h(FlowerBatchSale,{state,source:'storage',t}),
+    h('div',{className:'fg-roomActions'},
+      h('button',{className:'fg-btn fg-btnPrimary',type:'button','data-action':'claimGardenerFlowers',disabled:claimable===0,onClick:()=>run(claimGardenerFlowers,(before,after)=>t('staff.claimed',{n:after.basket.length-before.basket.length}))},storage.length && !claimable ? t('staff.full') : t('staff.claim',{n:claimable})),
+      cost === null ? h('small',{className:'fg-note'},t('room.max')) : h('div',null,
+        h('button',{className:'fg-btn',type:'button','data-action':'upgradeGardenerStorage',disabled:state.coins<cost,onClick:()=>run(upgradeGardenerStorage,(_before,after)=>t('room.expanded',{n:gardenerStorageCapacity(after)}))},t('room.expand',{n:nextCapacity}),' · ',t('staff.coinCost',{coins:cost})),
+        state.coins<cost && h('small',{className:'fg-note'},t('room.short',{n:cost-state.coins}))))
+  )
+}
+
+function GardenerBoard({state,t,onChange}) {
+  const [reveal,setReveal] = React.useState(null)
+  const [notice,setNotice] = React.useState('')
+  const [choices,setChoices] = React.useState({})
+  const [dismantle,setDismantle] = React.useState(null)
+  const staff = state.gardeners
+  const owned = GARDENERS.filter(person => staff?.roster?.[person.id])
+  const posts = staff?.assignments ?? {}
+  const grounds = SCENES.filter(scene => state.scenes[scene.id]?.unlocked > 0)
+  const refund = GARDENER_RECYCLE_COINS
+  function run(action,resultText) {
+    const current = getState()
+    const next = action(current)
+    if (!next) { setNotice(t('staff.failed')); return }
+    onChange(next)
+    setNotice(resultText ? resultText(current,next) : t('staff.done'))
+  }
+  function recruit() {
+    run(drawGardener,(before,after) => {
+      const id = after.gardeners.lastDraw
+      const previous = before.gardeners?.roster[id]
+      const text = t(previous ? 'staff.repeat' : 'staff.new',{name:t(`staff.${id}`),n:after.gardeners.roster[id].shards-(previous?.shards ?? 0)})
+      setReveal(last => ({id, text, sequence:(last?.sequence ?? 0) + 1}))
+      return text
+    })
+  }
+  function recruitTen() {
+    const batch = drawGardenerTen(getState())
+    if (!batch) { setNotice(t('staff.failed')); return }
+    onChange(batch.state)
+    setReveal(last => ({results:batch.results, sequence:(last?.sequence ?? 0) + 1}))
+    setNotice(t('staff.tenPaid'))
+  }
+  function drawControl(count) {
+    const single = count === 1
+    const coins = single ? GARDENER_DRAW_COST : GARDENER_TEN_COST
+    const ribbons = single ? GARDENER_DRAW_RIBBONS : GARDENER_TEN_RIBBONS
+    const enabled = canRecruitGardeners(state, count)
+    const missing = []
+    if (state.coins < coins) missing.push(t('staff.needCoins', {n:coins - state.coins}))
+    if ((state.ribbons ?? 0) < ribbons) missing.push(t('staff.needRibbons', {n:ribbons - (state.ribbons ?? 0)}))
+    return h('div', {className:'fg-staffDrawOption'},
+      h('button', {type:'button', className:single ? 'fg-btn' : 'fg-btn fg-gachaTen',
+        'data-action':single ? 'recruitGardener' : 'recruitTen', disabled:!enabled, onClick:single ? recruit : recruitTen},
+        t(single ? 'staff.draw' : 'staff.ten'), ' · ', t('staff.drawPrice',{coins,ribbons})),
+      !enabled && h('small', {className:'fg-note'}, t('staff.short', {resources:missing.join(' + ')})))
+  }
+  function staffCard(person) {
+    const id = person.id, member = staff.roster[id]
+    const post = grounds.find(scene => posts[scene.id] === id)?.id ?? ''
+    const choice = choices[id] ?? post
+    const nextDuty = post ? (staff.workedAt[post] ?? state.lastTick) + gardenerInterval(state,id) - state.lastTick : 0
+    const lastWork = post && staff.lastWork?.[post]
+    const seed = post && SPECIES_BY_ID.get(SCENE_BY_ID.get(post).species[0])
+    return h('article',{key:id,className:'fg-staffCard','data-gardener':id,'data-rarity':person.rarity},
+      h('div',{className:'fg-staffMember'},
+        portrait(id),
+        h('div',null,
+          h('div',{className:'fg-sectionHead'},h('strong',null,t(`staff.${id}`)),h('span',{className:'fg-badge'},t(`staff.${person.rarity}`)),h('small',{className:'fg-staffDuty'},post?t(`scene.${post}`):t('staff.idle'))),
+          h('p',{className:'fg-note'},t(`staff.${person.role}`),' · ',t('staff.currentInterval',{time:formatDuration(gardenerInterval(state,id),t)})))),
+      traitInfo(person),
+      post && h('div',{className:'fg-note','data-shift':post},
+        h('strong',null,nextDuty > 0 ? t('staff.nextDuty',{time:formatDuration(nextDuty,t)}) : t('staff.dutyNow')),
+        lastWork?.id === id && h('div',null,t(`staff.work.${lastWork.action}`,{n:lastWork.index+1})),
+        staff.autoSow && seed && h('div',null,t('staff.sowPrice',{flower:t(`species.${seed.id}`),coins:seed.cost}))),
+      id === 'xiaohei' && h(XiaoheiPetButton,{t}),
+      h('div',{className:'fg-staffProgress',role:'img','aria-label':t('staff.stats',member)},
+        h('span',{className:'fg-staffStarRail','aria-hidden':true},Array.from({length:GARDENER_MAX_STARS},(_,i)=>
+          h('span',{key:i,'data-lit':i < member.stars},i < member.stars ? '★' : '☆'))),
+        h('strong',{className:'fg-staffRank','aria-hidden':true},t('staff.rankBadge',{n:['Ⅰ','Ⅱ','Ⅲ','Ⅳ','Ⅴ'][member.rank-1]})),
+        h('small',{'aria-hidden':true},t('staff.shardCount',{n:member.shards}))),
+      h('div',{className:'fg-staffRow'},h('select',{className:'fg-btn','aria-label':`${t(`staff.${id}`)} · ${t('staff.post')}`,value:choice,onChange:event=>setChoices({...choices,[id]:event.target.value})},
+        h('option',{value:''},t('staff.idle')),grounds.map(scene=>h('option',{key:scene.id,value:scene.id}, posts[scene.id] && posts[scene.id]!==id ? t('staff.occupied',{scene:t(`scene.${scene.id}`),name:t(`staff.${posts[scene.id]}`)}) : t(`scene.${scene.id}`)))),
+        h('button',{type:'button',className:'fg-btn',disabled:choice===post,onClick:()=>run(current=>assignGardener(current,id,choice||null,Date.now()),()=>{setChoices({});return t('staff.done')})},t(choice?'staff.assign':'staff.recall'))),
+      h('details',{className:'fg-staffCare'},h('summary',null,t('staff.manageCard')),
+      h('div',{className:'fg-staffUpgrades'},['stars','rank'].map(kind=>{
+        const cost=gardenerUpgradeCost(state,id,kind)
+        return h('div',{key:kind},h('button',{type:'button',className:'fg-btn fg-btnSmall',disabled:!cost||cost.coins>state.coins||cost.shards>member.shards,onClick:()=>run(current=>upgradeGardener(current,id,kind))},t(`staff.${kind}`)),h('small',{className:'fg-note'},cost?t(cost.shards?'staff.cost':'staff.coinCost',cost):t('staff.max')))
+      })),
+      h('div',{className:'fg-staffDismantle'},
+        dismantle === id ? h('div',{className:'fg-staffConfirm'},
+          h('p',{className:'fg-note'},t('staff.dismantleNote',{n:refund})),
+          h('button',{type:'button',className:'fg-btn fg-btnDanger fg-btnSmall',disabled:!!post,onClick:()=>{
+            run(current=>dismantleGardener(current,id),()=>t('staff.refunded',{n:refund}))
+            setDismantle(null)
+          }},t('staff.dismantleConfirm')),
+          h('button',{type:'button',className:'fg-btn fg-btnSmall',onClick:()=>setDismantle(null)},t('staff.dismantleCancel'))
+        ) : h('button',{type:'button',className:'fg-btn fg-btnSmall fg-btnGhost',disabled:!!post,onClick:()=>setDismantle(id)},t(post?'staff.dismantleAssigned':'staff.dismantle')),
+        member.shards > 0 && h('button',{type:'button',className:'fg-btn fg-btnSmall fg-btnGhost',onClick:()=>run(current=>dismantleGardenerShard(current,id),()=>t('staff.refunded',{n:refund}))},t('staff.shardBreak'),' · ',t('staff.shardRefund',{n:refund})))))
+  }
+  function portrait(id) {
+    return h('div',{className:'fg-staffPortrait','aria-hidden':true},h(GardenerPortrait,{id}))
+  }
+  function oddsLabel(person) {
+    const value = person.weight
+    return Number.isInteger(value) ? `${value}%` : `${value.toFixed(2).replace(/0+$/u,'').replace(/\.$/u,'')}%`
+  }
+  function traitInfo(person) {
+    const effect = t(`staff.reward.${person.perk}`, {n:person.amount})
+    return h('div',{className:'fg-staffTrait','data-staff-trait':person.id},
+      h('div',{className:'fg-staffTraitHead'},h('strong',null,t(`staff.perk.${person.perk}`)),
+        h('small',null,t('staff.proc',{n:`${person.chance}%`}))),
+      h('span',{className:'fg-note'},t(`staff.trigger.${person.role}`,{effect})))
+  }
+  function galleryCard(person) {
+    return h('li',{key:person.id,className:'fg-staffCandidate','data-candidate':person.id,'data-rarity':person.rarity},
+      portrait(person.id),
+      h('div',{className:'fg-staffCaption'},
+        h('strong',null,t(`staff.${person.id}`)),
+        h('span',{className:'fg-note'},t('staff.baseInterval',{time:formatDuration(person.baseSeconds*1000,t)})),
+        h('small',null,t(`staff.${person.rarity}`),' · ',t('staff.drawRate',{n:oddsLabel(person)})),
+        traitInfo(person)))
+  }
+  return h('div',{className:'fg-staffBoard'},
+    h('section',{className:'fg-section fg-staffRecruit'},
+      h('div',{className:'fg-gachaBanner'},
+        h('div',{className:'fg-gachaCopy'},h('h3',null,t('staff.festival')),h('strong',null,t('staff.featuredCat')),
+          h('span',null,'✦ ',t('staff.tenBenefit'))),
+        h('div',{className:'fg-gachaHero','aria-hidden':'true'},h(GardenerPortrait,{id:'xiaohei'}))),
+      h('div',{className:'fg-gachaControls'},
+        drawControl(1), drawControl(10),
+        h('small',{className:'fg-note'},t('staff.wallet',{coins:state.coins,ribbons:state.ribbons ?? 0}))),
+      h('details',{className:'fg-gachaRules'},h('summary',null,t('staff.tenOdds')),
+        h('p',null,t('staff.tenFirst')),h('ul',null,GARDENER_BONUS_POOL.map(person=>h('li',{key:person.id},t(`staff.${person.id}`),' · ',`${person.weight*100/GARDENER_BONUS_POOL.reduce((sum,entry)=>sum+entry.weight,0)}%`)))),
+      reveal?.results && h(GardenerSpread,{key:reveal.sequence,results:reveal.results,t}),
+      reveal?.id && h('div',{key:reveal.sequence,className:'fg-staffReveal','data-draw-result':reveal.id},
+        portrait(reveal.id), h('div',null,h('small',null,t('staff.result')),h('strong',null,reveal.text),
+          h('span',null,t(`staff.${GARDENER_BY_ID.get(reveal.id).rarity}`),' · ',t(`staff.${GARDENER_BY_ID.get(reveal.id).role}`)),traitInfo(GARDENER_BY_ID.get(reveal.id)))),
+      h('small',{className:'fg-note'},t('staff.traitGrowth')),
+      h('ul',{className:'fg-staffGallery','aria-label':t('staff.odds')},GARDENERS.map(galleryCard))),
+    h('p',{role:'status',className:reveal && reveal.text===notice?'fg-staffSr':'fg-staffNotice'},notice),
+    h('section',{className:'fg-section'},h('div',{className:'fg-sectionHead'},h('h3',{className:'fg-sectionTitle'},t('staff.roster')),h('span',{className:'fg-sectionMeta'},`${owned.length}/${GARDENERS.length}`)),
+      h('p',{className:'fg-note'},t('staff.assignHelp')),
+      h('label',{className:'fg-staffRow'},h('input',{type:'checkbox',checked:staff?.autoSow === true,'data-action':'gardenerAutoSow',onChange:event=>{const enabled=event.target.checked;run(current=>setGardenerAutoSow(current,enabled))}}),t('staff.autoSow')),
+      h('p',{className:'fg-note'},t('staff.workOrder'),' ',t('staff.sowHelp')),
+      owned.length?h('div',{className:'fg-staffGrid'},owned.map(staffCard)):h('p',{className:'fg-empty'},t('staff.empty'))),
+    h(GardenerStoreroom,{state,t,run}))
+}
+// Bulk flower sales reuse the same quote/confirmation flow for both inventories.
+Object.assign(zh, {
+  'bulkSale.open':'批量出售花材', 'bulkSale.ordinary':'仅选原色普通花', 'bulkSale.clear':'清空选择',
+  'bulkSale.hint':'按组选择，选中的组会整组出售。', 'bulkSale.preview':'核对售价', 'bulkSale.confirm':'确认出售',
+  'bulkSale.cancel':'取消', 'bulkSale.summary':'{stacks} 组 · {n} 朵 · {coins} 金币', 'bulkSale.special':'含 {n} 朵特殊花材',
+  'bulkSale.stale':'库存或市价已变化，请重新核对。', 'bulkSale.done':'已售出 {n} 朵，获得 {coins} 金币。',
+  'bulkSale.basketUpgrade':'花篮扩至 {n} 朵', 'bulkSale.basketMax':'花篮已达到最大容量', 'bulkSale.basketDone':'花篮现可容纳 {n} 朵。',
+})
+Object.assign(en, {
+  'bulkSale.open':'Sell flower stacks', 'bulkSale.ordinary':'Select plain flowers only', 'bulkSale.clear':'Clear selection',
+  'bulkSale.hint':'Select the stacks to sell. Each selected stack is sold in full.', 'bulkSale.preview':'Review sale', 'bulkSale.confirm':'Confirm sale',
+  'bulkSale.cancel':'Cancel', 'bulkSale.summary':'{stacks} stacks · {n} blooms · {coins} coins', 'bulkSale.special':'Includes {n} special blooms',
+  'bulkSale.stale':'Stock or prices changed. Review the sale again.', 'bulkSale.done':'Sold {n} blooms for {coins} coins.',
+  'bulkSale.basketUpgrade':'Expand basket to {n} blooms', 'bulkSale.basketMax':'Basket at maximum capacity', 'bulkSale.basketDone':'Basket capacity is now {n}.',
+})
+
+function FlowerBatchSale({state, source, t}) {
+  const [open, setOpen] = React.useState(false)
+  const [selected, setSelected] = React.useState([])
+  const [review, setReview] = React.useState(null)
+  const [notice, setNotice] = React.useState('')
+  const blooms = source === 'storage' ? state.gardeners.storage : state.basket
+  const stacks = new Map()
+  for (const flower of blooms) {
+    const key = itemKey(flower)
+    if (stacks.has(key)) stacks.get(key).count++
+    else stacks.set(key, {key, flower, count:1, rarity:rarityOf(flower)})
+  }
+  const entries = [...stacks.values()]
+  const keys = selected.filter(key => stacks.has(key))
+  const quote = open && keys.length ? quoteFlowerBatch(state, source, keys, Date.now()) : null
+  function updateSelection(next) { setSelected(next); setReview(null); setNotice('') }
+  function finish(message) { setReview(null); setSelected([]); setOpen(false); setNotice(message) }
+  function reviewSale() {
+    const current = quoteFlowerBatch(getState(), source, keys, Date.now())
+    if (!current || !quote || current.fingerprint !== quote.fingerprint || current.coins !== quote.coins) {
+      setNotice(t('bulkSale.stale')); return
+    }
+    const special = entries.filter(entry => keys.includes(entry.key) && entry.rarity !== 'base').reduce((sum,entry) => sum + entry.count,0)
+    setReview({...current, special}); setNotice('')
+  }
+  function confirmSale() {
+    if (!review) return
+    const next = sellFlowerBatch(getState(), review, Date.now())
+    if (!next) { setReview(null); setNotice(t('bulkSale.stale')); return }
+    commit(next, true)
+    finish(t('bulkSale.done', {n:review.count, coins:review.coins}))
+  }
+  const summary = value => t('bulkSale.summary', {stacks:value?.keys.length ?? 0, n:value?.count ?? 0, coins:value?.coins ?? 0})
+  return h('section', {className:'fg-batchSale', 'data-bulk-source':source},
+    !open ? h('button', {type:'button', className:'fg-btn', 'data-action':'bulkSaleOpen', disabled:!entries.length, onClick:()=>{setNotice('');setOpen(true)}}, t('bulkSale.open')) :
+      h('fieldset', {className:'fg-batchPanel'}, h('legend',null,t('bulkSale.open')),
+        review ? h('div', {className:'fg-batchReview'},
+          h('strong',null,summary(review)),
+          review.special > 0 && h('span',{className:'fg-noteWarn'},t('bulkSale.special',{n:review.special})),
+          h('button',{type:'button',className:'fg-btn fg-btnDanger','data-action':'bulkSaleConfirm',onClick:confirmSale},t('bulkSale.confirm')))
+        : [h('p',{key:'hint',className:'fg-note'},t('bulkSale.hint')),
+          h('div',{key:'shortcuts',className:'fg-batchTools'},
+            h('button',{type:'button',className:'fg-btn fg-btnSmall',disabled:!entries.some(entry=>entry.rarity==='base'),onClick:()=>updateSelection(entries.filter(entry=>entry.rarity==='base').map(entry=>entry.key))},t('bulkSale.ordinary')),
+            h('button',{type:'button',className:'fg-btn fg-btnSmall',disabled:!selected.length,onClick:()=>updateSelection([])},t('bulkSale.clear'))),
+          h('div',{key:'stacks',className:'fg-batchChoices'},entries.map(entry=>h('label',{key:entry.key,className:'fg-batchChoice'},
+            h('input',{type:'checkbox',checked:keys.includes(entry.key),onChange:event=>updateSelection(event.target.checked ? [...keys,entry.key] : keys.filter(key=>key!==entry.key))}),
+            h('span',null,bloomName(entry.flower,t),' · ',t(`bag.rarity.${entry.rarity}`),' ×',entry.count)))),
+          h('div',{key:'quote',className:'fg-batchReview'},h('strong',null,summary(quote)),
+            h('button',{type:'button',className:'fg-btn fg-btnPrimary','data-action':'bulkSaleReview',disabled:!quote,onClick:reviewSale},t('bulkSale.preview')))],
+        h('button',{type:'button',className:'fg-btn fg-btnSmall',onClick:()=>finish('')},t('bulkSale.cancel'))),
+    h('span',{className:'fg-batchStatus',role:'status'},notice))
+}
+
+function BasketExpansion({state,t}) {
+  const [notice, setNotice] = React.useState('')
+  const cost = basketUpgradeCost(state)
+  if (cost === null) return h('small',{className:'fg-note'},t('bulkSale.basketMax'))
+  const nextCapacity = basketCapacity({...state,basketLevel:(state.basketLevel ?? 0) + 1})
+  function upgrade() {
+    const next = buyItem(getState(), 'basket')
+    if (!next) { setNotice(t('staff.failed')); return }
+    commit(next,true); setNotice(t('bulkSale.basketDone',{n:basketCapacity(next)}))
+  }
+  return h('div',{className:'fg-basketExpand'},
+    h('button',{type:'button',className:'fg-btn fg-btnSmall','data-action':'expandBackpack',disabled:state.coins<cost,onClick:upgrade},
+      t('bulkSale.basketUpgrade',{n:nextCapacity}),' · ',t('staff.coinCost',{coins:cost})),
+    state.coins<cost && h('small',{className:'fg-note'},t('room.short',{n:cost-state.coins})),
+    h('small',{role:'status'},notice))
+}
 // One local preference for every desktop flower and saved arrangement on this device.
 const petSizeKey = 'flower-garden.desktop-pet-size.v1'
 const petSizeListeners = new Set()
@@ -7999,6 +8867,7 @@ function updateBouquetPin(id, entry) {
 const pinStoragePrefix = 'flower-garden.desktop-pin.v1.'
 function artWindowKey(id) { return typeof id === 'string' ? id : `bouquet:${id}` }
 function artIdFromWindowKey(key) {
+  if (key === 'pet:xiaohei') return key
   if (/^bloom:[\w:.~-]{1,122}$/.test(key)) return key
   if (/^bouquet:\d{1,16}$/.test(key)) {
     const id = Number(key.slice(8))
@@ -8573,7 +9442,7 @@ function GreetingEditor({ t, card }) {
     h('button', { type: 'button', className: 'fg-btn fg-btnSmall fg-btnPrimary', 'data-action': 'greetSave', onClick: event => saveCard(event.currentTarget.closest('.fg-keepCard'), [head, ...meanings], `flower-garden-greeting-${card.id}`) }, t('greet.save')))
 }
 
-const TAB_ICONS = { garden: '🌱', basket: '🧺', studio: '💐', album: '📔', orders: '✉️', ecology: '🔬', show: '🎀', shop: '🛒', flowers: '📖', visitors: '🦋', settings: '⚙️', bag: '🎒', tasks: '📋', book: '📖' }
+const TAB_ICONS = { garden: '🌱', gardeners: '🧑‍🌾', basket: '🧺', studio: '💐', album: '📔', orders: '✉️', ecology: '🔬', show: '🎀', shop: '🛒', flowers: '📖', visitors: '🦋', settings: '⚙️', bag: '🎒', tasks: '📋', book: '📖' }
 
 // Copy for the new uses of reputation, study notes and ribbons, and the added achievements.
 Object.assign(zh, {
@@ -9586,6 +10455,8 @@ function InventoryDialog({ state, t, clock = Date.now(), onClose, onGarden, onSh
     h('div', { className: 'fg-bagFilters', role: 'group', 'aria-label': t('bag.filters') },
       ['all', 'bloom', 'seed', 'item'].map(id => h('button', { key: id, type: 'button', className: 'fg-bagFilter', 'aria-pressed': filter === id ? 'true' : 'false', onClick: () => { setFilter(id); setArmed(null) } },
         t(`bag.${id}`), ' ', h('span', { className: 'fg-bagFilterCount' }, String(all.filter(entry => id === 'all' || entry.kind === id).length))))),
+    h(BasketExpansion,{state,t}),
+    (filter === 'all' || filter === 'bloom') && h(FlowerBatchSale,{state,source:'basket',t}),
     h('div', { className: 'fg-bagBody' },
       h(BagGrid, { entries: shown, picked: current?.key, onSelect: pick, min: 12 }),
       h('aside', { className: 'fg-bagDetail', 'data-rarity': current?.rarity, 'aria-live': 'polite' },
@@ -9686,7 +10557,7 @@ function AwayCard({ report, t, onClose }) {
       const [pendingImport, setPendingImport] = React.useState(null)
       const saveInput = React.useRef(null)
       const [toast, setToast] = React.useState({ text: '', key: 0, tone: 'ok', species: null })
-      const [clock, setClock] = React.useState(() => Date.now())
+      const clock = state.lastTick
       const rootRef = React.useRef(null)
       const scrollRef = React.useRef(null)
       // The element a dialog took focus from, so closing it can hand focus back
@@ -9747,16 +10618,6 @@ function AwayCard({ report, t, onClose }) {
         if (t !== boundT || locale === undefined || typeof locale.subscribe !== 'function') return undefined
         return locale.subscribe(() => forceRender())
       }, [t])
-
-      React.useEffect(() => {
-        const id = window.setInterval(() => {
-          setClock(Date.now())
-          tick()
-        }, 1000)
-        return () => {
-          window.clearInterval(id)
-        }
-      }, [])
 
       React.useEffect(() => {
         if (confirmReset === false) return undefined
@@ -10952,6 +11813,7 @@ h('section', { className: 'fg-section' },
 h(ExpeditionBoard, { state, t, clock, onChange: commitReward }),
 h(SpecialCommissionBoard, { state, t, clock, onChange: commitReward, onSpecies: openGuide, onVisitor: openGuest })
           ),
+          panel('gardeners', h(GardenerBoard, { state, t, onChange:next=>commit(next,true) })),
           panel('ecology',
 h(GardenEcology, { state, t, clock, onChange: commitReward, onSpecies: openGuide })
           ),
@@ -11763,7 +12625,52 @@ function GoodsShelf({ state, t, clock, onChange }) {
 .fg-vaseTints{display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap}
 .fg-vaseTint{appearance:none;width:22px;height:22px;padding:0;border-radius:50%;border:2px solid var(--dsw-alias-border-l2);cursor:pointer}
 .fg-vaseTint[aria-pressed="true"]{outline:2px solid var(--fg-accent);outline-offset:2px}
+.fg-staffBoard,.fg-staffCard{display:grid;gap:10px;min-width:0}.fg-staffGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:10px}.fg-staffCard{padding:12px;border:1px solid var(--dsw-alias-border-l1);border-radius:12px;background:var(--dsw-alias-bg-layer-1);align-content:start}.fg-staffRow{display:flex;align-items:center;flex-wrap:wrap;gap:8px}.fg-staffRow select{min-width:0;max-width:100%;flex:1}.fg-staffUpgrades{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}.fg-staffUpgrades>div{display:grid;gap:3px}.fg-staffOdds{margin:5px 0;padding-inline-start:1.4em;display:grid;gap:4px}.fg-staffNotice{margin:0;color:var(--dsw-alias-label-primary)}.fg-staffNotice:empty{display:none}
+.fg-staffBoard{gap:16px}
+.fg-staffBoard :is(button,select):focus-visible{outline:2px solid var(--dsw-alias-brand-primary);outline-offset:2px}
+.fg-staffGallery{list-style:none;padding:0;margin:4px 0 0;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,116px),1fr));gap:8px}
+.fg-staffCandidate{--staff-ink:var(--fg-accent);min-width:0;overflow:hidden;border:1px solid var(--dsw-alias-border-l1);border-bottom:3px solid var(--staff-ink);border-radius:12px;background:var(--dsw-alias-bg-layer-1)}
+.fg-staffCandidate[data-rarity="legendary"],.fg-staffReveal[data-draw-result="aurum"],.fg-staffCard[data-gardener="aurum"]{--staff-ink:#d6a629;border:2px solid var(--staff-ink);background:linear-gradient(145deg,#d6a62926,transparent 65%),var(--dsw-alias-bg-layer-1)}
+.fg-staffCandidate[data-rarity="rare"]{--staff-ink:var(--fg-r-alt)}.fg-staffCandidate[data-rarity="epic"]{--staff-ink:var(--fg-r-hybrid)}
+.fg-staffPortrait{min-width:0;overflow:hidden;border-radius:9px;aspect-ratio:8/9}
+.fg-staffPortrait svg{display:block;width:100%;height:100%}
+.fg-staffCandidate .fg-staffPortrait{margin:auto;max-width:154px}
+.fg-staffCaption{display:grid;gap:2px;padding:8px;overflow-wrap:anywhere}
+.fg-staffCaption small{color:var(--dsw-alias-label-secondary);font-variant-numeric:tabular-nums}
+.fg-staffMember,.fg-staffReveal{display:grid;grid-template-columns:min(27%,70px) minmax(0,1fr);align-items:center;gap:12px}
+.fg-staffMember p{margin:4px 0 0}
+.fg-staffReveal{grid-template-columns:min(32%,100px) minmax(0,1fr);padding:10px;border-radius:14px;border:1px solid var(--fg-accent);background:var(--dsw-alias-bg-layer-1);overflow-wrap:anywhere}
+.fg-staffReveal>div:last-child{display:grid;gap:4px}.fg-staffReveal strong{font-size:1.1em}.fg-staffReveal small,.fg-staffReveal span{color:var(--dsw-alias-label-secondary)}
+.fg-staffSr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;clip-path:inset(50%);overflow:hidden;white-space:nowrap}
+@keyframes fg-staffReveal{from{opacity:.35;transform:translateY(4px) rotate(-3deg)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:no-preference){.fg-staffReveal .fg-staffPortrait{animation:fg-staffReveal .32s ease-out}}
 .fg-vaseTintPick{appearance:none;width:30px;height:26px;padding:0;border:1px solid var(--dsw-alias-border-l2);border-radius:8px;background:none;cursor:pointer}
+
+.fg-staffGrid{grid-template-columns:repeat(auto-fill,minmax(min(100%,280px),1fr));align-items:start}
+.fg-staffGrid .fg-staffCard{--staff-edge:#679780;max-width:360px;box-sizing:border-box;width:100%;padding:14px;gap:12px;border-radius:18px;border:1px solid var(--dsw-alias-border-l1);border-top:4px solid var(--staff-edge);background:var(--dsw-alias-bg-layer-1)}
+.fg-staffGrid .fg-staffCard[data-rarity="rare"]{--staff-edge:#488aaa}.fg-staffGrid .fg-staffCard[data-rarity="epic"]{--staff-edge:#9877b9}.fg-staffGrid .fg-staffCard[data-rarity="legendary"]{--staff-edge:#c69b3e}
+.fg-staffCard .fg-staffMember{grid-template-columns:min(35%,98px) minmax(0,1fr);padding:10px;gap:12px;border-radius:12px;background:linear-gradient(135deg,color-mix(in srgb,var(--staff-edge) 19%,transparent),transparent)}
+.fg-staffProgress{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-variant-numeric:tabular-nums}
+.fg-staffStarRail{display:inline-flex;gap:2px;font-size:1.18em;color:var(--dsw-alias-label-secondary)}.fg-staffStarRail [data-lit=true]{color:#b98314}
+.fg-staffDuty{padding:2px 6px;border-radius:99px;color:var(--dsw-alias-label-secondary);font-size:.75em;border:1px solid var(--dsw-alias-border-l1)}
+.fg-staffCard .fg-staffProgress{padding:8px 10px;border-radius:10px;background:var(--dsw-alias-bg-layer-2)}
+.fg-staffRank{border:1px solid var(--staff-edge);border-radius:3px 9px;padding:2px 8px;font-size:.85em;letter-spacing:.07em;background:color-mix(in srgb,var(--staff-edge) 14%,transparent)}
+.fg-staffCare{border-top:1px solid var(--dsw-alias-border-l1);padding-top:8px}
+.fg-staffCare summary{cursor:pointer;font-weight:600;padding:4px 0}
+.fg-staffCare[open] .fg-staffUpgrades{margin:10px 0}
+.fg-staffStarRail{letter-spacing:.06em}.fg-staffRank{font-weight:700}
+.fg-gachaBanner{display:grid;grid-template-columns:minmax(0,1fr) minmax(75px,30%);align-items:center;gap:8px;position:relative;isolation:isolate;overflow:hidden;color:#fff6d9;background:radial-gradient(ellipse at 76% 30%,#87ae7a 0%,transparent 34%),linear-gradient(127deg,#143731,#245345 58%,#526b4b);border-radius:18px;box-shadow:inset 0 0 0 1px #bdd3a864}
+.fg-gachaBanner::before{content:'';position:absolute;inset:8px;z-index:-1;border:1px solid #e0d5a44d;border-radius:12px}.fg-gachaCopy{padding:16px clamp(10px,3vw,30px);display:grid;gap:5px}.fg-gachaCopy h3{font:inherit;font-size:.8em;letter-spacing:.14em;color:#d7eccc;margin:0}.fg-gachaCopy strong{font-family:ui-serif,serif;font-size:clamp(1.15em,3vw,2em);line-height:1.25}.fg-gachaCopy span{font-size:.85em;color:#f4daa1}.fg-gachaHero{align-self:end;justify-self:center;width:min(100%,130px);line-height:0}.fg-gachaHero svg{width:100%;height:auto}
+.fg-staffDrawOption{display:grid;gap:3px;min-width:0;max-width:100%;align-self:flex-start}.fg-gachaControls,.fg-gachaRules ul{display:flex;flex-wrap:wrap;align-items:center;gap:8px}.fg-gachaControls .fg-gachaTen{background:#285745;color:#fff8de;border-color:#73926b;font-weight:700}.fg-gachaRules summary{cursor:pointer;font-size:.9em}.fg-gachaRules p,.fg-gachaRules ul{margin:6px 0;font-size:.9em}.fg-gachaRules ul{list-style:none;padding:0}.fg-gachaRules li{border:1px solid var(--dsw-alias-border-l1);padding:2px 6px;border-radius:5px}
+.fg-gachaSpread{display:grid;gap:8px}.fg-gachaSpread h4{margin:0}.fg-gachaTiles{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,85px),1fr));gap:6px}.fg-gachaTiles li{min-width:0}.fg-gachaTile{font:inherit;appearance:none;cursor:pointer;position:relative;display:grid;width:100%;aspect-ratio:4/5;align-content:center;justify-items:center;gap:5px;overflow:hidden;border-radius:10px;color:#ebd9a8;border:1px solid #ada478;background:repeating-linear-gradient(45deg,#355e4c33 0 2px,transparent 2px 10px),linear-gradient(125deg,#23453e,#385d4a);box-shadow:inset 0 0 0 4px #253d35,inset 0 0 0 5px #b0b58c7a}.fg-gachaTile .fg-gachaSeal{font-family:serif;font-size:2em;line-height:1}.fg-gachaTile[data-flipped=true]{padding:0;display:block;cursor:default;background:var(--dsw-alias-bg-layer-1)}.fg-gachaTile svg{width:100%;height:100%;display:block}.fg-gachaTile[data-rarity=epic]{border:2px solid #977ab2}.fg-gachaTile[data-rarity=legendary]{border:2px solid #d6a629}.fg-gachaCaption{position:absolute;inset:auto 0 0;display:grid;padding:12px 3px 4px;color:#fff;background:linear-gradient(transparent,#182923eb 45%);text-align:center}.fg-gachaCaption small{font-size:.7em}
+@media(prefers-reduced-motion:no-preference){.fg-gachaTile[data-flipped=true] svg{animation:fg-recruitTurn .24s ease-out}}@keyframes fg-recruitTurn{from{transform:scaleX(.25);opacity:.32}to{transform:scaleX(1);opacity:1}}
+.fg-staffTrait{display:grid;gap:4px;text-align:start;padding:6px;border-inline-start:2px solid var(--staff-ink,var(--staff-edge,var(--fg-accent)));background:var(--dsw-alias-bg-layer-2);border-radius:4px}.fg-staffTraitHead{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:baseline;justify-content:space-between}.fg-staffTraitHead small{font-variant-numeric:tabular-nums}.fg-staffCaption .fg-staffTrait{margin-top:4px;font-size:.88em}.fg-staffGallery{grid-template-columns:repeat(auto-fit,minmax(min(100%,150px),1fr))}
+.fg-staffProgress small{margin-inline-start:auto;color:var(--dsw-alias-label-secondary)}
+.fg-roomHead,.fg-roomActions{display:flex;align-items:center;justify-content:space-between;gap:8px 12px;flex-wrap:wrap}.fg-roomCounter{font-variant-numeric:tabular-nums}.fg-roomMeter{display:block;width:100%;height:.5em;accent-color:var(--fg-accent)}
+.fg-roomShelf{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,105px),1fr));gap:8px;list-style:none;padding:0;margin:0}.fg-roomStack{position:relative;min-width:0;display:grid;align-content:start;gap:2px;padding:8px;border-radius:12px;border:1px solid var(--dsw-alias-border-l1);border-bottom:4px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-2);text-align:center}.fg-roomStack[data-rarity=spirit]{border-bottom-color:var(--fg-r-spirit)}.fg-roomStack[data-rarity=curio]{border-bottom-color:var(--fg-r-curio)}.fg-roomStack[data-rarity=hybrid]{border-bottom-color:var(--fg-r-hybrid)}.fg-roomStack[data-rarity=alt]{border-bottom-color:var(--fg-r-alt)}
+.fg-roomArt{height:78px;display:grid;place-items:center}.fg-roomArt svg{height:100%;max-width:100%;width:78px}.fg-roomName{overflow-wrap:anywhere}.fg-roomStack small{color:var(--dsw-alias-label-secondary)}.fg-roomQuantity{position:absolute;inset-block-start:5px;inset-inline-end:5px;padding:1px 6px;background:var(--dsw-alias-bg-layer-1);border:1px solid var(--dsw-alias-border-l1);border-radius:99px;font-size:.78em;font-variant-numeric:tabular-nums}
+.fg-batchSale,.fg-batchPanel,.fg-basketExpand{display:grid;gap:6px;min-width:0}.fg-batchSale{justify-items:start}.fg-batchPanel{box-sizing:border-box;width:100%;margin:0;padding:10px;border:1px solid var(--dsw-alias-border-l1);border-radius:10px}.fg-batchPanel legend{font-weight:600}.fg-batchPanel p{margin:0}.fg-batchPanel>button{justify-self:start}.fg-batchTools,.fg-batchReview{display:flex;align-items:center;flex-wrap:wrap;gap:6px 12px}.fg-batchChoices{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,145px),1fr));gap:4px;max-height:14em;overflow:auto}.fg-batchChoice{display:flex;align-items:center;gap:5px;min-width:0;padding:4px;overflow-wrap:anywhere;cursor:pointer}.fg-basketExpand{justify-items:start}.fg-batchStatus:empty,.fg-basketExpand small:empty{display:none}
+.fg-roomEmpty{margin:0;padding:16px;text-align:center;color:var(--dsw-alias-label-secondary);border:1px dashed var(--dsw-alias-border-l2);border-radius:12px}.fg-roomActions{justify-content:flex-start;align-items:flex-start}.fg-roomActions>div{display:grid;gap:4px}
 `
 
     // §7b Backpack slots, daily play strip, rule tips and motion polish.
@@ -11857,6 +12764,36 @@ button.fg-slot[aria-pressed="true"]{outline:3px solid var(--dsw-alias-brand-prim
     // ---------------------------------------------------------------------
     // §8 Module registration.
     // ---------------------------------------------------------------------
+    // A page owns one simulation interval, regardless of how many garden views mount.
+    // On secure origins the active renderer also holds a cross-tab clock lock.
+    let clockOwners = 0, disposeClock = null
+    function startGardenClock() {
+      if (typeof window === 'undefined' || !window.setInterval) return () => {}
+      if (++clockOwners === 1) {
+        let stopped = false, timer = null, releaseLock
+        function start() {
+          if (stopped || timer !== null) return
+          timer = window.setInterval(tick, 1000)
+          tick()
+        }
+        const locks = window.navigator?.locks
+        const controller = locks && typeof AbortController === 'function' ? new AbortController() : null
+        if (controller) {
+          locks.request(`${STORAGE_KEY}:clock`, {signal:controller.signal}, async () => {
+            if (stopped) return
+            start()
+            await new Promise(resolve => { releaseLock = resolve })
+          }).catch(() => { if (!stopped) start() })
+        } else start()
+        disposeClock = () => {
+          stopped = true
+          controller?.abort()
+          releaseLock?.()
+          if (timer !== null) window.clearInterval(timer)
+        }
+      }
+      return () => { if (--clockOwners === 0) { disposeClock?.(); disposeClock = null } }
+    }
     return {
       name: 'dsh-flower-garden',
       inject: ['slots', 'locale'],
@@ -11884,6 +12821,7 @@ button.fg-slot[aria-pressed="true"]{outline:3px solid var(--dsw-alias-brand-prim
           }
         }, 'flower-garden: saved garden')
 
+        ctx.effect(startGardenClock, 'flower-garden: simulation clock')
         ctx.effect(trackDesktopArtPins, 'flower-garden: restore pinned artwork')
 
         ctx.slots.inject('shell.overlay', () => ctx.slots.register({name:'shell.overlay',id:'flower-garden-mini',order:30},FloatingGarden))
@@ -11903,7 +12841,7 @@ button.fg-slot[aria-pressed="true"]{outline:3px solid var(--dsw-alias-brand-prim
       __dicts: { zh, en },
       /** Pure game transitions and tuning, exported for unit tests only. */
       __game: {
-        ...ECOLOGY_API, ...PLAY_API, ...CRAFT_API, ...GENE_API, ...ALBUM_API, ...ECONOMY_API, ...LONGTERM_API, ...FUND_API, ...USES_API, ...FUN_API, ...FLOWER_API, ...GOODS_API, ...TINT_API, ...BULK_API, ...TRAIT_API, HIDDEN_CAP, CHARM_CAP, bagEntries, getAway, adoptStored, getState, playSound, miniGeometry, revealBloom, revealGarden, inventoryCount, rewardForChange, RESEARCH_BRANCHES, RESEARCH_OFFERS, sanitizeResearch, researchLevel, researchFee, researchCost, upgradeResearch, exchangeResearch, hybridChance, ECO_PROFILES, VISITOR_INFO, studyLevel, GARDEN_TABS, TAB_GROUPS, TAB_GROUP_IDS, todayTasks, tabGroupOf, sanitizeUi, dayPeriod, gardenClock,
+        ...ECOLOGY_API, ...PLAY_API, ...CRAFT_API, ...GENE_API, ...ALBUM_API, ...ECONOMY_API, ...LONGTERM_API, ...FUND_API, ...USES_API, ...FUN_API, ...FLOWER_API, ...GOODS_API, ...TINT_API, ...GARDENER_API, ...BULK_API, ...TRAIT_API, HIDDEN_CAP, CHARM_CAP, bagEntries, getAway, adoptStored, getState, playSound, miniGeometry, revealBloom, revealGarden, inventoryCount, rewardForChange, RESEARCH_BRANCHES, RESEARCH_OFFERS, sanitizeResearch, researchLevel, researchFee, researchCost, upgradeResearch, exchangeResearch, hybridChance, ECO_PROFILES, VISITOR_INFO, studyLevel, GARDEN_TABS, TAB_GROUPS, TAB_GROUP_IDS, todayTasks, tabGroupOf, sanitizeUi, dayPeriod, gardenClock,
         discoveryItems, recordDiscoveries, sanitizeDiscoveries, specialCommissions, commissionState, acceptCommission, commissionProgress, completeCommission, sanitizeCommissions, specialVisitorEligible,
         SCENES, SPECIES, CODEX_ENTRIES, HIDDEN_PAL, UNLOCK_COSTS, XP_PER_LEVEL, PLOT_COUNT,
         START_COINS, DRY_SHARE, BASKET_CAPACITY, ORDER_SLOTS, WEATHER_MS, ITEMS, SPRINKLER_MS, CHARM_BONUS,
@@ -11911,14 +12849,14 @@ button.fg-slot[aria-pressed="true"]{outline:3px solid var(--dsw-alias-brand-prim
         unlockScene, sellBasket, basketValue, basketCount, basketPlainCount, orderReady, orderNeedsGold,
         deliverOrder, fillOrders,
         makeOrder, stageOf, levelOf, growMsOf, weatherAt, weatherEndsAt, paletteOf, plotVariant,
-        variantMultiplier, bloomPrice, hiddenChance, sceneOf, emptyScene, basketCapacity,
+        variantMultiplier, bloomPrice, hiddenChance, sceneOf, emptyScene, basketCapacity, basketUpgradeCost, BASKET_MAX_LEVEL,
         buyItem, useSprinkler, useCharm, fertilizeAt,
         VISITORS, VISIT_MS, VISIT_CHANCE, ACHIEVEMENTS, MARKET_BONUS,
         TRAITS, SCENE_TRAIT, FACILITIES, FACILITY_MAX, SHOW_MS, SHOW_SLOTS, SHOW_TIERS,
         SOIL_HARVEST, SOIL_REPEAT, SOIL_ROTATE, SOIL_REST_MS, SOIL_FLOOR, COMPOST_GAIN,
         GLUT_STEP, GLUT_FLOOR, GLUT_RECOVER_MS, TRAIT_PRICE, HYBRID_PRICE, HYBRID_CHANCE,
         soilOf, soilFactor, compostAt, facilityLevel, facilityCost, upgradeFacility,
-        traitCauses, hybridPartner, itemKey, itemValue, glutSteps, glutFactor, quoteSale, sellKind, sellIndividual,
+        traitCauses, hybridPartner, itemKey, itemValue, glutSteps, glutFactor, quoteSale, quoteFlowerBatch, sellFlowerBatch, sellKind, sellIndividual,
         isPlainBloom, isWarm, showAt, showEntry, showAccepts, showPoints, exhibit,
         visitorAt, greetVisitor, visitBucket, isNight, waterAll, featuredSpecies, salePrice,
         achievementValue, achievementReady, claimAchievement,

@@ -9,7 +9,15 @@ const path = require('node:path')
 
 const BUNDLE = process.env.FG_BUNDLE ?? path.join(__dirname, '..', 'client.js')
 let captured = null
+// The store reads window.localStorage even when no DOM exists; keep it in memory
+// so loading the bundle does not log "storage is unavailable".
+const memoryStorage = new Map()
 global.window = {
+  localStorage: {
+    getItem: key => (memoryStorage.has(key) ? memoryStorage.get(key) : null),
+    setItem: (key, value) => { memoryStorage.set(key, String(value)) },
+    removeItem: key => { memoryStorage.delete(key) },
+  },
   __ModuleLoader__: {
     load(definition) {
       captured = definition
@@ -283,13 +291,42 @@ const lv2 = game.buyItem(lv1, 'basket')
 check('the second upgrade holds fifty flowers', lv2.basketLevel === 2 && game.basketCapacity(lv2) === 50)
 const lv3 = game.buyItem(lv2, 'basket'), lv4 = game.buyItem(lv3, 'basket')
 check('the basket expands to seventy-five then one hundred slots', game.basketCapacity(lv3) === 75 && game.basketCapacity(lv4) === 100)
-check('a maxed upgrade is refused even with enough coins', game.buyItem({...lv4,coins:10000}, 'basket') === null)
+check('former basket cap upgrades to 150 slots for 150 coins', game.basketUpgradeCost(lv4) === 150 && game.basketCapacity(game.buyItem(lv4,'basket')) === 150)
+const largestBasket = {...lv4, basketLevel:game.BASKET_MAX_LEVEL, coins:10000}
+check('max basket refuses further payment', game.basketUpgradeCost(largestBasket) === null && game.buyItem(largestBasket, 'basket') === null)
 const largeBasketSave=game.sanitize({...lv4,basket:Array.from({length:100},(_,i)=>({species:'daisy',variant:'base',dna:i+1}))},1)
 check('one hundred saved flowers survive reload with their identities', largeBasketSave.basket.length===100 && largeBasketSave.basket[99].dna===100 && largeBasketSave.basketLevel===4)
-check('capacity cannot exceed one hundred through invalid levels', game.basketCapacity({basketLevel:999})===100)
+check('oversized basket levels cap at 900 and sanitize safely', game.basketCapacity({basketLevel:999}) === 900 && game.sanitize({...largestBasket,basketLevel:999},1).basketLevel === 20)
+const saved900 = game.sanitize({...largestBasket,basket:Array.from({length:901},(_,i)=>({species:'daisy',variant:'base',dna:i+1}))},1)
+check('expanded basket survives reload at its new cap', saved900.basket.length === 900 && saved900.basket.at(-1).dna === 900)
 check('old upgrades retain or gain capacity on reload', game.basketCapacity(game.sanitize({...lv2,basketLevel:2},1))===50)
 check('a one hundred flower basket rejects additional harvests', game.harvestAt({...ripeMeadow,basketLevel:4,basket:largeBasketSave.basket},'meadow',0,noon,'overcast')===null)
 
+
+console.log('multi-stack flower sale confirmation')
+{
+  const flowers = [
+    {species:'daisy',variant:'base',dna:1001}, {species:'rose',variant:'hidden',dna:2001},
+    {species:'daisy',variant:'base',dna:1002}, {species:'rose',variant:'base',dna:2002},
+  ]
+  const chosen = [game.itemKey(flowers[0]),game.itemKey(flowers[1])]
+  const base = game.freshState(noon)
+  for (const source of ['basket','storage']) {
+    const state = {...base,basket:flowers,gardeners:{...base.gardeners,storage:flowers}}
+    const withSource = inventory => source === 'basket' ? {...state,basket:inventory} : {...state,gardeners:{...state.gardeners,storage:inventory}}
+    const quote = game.quoteFlowerBatch(state, source, chosen, noon)
+    const expected = game.sellBasket({...state,basket:flowers.slice(0,3)},undefined,undefined,noon)
+    const sold = game.sellFlowerBatch(state,quote,noon)
+    const remaining = source === 'basket' ? sold.basket : sold.gardeners.storage
+    check(`${source} multi-sale uses inventory order and the existing market calculation`, quote.count === 3 && quote.coins === expected.coins - state.coins && sold.coins === expected.coins && JSON.stringify(sold.glut) === JSON.stringify(expected.glut))
+    check(`${source} sells exactly the selected stacks and preserves other container`,remaining.length === 1 && remaining[0] === flowers[3] && (source==='basket'?sold.gardeners.storage:sold.basket) === flowers)
+    check(`${source} rejects sale after change of selected specimen DNA`,game.sellFlowerBatch(withSource([{...flowers[0],dna:88},...flowers.slice(1)]),quote,noon) === null)
+    check(`${source} stale selection and altered refund are refused`,game.sellFlowerBatch(sold,quote,noon) === null && game.sellFlowerBatch(state,{...quote,coins:quote.coins+1},noon) === null)
+    check(`${source} ignores unrelated inventory changes`,game.sellFlowerBatch(withSource([...flowers,{...flowers[3],dna:2003}]),quote,noon)?.coins === sold.coins)
+    check(`${source} rejects empty, duplicated and missing stack keys`,[[],[chosen[0],chosen[0]],['not-a-flower']].every(keys=>game.quoteFlowerBatch(state,source,keys,noon) === null))
+    check(`${source} stale market price rejected`, game.sellFlowerBatch({...state,glut:{daisy:{n:14,at:noon},rose:{n:14,at:noon}}},quote,noon)===null)
+  }
+}
 console.log('items: the sprinkler waters a ground')
 const dryPlot = { species: 'daisy', growthMs: 0, moisture: 5, dried: false }
 const groundState = {
@@ -654,8 +691,8 @@ console.log('ui save and local garden clock')
 check('ui sanitizer preserves valid tab and display settings', JSON.stringify(game.sanitizeUi({ tab: 'basket', fontSize: 19, font: 'serif' })) === JSON.stringify({ tab: 'basket', fontSize: 19, font: 'serif', sound: false }))
 check('ui sanitizer falls back invalid values', JSON.stringify(game.sanitizeUi({ tab: 'nope', fontSize: 14, font: 'comic' })) === JSON.stringify({ tab: 'garden', fontSize: 15, font: 'system', sound: false }))
 check('today tasks start with an unclaimed check-in', (() => { const list = game.todayTasks(game.createState ? game.createState(Date.now()) : game.getState(), Date.now()); return list[0].id === 'daily' && list.some(task => task.id === 'wanted') })())
-check('tab groups cover every section except settings', game.TAB_GROUP_IDS.flatMap(g => game.TAB_GROUPS[g]).length === 10 && game.tabGroupOf('settings') === null && game.tabGroupOf('shop') === 'bag')
-check('garden tabs expose nine stable sections', game.GARDEN_TABS.length === 11 && game.GARDEN_TABS[0] === 'garden' && game.GARDEN_TABS[10] === 'settings')
+check('tab groups cover every section except settings', JSON.stringify(game.TAB_GROUP_IDS.flatMap(g => game.TAB_GROUPS[g]).sort()) === JSON.stringify(game.GARDEN_TABS.filter(id => id !== 'settings').sort()) && game.tabGroupOf('shop') === 'bag')
+check('garden navigation includes gardeners and settings', game.GARDEN_TABS[0] === 'garden' && game.GARDEN_TABS.includes('gardeners') && game.GARDEN_TABS.includes('settings'))
 check('day periods honor every boundary', [0, 4, 5, 6, 7, 10, 11, 13, 14, 16, 17, 18, 19, 23].map(hour => game.dayPeriod(new Date(2026, 0, 1, hour).getTime())).join(',') === 'night,night,dawn,dawn,morning,morning,noon,noon,afternoon,afternoon,dusk,dusk,night,night')
 const localClockAt = new Date(2026, 6, 8, 17, 23, 41).getTime()
 const localClock = game.gardenClock(localClockAt)
@@ -1234,6 +1271,126 @@ const crowd = mk(when), waiting = game.visitorCount(crowd, 'meadow', when)
 const met = game.greetAll(crowd, 'meadow', when)
 check('one click greets every waiting visitor', waiting >= 2 && Object.values(met.visitors).reduce((a, n) => a + n, 0) === waiting && met.coins > crowd.coins && game.visitorCount(met, 'meadow', when) === 0)
 check('nobody to greet is a no-op', game.greetAll(met, 'meadow', when) === null && game.greetAll(game.freshState(when), 'meadow', when) === null && game.visitorCount(crowd, 'nope', when) === 0)
+}
+
+console.log('gardener recruitment, work and storage')
+{
+  const empty = game.freshState(noon)
+  const rich = {...empty, coins:10000, ribbons:10, ribbonsEarned:15, seed:1}
+  const recruited = game.drawGardener(rich)
+  const id = recruited.gardeners.lastDraw
+  check('single draw spends 1000 coins and one ribbon immutably', recruited.coins === 9000 && recruited.ribbons === 9 && recruited.ribbonsEarned === 15 && rich.coins === 10000 && rich.ribbons === 10 && !rich.gardeners.roster[id] && game.drawGardener(rich).gardeners.lastDraw === id)
+  check('gardener odds total common 60 rare 30 epic 9.5 legendary 0.5', game.GARDENERS.filter(g=>g.rarity==='common').reduce((n,g)=>n+g.weight,0) === 60 && game.GARDENERS.filter(g=>g.rarity==='rare').reduce((n,g)=>n+g.weight,0) === 30 && game.GARDENERS.filter(g=>g.rarity==='epic').reduce((n,g)=>n+g.weight,0) === 9.5 && game.GARDENERS.find(g=>g.id==='aurum')?.weight === .5)
+  for (const count of [1,10]) {
+    const draw = count === 1 ? game.drawGardener : game.drawGardenerTen
+    for (const shortfall of [{coins:1000 * count - 1}, {ribbons:count - 1}]) {
+      const state = {...rich, ...shortfall}
+      const snapshot = JSON.stringify(state)
+      check(`draw ${count} is atomic with a ${Object.keys(shortfall)[0]} shortfall`, draw(state) === null && JSON.stringify(state) === snapshot)
+    }
+  }
+  const pack = game.drawGardenerTen(rich)
+  check('ten draws spend the full fee once and reject insufficient funds', pack.state.coins === 0 && pack.state.ribbons === 0 && pack.state.ribbonsEarned === 15 && game.drawGardenerTen({...rich,coins:9999}) === null && game.drawGardenerTen({...rich,ribbons:9}) === null)
+  let singles = rich
+  const nine = Array.from({length:9}, () => { singles = game.drawGardener(singles); return singles.gardeners.lastDraw })
+  check('first nine match ordinary draws from same seed', nine.every((id,i) => pack.results[i].id === id))
+  const featured = game.GARDENER_BONUS_POOL
+  check('final slot is epic or legendary with exactly 5% gold', pack.results.length === 10 && featured.some(person => person.id === pack.results[9].id) && featured.reduce((sum,person)=>sum+person.weight,0) === 10 && featured.find(person=>person.id === 'aurum').weight === 0.5)
+  const seenCards = new Set()
+  check('new hire and duplicate rewards settle in chronological order', pack.results.every(result => {
+    const first = !seenCards.has(result.id)
+    seenCards.add(result.id)
+    return result.isNew === first && result.shards === (first ? 0 : 1)
+  }) && Object.values(pack.state.gardeners.roster).reduce((sum,worker)=>sum+1+worker.shards,0) === 10)
+  check('Xiaohei has 1.5% ordinary odds and 15% guaranteed-slot odds', featured.find(person=>person.id === 'xiaohei')?.weight === 1.5)
+  const copy = game.drawGardener({...recruited, seed:1})
+  check('duplicate becomes a shard', Object.keys(copy.gardeners.roster).length === 1 && copy.gardeners.roster[id].shards === 1)
+  const stars = game.upgradeGardener(copy, id, 'stars'), rank = game.upgradeGardener(stars, id, 'rank')
+  check('upgrades spend their costs and speed up work', stars.gardeners.roster[id].stars === 2 && stars.gardeners.roster[id].shards === 0 && rank.gardeners.roster[id].rank === 2 && game.gardenerInterval(rank,id) < game.gardenerInterval(copy,id))
+  check('missing materials and unknown upgrade paths are refused', game.upgradeGardener(stars,id,'stars') === null && game.upgradeGardener(copy,id,'bogus') === null)
+  const roster = {sprout:{stars:1,rank:1,shards:0}, finch:{stars:1,rank:1,shards:0}}
+  const base = {...rich,gardeners:{...rich.gardeners,roster},basket:Array(game.basketCapacity(rich)).fill({species:'daisy',variant:'base'})}
+  const assigned = game.assignGardener(base,'sprout','meadow',noon)
+  const dismantled = game.dismantleGardener(base,'sprout')
+  const recycled = game.dismantleGardenerShard(copy,id)
+  check('dismantle refunds 100 coins and zero ribbons', game.dismantleGardener(assigned,'sprout') === null && dismantled.coins === base.coins + 100 && dismantled.ribbons === base.ribbons)
+  check('recycling a shard refunds 100 coins and zero ribbons', recycled.coins === copy.coins + 100 && recycled.ribbons === copy.ribbons && recycled.gardeners.roster[id].shards === 0)
+  check('only recruited gardeners can work unlocked grounds', game.assignGardener(base,'clover','meadow',noon) === null && game.assignGardener(base,'sprout','snow',noon) === null)
+  const ready = {...planted('daisy'),growthMs:growMs,identified:true,variant:'hidden',dna:7831}
+  const crop = {...assigned, scenes:{...assigned.scenes, meadow:{...assigned.scenes.meadow, plots:[ready,null,null,null,null,null]}}}
+  const workAt = noon + game.gardenerInterval(crop,'sprout')
+  const harvested = game.advanceState(crop,workAt)
+  check('harvester stores actual identified flower when basket full', harvested.gardeners.storage[0]?.variant === 'hidden' && harvested.gardeners.storage[0]?.dna === 7831 && harvested.basket.length === base.basket.length && harvested.scenes.meadow.plots[0] === null)
+  check('one time produces one harvest', game.advanceState(harvested,workAt).harvested === 1 && game.claimGardenerFlowers(harvested) === null)
+  const claimed = game.claimGardenerFlowers({...harvested,basket:base.basket.slice(1),gardeners:{...harvested.gardeners,storage:[...harvested.gardeners.storage,...harvested.gardeners.storage]}})
+  check('claim transfers only what fits and retains metadata', claimed.gardeners.storage.length === 1 && claimed.basket.at(-1).dna === 7831 && claimed.harvested === 1)
+  const fullStore = {...crop,gardeners:{...crop.gardeners,storage:Array(game.GARDENER_STORAGE_CAP).fill(ready)}}
+  check('full storeroom leaves mature flower in place', game.advanceState(fullStore,workAt).scenes.meadow.plots[0]?.dna === 7831)
+  let expanding = {...fullStore, coins:5000}
+  for (const [index, price] of [500,1000,1500,2000].entries()) {
+    const previous = expanding
+    expanding = game.upgradeGardenerStorage(previous)
+    check(`storeroom level ${index + 2} has the expected cost and capacity`, game.gardenerStorageUpgradeCost(previous) === price && expanding.coins === previous.coins - price && expanding.gardeners.storageLevel === index + 2 && game.gardenerStorageCapacity(expanding) === 90 + index * 30 && expanding.gardeners.storage === previous.gardeners.storage)
+  }
+  const nextRoom = game.upgradeGardenerStorage({...expanding,coins:2500})
+  check('level five can upgrade to 210 slots', game.gardenerStorageUpgradeCost(expanding) === 2500 && game.gardenerStorageCapacity(nextRoom) === 210 && nextRoom.coins === 0)
+  const topRoom = {...expanding,coins:100000,gardeners:{...expanding.gardeners,storageLevel:30}}
+  check('max storeroom cannot charge for another upgrade', game.gardenerStorageCapacity(topRoom) === 930 && game.gardenerStorageUpgradeCost(topRoom) === null && game.upgradeGardenerStorage(topRoom) === null)
+  const poor = {...fullStore, coins:499}, poorBefore = JSON.stringify(poor)
+  check('unaffordable storeroom upgrade is atomic', game.upgradeGardenerStorage(poor) === null && JSON.stringify(poor) === poorBefore)
+  const lastSpace = {...expanding, gardeners:{...expanding.gardeners, roster:{clover:{stars:1,rank:1,shards:0}}, assignments:{meadow:'clover'}, storage:Array(179).fill(ready)}, seed:2000}
+  const filled = game.gardenerTick(lastSpace, workAt)
+  check('last available slot accepts harvest and limits clover bonus', filled.gardeners.storage.length === 180 && filled.gardeners.storage.at(-1).dna === ready.dna && filled.scenes.meadow.plots[0] === null)
+  const twoSpaces = {...lastSpace, gardeners:{...lastSpace.gardeners,storage:lastSpace.gardeners.storage.slice(1)}}
+  check('clover may award a second flower above level-one capacity', game.gardenerTick(twoSpaces,workAt).gardeners.storage.length === 180)
+  check('maxed full storeroom protects crop during manual and automatic harvest', game.harvestAt({...crop,gardeners:filled.gardeners},'meadow',0,workAt,game.weatherAt(workAt),false,'storage') === null && game.gardenerTick({...crop,gardeners:filled.gardeners},workAt+200000).scenes.meadow.plots[0]?.dna === ready.dna)
+  const blooms = Array.from({length:931},(_,i)=>({species:'daisy',variant:'hidden',dna:100+i}))
+  const migrateRoom = storageLevel => game.sanitize({...rich,gardeners:{...rich.gardeners,storageLevel,storage:blooms}},noon).gardeners
+  const restored = migrateRoom(5)
+  check('upgraded save keeps all 180 flower identities in order', restored.storageLevel === 5 && restored.storage.length === 180 && restored.storage.every((flower,i)=>flower.dna === 100+i && flower.variant === 'hidden'))
+  check('legacy and malformed storage levels migrate and apply their capacity', [undefined,0,'5',NaN].every(level=>migrateRoom(level).storageLevel === 1 && migrateRoom(level).storage.length === 60) && migrateRoom(100).storageLevel === 30 && migrateRoom(30).storage.length === 930 && migrateRoom(30).storage.at(-1).dna === 1029 && migrateRoom(2.9).storage.length === 90)
+  const resident = {...crop,scenes:{...crop.scenes,meadow:{...crop.scenes.meadow,plots:[{...ready,resident:true},null,null,null,null,null]}}}
+  check('resident flower remains on its ground', game.advanceState(resident,workAt).scenes.meadow.plots[0]?.resident === true)
+  const greeted = game.assignGardener(crop,'finch','meadow',noon)
+  check('assigning another gardener replaces the previous one', greeted.gardeners.assignments.meadow === 'finch' && !game.assignGardener(greeted,'finch',null,noon).gardeners.assignments.meadow)
+  let when = noon + game.gardenerInterval(greeted,'finch')
+  for(let i=0;i<500;i++){when+=game.VISIT_MS;if(game.visitorCount(greeted,'meadow',when)>0)break}
+  const visited = game.gardenerTick(greeted,when)
+  check('greeter visits once, awarding the normal tip', visited.coins > greeted.coins && visited.scenes.meadow.plots[0].visits === 1 && game.gardenerTick(visited,when) === visited)
+  const enabled = game.setGardenerAutoSow(assigned,true)
+  const cheapest = game.SPECIES.filter(p => game.SCENES.find(s => s.id === 'meadow').species.includes(p.id)).sort((a,b) => a.cost-b.cost)[0]
+  const sown = game.advanceState(enabled,workAt)
+  check('sowing pays the cheapest local price once when the worker is due', sown.planted === enabled.planted+1 && sown.coins === enabled.coins-cheapest.cost && sown.scenes.meadow.plots[0].species === cheapest.id && sown.gardeners.lastWork.meadow.action === 'sow' && game.advanceState(sown,workAt).coins === sown.coins)
+  check('sowing respects opt-in, available coins and the work deadline', game.advanceState(assigned,workAt).coins === assigned.coins && game.advanceState({...enabled,coins:0},workAt).planted === enabled.planted && game.advanceState(enabled,workAt-1).planted === enabled.planted)
+  const sober = game.setGardenerAutoSow(enabled,false)
+  check('player can disable spending and saves restore its explicit setting', !sober.gardeners.autoSow && game.sanitize(sown,workAt).gardeners.autoSow && game.sanitize({...base,gardeners:{...base.gardeners,autoSow:'yes'}},noon).gardeners.autoSow === false)
+  let quiet = when
+  for(let i=0;i<500 && game.visitorCount(greeted,'meadow',quiet)>0;i++) quiet+=game.VISIT_MS
+  const helper = game.gardenerTick(greeted,quiet)
+  check('a greeter harvests when no visitor is available, without greeting bonus', helper.gardeners.lastWork.meadow.action === 'harvest' && helper.gardeners.storage.length === 1 && helper.coins === greeted.coins)
+  const fallback = game.gardenerTick({...fullStore,seed:2000},when)
+  check('with a full store a harvester can greet while leaving the flower in place', fallback.gardeners.lastWork.meadow.action === 'greet' && fallback.scenes.meadow.plots[0]?.dna === ready.dna && fallback.bag.fertilizer === fullStore.bag.fertilizer)
+  check('worker specialization takes priority over available fallback', visited.gardeners.lastWork.meadow.action === 'greet' && game.gardenerTick(crop,when).gardeners.lastWork.meadow.action === 'harvest')
+  for (const person of game.GARDENERS) {
+    const worker = {stars:5, rank:5, shards:0}
+    const trained = {...crop, gardeners:{...crop.gardeners, roster:{[person.id]:worker}, assignments:{meadow:person.id}, workedAt:{meadow:noon}}}
+    check(`training improves ${person.id} frequency with a fixed perk chance`, game.gardenerTraitChance(trained,person.id) === person.chance / 100 && game.gardenerTraitChance(empty,person.id) === person.chance / 100 && game.gardenerInterval(empty,person.id) === person.baseSeconds * 1000 && game.gardenerInterval(trained,person.id) < game.gardenerInterval(empty,person.id))
+    const plain = person.role === 'harvest' ? game.harvestAt(trained,'meadow',0,when,game.weatherAt(when),false,'storage') : game.greetVisitor(trained,'meadow',0,when,game.weatherAt(when))
+    const visitor = Object.keys(plain.visitors).find(id => (plain.visitors[id] ?? 0) > (trained.visitors[id] ?? 0))
+    const amount = {
+      sprout:s=>s.bag.fertilizer, finch:s=>s.coins, clover:s=>s.gardeners.storage.length,
+      robin:s=>s.affinity[visitor] ?? 0, amber:s=>s.ribbons, luna:s=>s.bag.charm,
+      xiaohei:s=>s.bag.compost, aurum:s=>Object.values(s.seeds).reduce((sum,n)=>sum+n,0),
+    }[person.id]
+    const winSeed = 2000 // Next roll: 0.011; seed 1000 rolls 0.624.
+    const hit = game.gardenerTick({...trained,seed:winSeed},when)
+    const miss = game.gardenerTick({...trained,seed:1000},when)
+    check(`only winning work roll grants ${person.id} bonus`, amount(hit) - amount(plain) === (person.id === 'finch' ? 2 : 1) && amount(miss) === amount(plain))
+  }
+  const saved = game.sanitize(JSON.parse(JSON.stringify(harvested)),workAt)
+  check('gardener state round trips through save migration', JSON.stringify(saved.gardeners) === JSON.stringify(harvested.gardeners))
+  const legacy = game.sanitize({...rich,gardeners:undefined},noon)
+  check('legacy saves start without gardeners or storage', !Object.keys(legacy.gardeners.roster).length && !legacy.gardeners.storage.length)
 }
 
 console.log(failures === 0 ? '\nall checks passed' : `\n${failures} check(s) failed`)

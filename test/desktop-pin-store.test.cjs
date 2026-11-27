@@ -22,7 +22,9 @@ function tempStore() {
   return { store: createPinStore(directory), directory }
 }
 
-test('pinMode only accepts bloom and bouquet keys', () => {
+test('pinMode accepts artwork keys and precisely the supported Xiaohei key', () => {
+  assert.equal(pinMode('pet:xiaohei'), 'pet')
+  assert.equal(pinMode('pet:unowned'), null)
   assert.equal(pinMode('bloom:daisy:base:x1'), 'bloom')
   assert.equal(pinMode('bouquet:vase-3'), 'bouquet')
   assert.equal(pinMode('garden'), null)

@@ -11,6 +11,7 @@ const gardenPage = path.join(__dirname, 'garden.html')
 const bouquetPage = path.join(__dirname, 'bouquet.html')
 function pageFor(key) {
   if (key === 'garden') return gardenPage
+  if (key === 'pet:xiaohei') return path.join(__dirname, 'xiaohei.html')
   return key.startsWith('bloom:') ? path.join(__dirname, 'bloom.html') : bouquetPage
 }
 const windows = new Map()
@@ -85,7 +86,7 @@ else {
  app.whenReady().then(()=>{
    store = createPinStore(app.getPath('userData'))
     const partition=session.fromPartition('flower-garden')
-   const assets=new Set(['garden.html','garden.css','garden-shared.css','garden.js','window-controls.css','window-controls.js','bouquet.html','bouquet.css','bloom.html','bloom.css'].map(name=>pathToFileURL(path.join(__dirname,name)).href))
+   const assets=new Set(['garden.html','garden.css','garden-shared.css','garden.js','window-controls.css','window-controls.js','bouquet.html','bouquet.css','bloom.html','bloom.css','xiaohei.html','xiaohei.css','xiaohei.js'].map(name=>pathToFileURL(path.join(__dirname,name)).href))
    partition.webRequest.onBeforeRequest((details,callback)=>callback({cancel:!assets.has(details.url)}))
    partition.setPermissionCheckHandler(()=>false); partition.setPermissionRequestHandler((_c,_p,cb)=>cb(false)); partition.on('will-download',event=>event.preventDefault())
 
@@ -107,6 +108,24 @@ function createWindow(key, restored, petSize) {
    } else { if (!bouquet) win.show(); report({type:'ready',windowKey:key}) }
  }).catch(() => { win.preserveRecord = true; closeWindow(key) })
 }
+// Keep click/keyboard interaction on the same artwork as the drag handle.
+// Main reads the system cursor position rather than accepting target coordinates.
+const dragOrigins = new WeakMap()
+ipcMain.on('flower-garden:pet-drag', (event, phase) => {
+  const found = senderWindow(event)
+  if (!found || found[0] !== 'pet:xiaohei') return
+  const win = found[1]
+  if (phase === 'start') {
+    dragOrigins.set(win, {cursor:screen.getCursorScreenPoint(), bounds:win.getBounds()})
+  } else if (phase === 'end') {
+    dragOrigins.delete(win)
+  } else if (phase === 'move' && dragOrigins.has(win)) {
+    const origin = dragOrigins.get(win)
+    const cursor = screen.getCursorScreenPoint()
+    const {x, y} = clampBounds({...origin.bounds, x:origin.bounds.x + cursor.x - origin.cursor.x, y:origin.bounds.y + cursor.y - origin.cursor.y})
+    win.setPosition(x, y)
+  }
+})
 ipcMain.on('flower-garden:rendered', (event, id, ok) => {
   const found = senderWindow(event)
   if (!found || !pinMode(found[0])) return

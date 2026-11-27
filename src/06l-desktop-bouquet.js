@@ -57,6 +57,7 @@ function updateBouquetPin(id, entry) {
 const pinStoragePrefix = 'flower-garden.desktop-pin.v1.'
 function artWindowKey(id) { return typeof id === 'string' ? id : `bouquet:${id}` }
 function artIdFromWindowKey(key) {
+  if (key === 'pet:xiaohei') return key
   if (/^bloom:[\w:.~-]{1,122}$/.test(key)) return key
   if (/^bouquet:\d{1,16}$/.test(key)) {
     const id = Number(key.slice(8))

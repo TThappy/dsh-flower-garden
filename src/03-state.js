@@ -44,6 +44,7 @@
       return fillOrders({
         v: STATE_VERSION,
         coins: START_COINS,
+        gardeners: sanitizeGardeners(null, scenes, now),
         ui: sanitizeUi(null),
         discoveries: [], discoverySeq: 0,
         xp: 0,
@@ -227,7 +228,7 @@
         }
       }
       // An upgraded basket holds more, so the cap depends on the saved level.
-      const basketLevel = Math.max(0, Math.min(4, Math.floor(finiteOr(raw.basketLevel, 0))))
+      const basketLevel = basketUpgradeLevel(raw)
       const basket = []
       if (Array.isArray(raw.basket)) {
         for (const item of raw.basket.slice(0, basketCapacity({basketLevel}))) {
@@ -244,6 +245,7 @@
       return fillOrders({
         v: STATE_VERSION,
         coins: finiteOr(raw.coins, START_COINS),
+        gardeners: sanitizeGardeners(raw.gardeners, scenes, now),
         ui: sanitizeUi(raw.ui),
         discoveries: sanitizeDiscoveries(raw.discoveries), discoverySeq: Math.max(Math.floor(finiteOr(raw.discoverySeq,0)),...sanitizeDiscoveries(raw.discoveries).map(entry=>entry.id),0),
         xp: finiteOr(raw.xp, 0),
@@ -680,7 +682,7 @@ const ECOLOGY_API = { ECO_PERIOD_MS, ECO_OBSERVE_MS, ecologyPeriod, ecologyState
         }
         cursor = segmentEnd
       }
-      return revealGarden(companionTick({ ...state, ...(scenesChanged ? { scenes: nextScenes } : {}), lastTick: now, ecology: ecologyState(state, now), quests: questState(state, now) }, now), now)
+      return gardenerTick(revealGarden(companionTick({ ...state, ...(scenesChanged ? { scenes: nextScenes } : {}), lastTick: now, ecology: ecologyState(state, now), quests: questState(state, now) }, now), now), now)
     }
 
     /**
@@ -802,14 +804,16 @@ const ECOLOGY_API = { ECO_PERIOD_MS, ECO_OBSERVE_MS, ecologyPeriod, ecologyState
       }
     }
 
-    function harvestAt(state, sceneId, index, now, weather, endResidency = false) {
+    function harvestAt(state, sceneId, index, now, weather, endResidency = false, destination = 'basket') {
       const scene = SCENE_BY_ID.get(sceneId)
       const slot = state.scenes[sceneId]
       const plot = slot === undefined ? undefined : slot.plots[index]
       if (scene === undefined || plot === undefined || plot === null || (plot.resident && !endResidency)) return null
       const species = SPECIES_BY_ID.get(plot.species)
       if (species === undefined || plot.growthMs < growMsOf(species)) return null
-      if (state.basket.length >= basketCapacity(state)) return null
+      const store = destination === 'storage'
+      const room = store ? gardenerStorageCapacity(state) - state.gardeners.storage.length : basketCapacity(state) - state.basket.length
+      if (room <= 0) return null
       const bonus = state.charm === true ? CHARM_BONUS : 0
       const chance = Math.min(state.charm === true ? CHARM_CAP : HIDDEN_CAP, hiddenChance(plot, weather, now, scene) + bonus + shelfBonus(state).spirit + studyBonus(state, plot.species) + boostBonus(state, now))
       const roll = nextRandom(state.seed)
@@ -840,7 +844,7 @@ const ECOLOGY_API = { ECO_PERIOD_MS, ECO_OBSERVE_MS, ecologyPeriod, ecologyState
       if (plot.tint !== undefined) first.tint = plot.tint
       const blooms = [first]
       // A pollinated flower sets a second bloom in the plot's own colour, room permitting.
-      const doubled = plot.pollinated === true && state.basket.length + 2 <= basketCapacity(state)
+      const doubled = plot.pollinated === true && room >= 2
       if (doubled) {
         const second = { species: species.id, variant: plain }
         if (plot.dna !== undefined) second.dna = 1 + ((plot.dna * 7919) % 2147483646)
@@ -892,7 +896,7 @@ const ECOLOGY_API = { ECO_PERIOD_MS, ECO_OBSERVE_MS, ecologyPeriod, ecologyState
         harvested: state.harvested + blooms.length,
         pollinated: (state.pollinated ?? 0) + (doubled ? 1 : 0),
         scenes: { ...state.scenes, [sceneId]: { ...slot, plots, ...withSoil(slot, index, soilOf(slot, index) - SOIL_HARVEST, species.id) } },
-        basket: [...state.basket, ...blooms],
+        ...(store ? {gardeners:{...state.gardeners, storage:[...state.gardeners.storage, ...blooms]}} : {basket:[...state.basket, ...blooms]}),
         seen,
         hybrids,
         exotics,
@@ -965,36 +969,62 @@ const ECOLOGY_API = { ECO_PERIOD_MS, ECO_OBSERVE_MS, ecologyPeriod, ecologyState
     function quoteSale(state, items, now) {
       const featured = featuredSpecies(state, now)
       const steps = new Map()
+      const saleBonus = shelfBonus(state).sale
       let coins = 0
       for (const item of items) {
         const down = steps.get(item.species) ?? glutSteps(state, item.species, now)
-        coins += Math.round((1 + shelfBonus(state).sale) * itemValue(item) * (item.species === featured ? MARKET_BONUS : 1) * glutFactor(down))
+        coins += Math.round((1 + saleBonus) * itemValue(item) * (item.species === featured ? MARKET_BONUS : 1) * glutFactor(down))
         steps.set(item.species, now === undefined ? 0 : down + 1)
       }
       return { coins, steps }
     }
 
-    function sellWhere(state, match, now) {
-      const selling = state.basket.filter(match)
-      if (selling.length === 0) return null
-      const quote = quoteSale(state, selling, now)
-      const next = { ...state, coins: state.coins + quote.coins, basket: state.basket.filter(item => !match(item)) }
+    // Settle the quoted inventory and glut together, preserving the other container.
+    function settleFlowerSale(state, source, remaining, quote, now) {
+      const next = {...state, coins:state.coins + quote.coins}
+      if (source === 'storage') next.gardeners = {...state.gardeners, storage:remaining}
+      else next.basket = remaining
       if (now !== undefined) {
-        const glut = { ...state.glut }
-        for (const [id, down] of quote.steps) glut[id] = { n: Math.min(down, 14), at: now }
-        next.glut = glut
+        next.glut = {...state.glut}
+        for (const [id, down] of quote.steps) next.glut[id] = {n:Math.min(down, 14), at:now}
       }
       return next
     }
 
-    /** Sell one basket group, addressed by `itemKey`. */
+    function sellWhere(state, match, now) {
+      const selling = state.basket.filter(match)
+      if (!selling.length) return null
+      return settleFlowerSale(state, 'basket', state.basket.filter((flower,index) => !match(flower,index)), quoteSale(state,selling,now), now)
+    }
+
     function sellIndividual(state, index, now) {
       if (!Number.isInteger(index) || index < 0 || index >= state.basket.length) return null
-      const item = state.basket[index]
-      const quote = quoteSale(state, [item], now)
-      const next = { ...state, coins: state.coins + quote.coins, basket: state.basket.filter((_, at) => at !== index) }
-      if (now !== undefined) next.glut = { ...state.glut, [item.species]: { n: Math.min(quote.steps.get(item.species), 14), at: now } }
-      return next
+      return sellWhere(state, (_, at) => at === index, now)
+    }
+
+    // Keep the order of the source inventory: successive blooms share a species' market glut.
+    function quoteFlowerBatch(state, source, keys, now) {
+      const inventory = source === 'basket' ? state.basket : source === 'storage' ? state.gardeners?.storage : null
+      if (!Array.isArray(inventory) || !Array.isArray(keys) || !keys.length || keys.length > inventory.length || !Number.isFinite(now)) return null
+      const selected = new Set(keys)
+      if (selected.size !== keys.length) return null
+      const selling = inventory.filter(item => selected.has(itemKey(item)))
+      if (new Set(selling.map(itemKey)).size !== selected.size) return null
+      const quote = quoteSale(state, selling, now)
+      // Use the full ordered list of selected identities, independent of object references after reload.
+      const fingerprint = JSON.stringify([source, selling.map(item => [itemKey(item), item.dna ?? null]), quote.coins])
+      return {source, keys:[...selected], count:selling.length, coins:quote.coins, fingerprint}
+    }
+
+    function sellFlowerBatch(state, offer, now) {
+      if (!offer) return null
+      const current = quoteFlowerBatch(state, offer.source, offer.keys, now)
+      if (!current || current.fingerprint !== offer.fingerprint || current.coins !== offer.coins || current.count !== offer.count) return null
+      const inventory = offer.source === 'basket' ? state.basket : state.gardeners.storage
+      const selected = new Set(current.keys)
+      const remaining = [], selling = []
+      for (const item of inventory) (selected.has(itemKey(item)) ? selling : remaining).push(item)
+      return settleFlowerSale(state, offer.source, remaining, quoteSale(state,selling,now), now)
     }
 
     function sellKind(state, key, now) {
@@ -1159,9 +1189,9 @@ const ECOLOGY_API = { ECO_PERIOD_MS, ECO_OBSERVE_MS, ecologyPeriod, ecologyState
       const item = ITEM_BY_ID.get(itemId)
       if (item === undefined || state.coins < item.price) return null
       if (item.kind === 'upgrade') {
-        const level = state.basketLevel ?? 0
-        if (level >= item.maxLevel) return null
-        return { ...state, coins: state.coins - item.price, basketLevel: level + 1 }
+        const cost = basketUpgradeCost(state)
+        if (cost === null) return null
+        return { ...state, coins: state.coins - cost, basketLevel: basketUpgradeLevel(state) + 1 }
       }
       return {
         ...state,

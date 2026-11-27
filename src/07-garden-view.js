@@ -28,7 +28,7 @@
       const [pendingImport, setPendingImport] = React.useState(null)
       const saveInput = React.useRef(null)
       const [toast, setToast] = React.useState({ text: '', key: 0, tone: 'ok', species: null })
-      const [clock, setClock] = React.useState(() => Date.now())
+      const clock = state.lastTick
       const rootRef = React.useRef(null)
       const scrollRef = React.useRef(null)
       // The element a dialog took focus from, so closing it can hand focus back
@@ -89,16 +89,6 @@
         if (t !== boundT || locale === undefined || typeof locale.subscribe !== 'function') return undefined
         return locale.subscribe(() => forceRender())
       }, [t])
-
-      React.useEffect(() => {
-        const id = window.setInterval(() => {
-          setClock(Date.now())
-          tick()
-        }, 1000)
-        return () => {
-          window.clearInterval(id)
-        }
-      }, [])
 
       React.useEffect(() => {
         if (confirmReset === false) return undefined
@@ -1294,6 +1284,7 @@ h('section', { className: 'fg-section' },
 h(ExpeditionBoard, { state, t, clock, onChange: commitReward }),
 h(SpecialCommissionBoard, { state, t, clock, onChange: commitReward, onSpecies: openGuide, onVisitor: openGuest })
           ),
+          panel('gardeners', h(GardenerBoard, { state, t, onChange:next=>commit(next,true) })),
           panel('ecology',
 h(GardenEcology, { state, t, clock, onChange: commitReward, onSpecies: openGuide })
           ),
